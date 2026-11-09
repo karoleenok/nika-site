@@ -83,8 +83,8 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 .js .lines > .line {
   display: block;
   overflow: hidden;
-  /* запас сверху, чтобы не срезалась краткая над «Й» при line-height .8 */
-  padding-top: .16em; margin-top: -.16em;
+  /* запас сверху, чтобы не срезалась краткая над «Й» при line-height .8 (надстрочник выше капители примерно на .2em) */
+  padding-top: .3em; margin-top: -.3em;
 }
 .js .lines > .line > span {
   display: block;

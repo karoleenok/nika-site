@@ -44,7 +44,7 @@
   transition: color var(--dur-1), opacity var(--dur-1), transform var(--dur-1);
 }
 .social svg { display: block; width: 100%; height: 100%; fill: currentColor; overflow: visible; }
-.social--ig svg { position: absolute; left: 0; bottom: -2%; width: 117.5%; height: 117.5%; }   /* в иконке есть звёздочка (сноска про Meta), рамка остаётся 40×40 */
+.social--ig svg { position: absolute; left: 0; bottom: -2%; width: 117.5%; height: 117.5%; max-width: none; }   /* в иконке есть звёздочка (сноска про Meta), рамка остаётся 40×40 */
 @media (hover: hover) { .social:hover { opacity: .7; transform: translateY(-2px); } }
 
 /* ---------- Рукописные акценты ---------- */
