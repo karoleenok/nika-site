@@ -248,4 +248,8 @@
       mq.addEventListener('change', toggle); toggle();
     });
   })();
+
+  /* iOS Safari включает :active только если на странице есть touchstart-слушатель.
+     Нужно для красной вспышки иконок в подвале при тапе. */
+  document.addEventListener('touchstart', () => {}, { passive: true });
 })();

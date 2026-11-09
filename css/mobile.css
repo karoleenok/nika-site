@@ -319,8 +319,14 @@ body.menu-lock { overflow: hidden; }
 .script-img--final { position: relative; inset: auto; z-index: 3; display: block; width: calc(220 * var(--m)); margin: 12px 0 0 auto; }
 .final__cta { position: relative; inset: auto; z-index: 3; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
 .final__btn { flex: 1 0 100%; min-width: 0; }
-.final__cta .socials { flex: 1 0 100%; gap: 8px; }
+.final__cta .socials { display: none; }   /* на мобилке иконки живут в подвале */
 .social--red { width: var(--btn-h); height: var(--btn-h); min-width: 44px; }
+
+/* Соцсети в подвале: белые, при тапе вспыхивают красным и плавно гаснут */
+.socials--footer { display: flex; gap: 8px; margin-top: 28px; padding-right: 16px; }   /* запас справа под звёздочку Instagram */
+.socials--footer .social { width: var(--btn-h); height: var(--btn-h); min-width: 44px; min-height: 44px; color: var(--c-white); transition: color .45s var(--ease-out); -webkit-tap-highlight-color: transparent; }
+.socials--footer .social:active { color: var(--c-red); transition-duration: 0s; transform: none; }
+.socials--footer .social:focus-visible { color: var(--c-red); outline: 2px solid var(--c-red); outline-offset: 4px; border-radius: 12px; }
 
 .footer { padding: calc(40 * var(--m)) var(--gutter) calc(24 * var(--m) + var(--safe-b)); }
 .footer__glow { width: calc(360 * var(--m)); height: calc(180 * var(--m)); bottom: calc(-110 * var(--m)); }
