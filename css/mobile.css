@@ -103,7 +103,7 @@ body.menu-lock { overflow: hidden; }
 /* ==========================================================================
    HERO
    ========================================================================== */
-.hero__stage { height: calc(100vw * 1.84); min-height: 640px; max-height: 860px; }
+.hero__stage { height: calc(100vw * 1.84 + 30 * var(--m)); min-height: 670px; max-height: 890px; }   /* +30·m: нижний блок текста опущен ниже лица, фото якорится сверху */
 /* кадр стоит ниже, чтобы над головой остался воздух под первый заголовок; ноги уходят за нижний край */
 .hero__bg, .hero__cutout { top: calc(100vw * .33); height: auto; }
 .hero__bg { -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16%); mask-image: linear-gradient(180deg, transparent 0, #000 16%); }
@@ -117,7 +117,7 @@ body.menu-lock { overflow: hidden; }
 .site-header__logo img { height: calc(40 * var(--m)); min-height: 0; }
 
 .hero__title { --ls: -.006em; }
-.hero__title--l { left: var(--gutter); top: calc(78 * var(--m)); }
+.hero__title--l { left: var(--gutter); top: calc(78 * var(--m)); z-index: 1; }   /* ниже вырезки (z 2): рука Ники слегка перекрывает «с умом» */
 .hero__title--r { right: var(--gutter); left: auto; top: auto; bottom: calc(226 * var(--m)); z-index: 4; }
 .socials--hero { display: none; }
 .hero__lead { z-index: 4; font-size: var(--fs-lead); line-height: 1.2; }
@@ -272,11 +272,27 @@ body.menu-lock { overflow: hidden; }
 .shop__grid { grid-template-columns: 1fr; margin-top: 24px; gap: var(--gap); }
 .product { min-height: 0; padding: 16px; }
 .product__kind { font-size: var(--fs-tiny); }
-.stack--shop { min-height: calc(200 * var(--m)); margin-block: 12px 0; }
-.stack__cover { width: 48%; left: 0; top: 3%; }
-.stack__ph--1 { left: 38%; width: 25%; height: 86%; }
-.stack__ph--2 { left: 55%; width: 29%; height: 92%; }
-.stack__ph--3 { left: 72%; width: 27%; height: 88%; }
+/* Обложки не веером, а по одной: тап по карточке листает (js/main.js). Без JS видна только обложка. */
+.stack--shop { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; height: calc(212 * var(--m)); min-height: 0; margin-block: 12px 28px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.stack--shop > .stack__cover, .stack--shop > .stack__ph {
+  grid-area: 1 / 1; position: static; left: auto; top: auto; width: auto; height: 100%; max-width: 100%;
+  border-radius: 12px; transform: none; z-index: 0;
+  transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out);
+}
+.stack--shop > .stack__cover { box-shadow: 0 14px 28px rgba(0, 0, 0, .28); }
+.stack--shop > .stack__ph { aspect-ratio: 4 / 5.4; box-shadow: 0 14px 28px rgba(0, 0, 0, .14); opacity: 0; }
+.stack--shop > .stack__ph--1 { background: #d9d9d9; }
+.stack--shop > .stack__ph--2 { background: #ececec; }
+.stack--shop > .stack__ph--3 { background: #bcbcbc; }
+.stack--shop[role="button"] { cursor: pointer; }
+.stack--shop[role="button"]:focus-visible { outline: 2px solid var(--c-red); outline-offset: 4px; border-radius: 16px; }
+.js .stack--shop[data-cycle] > .is-before, .js .stack--shop[data-cycle] > .is-after { opacity: 0; pointer-events: none; }
+.js .stack--shop[data-cycle] > .is-before { transform: translateX(-28px) scale(.94); }
+.js .stack--shop[data-cycle] > .is-after  { transform: translateX(28px) scale(.94); }
+.js .stack--shop[data-cycle] > .is-active { opacity: 1; z-index: 1; }
+.stack__dots { position: absolute; left: 0; right: 0; bottom: -18px; display: flex; justify-content: center; gap: 6px; pointer-events: none; }
+.stack__dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--c-ink); opacity: .2; transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+.stack__dots i.is-on { opacity: 1; transform: scale(1.25); }
 .product__title { margin-top: 16px; font-size: var(--fs-card-t); line-height: 1.15; }
 .product__desc { margin-top: 8px; font-size: var(--fs-tiny); line-height: var(--lh-small); }
 .product .price { margin-top: 24px; margin-bottom: 14px; }
@@ -352,7 +368,7 @@ body.menu-lock { overflow: hidden; }
    Высоту коллажей держим пропорцией ширины, иначе фото налезают на кнопку. */
 @media (min-width: 431px) {
   .stack { min-height: 0; aspect-ratio: 355 / 224; }
-  .stack--shop { min-height: 0; aspect-ratio: 355 / 236; }
+  .stack--shop { height: calc(212 * var(--m)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -374,6 +390,9 @@ body.menu-lock { overflow: hidden; }
 .tariffs > .tariff, .shop__grid > .product, .cases__grid > .case { align-self: stretch; }
 .tariffs > .tariff { display: flex; flex-direction: column; }
 .tariffs > .tariff .btn { margin-top: auto; }
+/* Карточки в каруселях не выплывают при свайпе (раньше каждая въезжала на 24 px вверх и мигала прозрачностью — страница «тряслась») */
+.js .tariffs > [data-reveal], .js .cases__grid > [data-reveal], .js .shop__grid > [data-reveal] { opacity: 1; transform: none; transition: none; }
+.case:active, .product:active, .tariff:active { transform: none; }
 .carousel-dots { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
 .carousel-dots i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .25; transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
 .carousel-dots i.is-on { opacity: 1; transform: scale(1.25); }
