@@ -90,15 +90,6 @@
   mobileMQ.addEventListener('change', syncInfo);
   syncInfo();
 
-  /* ---------- Веер карточек «обо мне»: раскрывается, когда блок в зоне видимости (вместо hover) ---------- */
-  const fan = $('.fan');
-  if (fan) {
-    if ('IntersectionObserver' in window && !reduce) {
-      new IntersectionObserver(es => es.forEach(e => fan.classList.toggle('is-open', e.isIntersecting)), { threshold: .7 }).observe(fan);
-    } else { fan.classList.add('is-open'); }
-  }
-
-  /* ---------- Плавающая кнопка «написать Нике»: после героя, не поверх финала, не поверх клавиатуры ---------- */
   const fab = $('.wa-fab');
   const fabState = { past: false, end: false, typing: false };
   function updateFab() {
@@ -110,6 +101,9 @@
     const heroEl = $('.hero'), finaleEl = $('.finale');
     if (heroEl) new IntersectionObserver(es => { fabState.past = !es[0].isIntersecting; updateFab(); }).observe(heroEl);
     if (finaleEl) new IntersectionObserver(es => { fabState.end = es[0].isIntersecting; updateFab(); }, { rootMargin: '0px 0px -20% 0px' }).observe(finaleEl);
+    // кнопка свёрнута в круг; когда скролл стоит почти секунду, раскрывается в «написать Нике»
+    let idle;
+    addEventListener('scroll', () => { fab.classList.remove('is-open'); clearTimeout(idle); idle = setTimeout(() => fab.classList.add('is-open'), 900); }, { passive: true });
     document.addEventListener('focusin', e => { if (e.target.matches('input')) { fabState.typing = true; updateFab(); } });
     document.addEventListener('focusout', e => { if (e.target.matches('input')) { fabState.typing = false; updateFab(); } });
   }
@@ -249,7 +243,7 @@
     });
   })();
 
-  /* ---------- Рилсы в «обо мне» (мобилка): беззвучное превью играет, пока карточка на экране; тап включает звук ---------- */
+  /* ---------- Рилсы в «обо мне» (веер на ПК, полоса на мобилке): беззвучное превью играет, пока карточка на экране; тап включает звук ---------- */
   (() => {
     const btns = $$('.reel__btn');
     if (!btns.length) return;
@@ -268,7 +262,7 @@
     if (reduce || !('IntersectionObserver' in window)) return;   // без анимации: остаётся постер
     const io = new IntersectionObserver(es => es.forEach(e => {
       const v = e.target;
-      if (e.isIntersecting && mobileMQ.matches) play(v);
+      if (e.isIntersecting) play(v);
       else { v.pause(); if (!v.muted) { v.muted = true; label(btns[vids.indexOf(v)], false); } }
     }), { threshold: .6 });
     vids.forEach(v => io.observe(v));
