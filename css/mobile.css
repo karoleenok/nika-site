@@ -348,6 +348,13 @@ body.menu-lock { overflow: hidden; }
 .case:active, .product:active, .tariff:active { transform: scale(.992); }
 .glow--tr, .glow--bl { animation-duration: 22s; }
 
+/* 431–767: --m упирается в потолок 430, а карточка продолжает расти по ширине.
+   Высоту коллажей держим пропорцией ширины, иначе фото налезают на кнопку. */
+@media (min-width: 431px) {
+  .stack { min-height: 0; aspect-ratio: 355 / 224; }
+  .stack--shop { min-height: 0; aspect-ratio: 355 / 236; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .menu, .menu__nav a, .menu__bottom, .wa-fab { transition-duration: .001ms !important; transition-delay: 0s !important; }
   .fan__card { transition-duration: .001ms !important; }
