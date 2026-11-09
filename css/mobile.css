@@ -167,7 +167,7 @@ body.menu-lock { overflow: hidden; }
 }
 .info__col[open] .info__sum::after { transform: rotate(45deg); }
 .info__title { font-size: calc(32 * var(--m)); line-height: .8; }
-.info__list { margin-top: 0; padding: 0 0 16px; max-width: none !important; font-size: var(--fs-body); line-height: 1.25; }
+.info__list { margin-top: 0; padding: 0 0 16px; max-width: none !important; font-size: var(--fs-body); line-height: var(--lh-small); }
 .info__list li + li { margin-top: 8px; }
 .info__title--tariffs { margin-top: 28px; font-size: calc(36 * var(--m)); }
 .info__col:last-of-type { border-bottom: 1px solid rgba(14, 14, 14, .12); }
@@ -176,7 +176,7 @@ body.menu-lock { overflow: hidden; }
 .tariffs .tariff, .tariffs--3 .tariff, .tariff--wide { min-height: 0; }
 .tariff { padding: 16px; }
 .tariff__name, .tariffs--3 .tariff__name { font-size: var(--fs-card-t); line-height: 1.15; }
-.tariff__desc { margin-top: 6px; font-size: var(--fs-tiny); line-height: 1.25; }
+.tariff__desc { margin-top: 8px; font-size: var(--fs-tiny); line-height: var(--lh-small); }
 .tariff .price { margin-top: 28px; margin-bottom: 14px; }
 .tariff .btn { margin-top: 0; }
 .tariff--wide { margin-top: 16px; }
@@ -252,11 +252,11 @@ body.menu-lock { overflow: hidden; }
 .cases .label { margin-bottom: 18px; }
 .br-m { display: inline; }
 .section-title { line-height: .8; }
-.section-sub { max-width: none; margin-top: 16px; font-size: var(--fs-body); line-height: 1.125; }
+.section-sub { max-width: none; margin-top: 16px; font-size: var(--fs-body); line-height: var(--lh-small); }
 .cases__grid { grid-template-columns: 1fr; gap: var(--gap); margin-top: 24px; }
 .case { min-height: 0; padding: var(--inset); border-radius: var(--r-section); }
 .case__title { min-height: 0; line-height: .8; }
-.case__text { max-width: none; margin-top: 10px; font-size: var(--fs-body); line-height: 1.125; }
+.case__text { max-width: none; margin-top: 12px; font-size: var(--fs-body); line-height: var(--lh-small); }
 .stack { flex: none; min-height: calc(190 * var(--m)); margin-block: 14px 24px; }
 .case .btn { margin-top: 0; }
 .case--photo { min-height: calc(510 * var(--m)); }
@@ -278,7 +278,7 @@ body.menu-lock { overflow: hidden; }
 .stack__ph--2 { left: 55%; width: 29%; height: 92%; }
 .stack__ph--3 { left: 72%; width: 27%; height: 88%; }
 .product__title { margin-top: 16px; font-size: var(--fs-card-t); line-height: 1.15; }
-.product__desc { margin-top: 8px; font-size: var(--fs-tiny); line-height: 1.25; }
+.product__desc { margin-top: 8px; font-size: var(--fs-tiny); line-height: var(--lh-small); }
 .product .price { margin-top: 24px; margin-bottom: 14px; }
 
 /* ==========================================================================
@@ -359,3 +359,23 @@ body.menu-lock { overflow: hidden; }
   .menu, .menu__nav a, .menu__bottom, .wa-fab { transition-duration: .001ms !important; transition-delay: 0s !important; }
   .fan__card { transition-duration: .001ms !important; }
 }
+
+/* ---------- Карусели: однотипные карточки едут вбок (тарифы, кейсы, материалы) ---------- */
+.tariffs, .tariffs--3, .cases__grid, .shop__grid {
+  display: flex; flex-wrap: nowrap; gap: 8px;
+  margin-inline: calc(-1 * var(--inset)); padding-inline: var(--inset);
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scroll-padding-inline: var(--inset);
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.tariffs::-webkit-scrollbar, .cases__grid::-webkit-scrollbar, .shop__grid::-webkit-scrollbar { display: none; }
+.tariffs > *, .cases__grid > *, .shop__grid > * { flex: 0 0 82%; max-width: 340px; scroll-snap-align: start; }
+.cases__grid, .shop__grid { gap: var(--gap); }
+.tariffs > .tariff, .shop__grid > .product, .cases__grid > .case { align-self: stretch; }
+.tariffs > .tariff { display: flex; flex-direction: column; }
+.tariffs > .tariff .btn { margin-top: auto; }
+.carousel-dots { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+.carousel-dots i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .25; transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+.carousel-dots i.is-on { opacity: 1; transform: scale(1.25); }
+.carousel-dots[hidden] { display: none; }
+@media (min-width: 600px) { .shop__grid > * { flex: 1 0 calc(50% - var(--gap) / 2); max-width: none; } }

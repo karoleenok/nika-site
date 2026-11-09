@@ -184,4 +184,30 @@
       } catch (_) { setMsg('Не получилось отправить. Попробуй ещё раз или напиши в WhatsApp.'); }
     });
   });
+
+  /* ---------- Мобильные карусели: точки-индикаторы ---------- */
+  (() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    $$('.tariffs, .cases__grid, .shop__grid').forEach(list => {
+      const items = [...list.children];
+      if (items.length < 2) return;
+      const dots = document.createElement('div');
+      dots.className = 'carousel-dots'; dots.setAttribute('aria-hidden', 'true');
+      items.forEach(() => dots.appendChild(document.createElement('i')));
+      list.after(dots);
+      const sync = () => {
+        const max = list.scrollWidth - list.clientWidth;
+        let idx = 0;
+        if (max > 0) {
+          idx = list.scrollLeft >= max - 4 ? items.length - 1
+            : Math.round(list.scrollLeft / (items[1].offsetLeft - items[0].offsetLeft));
+        }
+        [...dots.children].forEach((d, i) => d.classList.toggle('is-on', i === idx));
+      };
+      const toggle = () => { dots.hidden = !mq.matches || list.scrollWidth <= list.clientWidth + 8; sync(); };
+      list.addEventListener('scroll', () => requestAnimationFrame(sync), { passive: true });
+      mq.addEventListener('change', toggle); new ResizeObserver(toggle).observe(list);
+      toggle();
+    });
+  })();
 })();
