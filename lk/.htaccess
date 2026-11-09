@@ -1,0 +1,5 @@
+# Личный кабинет: не индексировать и не кэшировать (на GitHub Pages этот файл не читается).
+<IfModule mod_headers.c>
+  Header always set X-Robots-Tag "noindex, nofollow"
+  Header always set Cache-Control "no-store"
+</IfModule>

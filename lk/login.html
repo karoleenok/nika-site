@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Вход в кабинет — Ника Дупина</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0e0e0e">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="../favicon.ico" sizes="48x48">
+  <link rel="apple-touch-icon" href="../favicon.png">
+  <link rel="preload" href="../fonts/BebasNeue-Bold.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="../fonts/InterTight-Variable.woff" as="font" type="font/woff" crossorigin>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/pages.css">
+  <link rel="stylesheet" href="../css/lk.css">
+</head>
+<body class="lk lk--auth" data-wa-phone="">
+<a class="skip-link" href="#main">К содержимому</a>
+<main id="main" class="auth">
+  <div class="auth__in">
+    <a class="auth__logo" href="../index.html" aria-label="Ника Дупина, на главную"><img src="../assets/logo-hd.svg" width="97" height="53" alt="Н.Д."></a>
+
+    <h1 class="display auth__title pg-in">Вход<br>в кабинет</h1>
+    <p class="auth__lead pg-in" style="--d:.06s">Пароль не нужен. Пришлём код на почту, с которой ты покупала доступ.</p>
+
+    <div class="auth__card pg-in" style="--d:.12s">
+      <!-- Шаг 1: почта -->
+      <form class="auth__step" data-step="email" novalidate>
+        <label class="field">
+          <span class="field__label">Почта</span>
+          <input class="field__input" type="email" name="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="name@mail.ru" required data-email>
+          <span class="field__err" data-err="email" role="alert"></span>
+        </label>
+        <button class="btn btn--red btn--block" type="submit">получить код</button>
+        <p class="auth__hint">Нажимая кнопку, ты соглашаешься с <a class="u" href="../legal/privacy.html">политикой обработки персональных данных</a>.</p>
+      </form>
+
+      <!-- Шаг 2: код -->
+      <form class="auth__step" data-step="code" novalidate hidden>
+        <p class="auth__sent">Если эта почта есть в базе Ники, мы отправили код на <strong data-sent-to></strong>. Письмо может прийти в течение минуты, загляни в «Спам».</p>
+        <label class="field">
+          <span class="field__label">Код из письма</span>
+          <input class="field__input field__input--code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="······" aria-describedby="code-err" required data-code>
+          <span class="field__err" id="code-err" data-err="code" role="alert"></span>
+        </label>
+        <label class="check">
+          <input type="checkbox" name="remember" checked data-remember>
+          <span class="check__box" aria-hidden="true"></span>
+          <span>Запомнить меня на этом устройстве</span>
+        </label>
+        <button class="btn btn--red btn--block" type="submit">войти</button>
+        <div class="auth__row">
+          <button class="linkbtn" type="button" data-resend disabled>отправить ещё раз</button>
+          <button class="linkbtn" type="button" data-change>другая почта</button>
+        </div>
+        <!-- ДЕМО: убрать вместе с js/lk-data.js, когда появится настоящая отправка кода -->
+        <p class="demo-hint" data-demo-hint hidden>Демо: подойдёт код 123456</p>
+      </form>
+    </div>
+
+    <p class="auth__help">Не получается войти? <a class="u" href="#" data-wa="Здравствуйте, Ника! Не получается войти в личный кабинет.">Напиши Нике</a></p>
+  </div>
+</main>
+<!-- ПРОВЕРИТЬ: номер WhatsApp Ники (data-wa-phone), тот же, что на главной -->
+<script src="../js/lk-data.js"></script>
+<script src="../js/lk-auth.js"></script>
+</body>
+</html>
