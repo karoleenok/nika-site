@@ -1,0 +1,104 @@
+/* ==========================================================================
+   Токены. Единственный источник правды по цветам, шрифтам, отступам, радиусам.
+   Макет: десктоп 1440. Единица --s = ширина окна / 1440 (но не шире 1680px).
+   Любой размер из макета пишется как calc(N * var(--s)).
+   ========================================================================== */
+
+@font-face {
+  font-family: "Bebas Neue";
+  src: url("../fonts/BebasNeue-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter Tight";
+  src: url("../fonts/InterTight-Variable.woff") format("woff");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+/* Рукописный акцент. Файл кладётся в /fonts, пока его нет — работает запасной курсив. */
+@font-face {
+  font-family: "Disruptors Script";
+  src: url("../fonts/DisruptorsScript.woff2") format("woff2"),
+       url("../fonts/DisruptorsScript.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* --- Цвет --- */
+  --c-red:        #dc1a1d;   /* акцент: кнопки, заголовки, маркеры */
+  --c-glow:       #ff0000;   /* только для свечений */
+  --c-ink:        #0e0e0e;   /* чёрный блоков и текста */
+  --c-night:      #05060b;   /* фон hero и финала */
+  --c-paper:      #f4f4f4;   /* серый фон карточек */
+  --c-white:      #ffffff;
+  --c-muted:      #787878;   /* второстепенный текст на светлом */
+  --c-disabled:   #e1e1e1;   /* SOLD OUT */
+  --c-on-dark:    #ffffff;
+  --c-on-dark-2:  rgba(255, 255, 255, .72);
+
+  /* --- Масштаб --- */
+  --page-max: 1680px;
+  --s: calc(min(100vw, var(--page-max)) / 1440);
+
+  /* --- Шрифты --- */
+  --f-display: "Bebas Neue", "Arial Narrow", Impact, sans-serif;
+  --f-text:    "Inter Tight", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --f-script:  "Disruptors Script", "Segoe Script", "Brush Script MT", cursive;
+
+  /* --- Типографика: размеры (в пикселях макета), межстрочный, трекинг ---
+     Мелкий текст не уходит ниже читаемого минимума через max(). */
+  --fs-hero:   calc(160 * var(--s));   /* ТРЕНИРУЙСЯ С УМОМ */
+  --fs-giant:  calc(320 * var(--s));   /* НИКА ДУПИНА */
+  --fs-cta:    calc(210 * var(--s));   /* ГОТОВ К ПЕРЕМЕНАМ? */
+  --fs-h2:     calc(78  * var(--s));
+  --fs-h2-xl:  calc(98  * var(--s));
+  --fs-h3:     calc(50  * var(--s));
+  --fs-lead:   max(16px, calc(20 * var(--s)));
+  --fs-body:   max(14px, calc(18 * var(--s)));
+  --fs-small:  max(12px, calc(16 * var(--s)));
+  --fs-tiny:   max(11px, calc(14 * var(--s)));
+  --fs-card-t: max(18px, calc(24 * var(--s)));
+  --fs-price:  max(24px, calc(32 * var(--s)));
+  --fs-script: calc(48 * var(--s));
+
+  --lh-display: .8;
+  --ls-display: -.012em;   /* трекинг заголовков, снят с макета */
+  --lh-tight:   1.2;
+  --lh-text:    1.35;
+
+  /* --- Система отступов (px макета) --- */
+  --sp-1: calc(4  * var(--s));
+  --sp-2: calc(8  * var(--s));
+  --sp-3: calc(12 * var(--s));
+  --sp-4: calc(16 * var(--s));
+  --sp-5: calc(20 * var(--s));
+  --sp-6: calc(28 * var(--s));
+  --sp-7: calc(40 * var(--s));   /* боковые поля страницы */
+  --sp-8: calc(56 * var(--s));
+  --sp-9: calc(80 * var(--s));
+  --sp-10: calc(120 * var(--s));
+
+  --gutter: var(--sp-7);         /* 40 */
+  --gap:    var(--sp-3);         /* 12: между карточками */
+  --inset:  var(--sp-6);         /* 28: внутри больших блоков */
+
+  /* --- Радиусы --- */
+  --r-section: calc(32 * var(--s));
+  --r-card:    calc(20 * var(--s));
+  --r-btn:     calc(8  * var(--s));
+  --r-input:   calc(8  * var(--s));
+
+  /* --- Размеры кнопок --- */
+  --btn-h:     max(44px, calc(56 * var(--s)));   /* минимум 44px под палец и курсор */
+
+  /* --- Движение --- */
+  --ease-out: cubic-bezier(.2, .7, .2, 1);
+  --dur-1: .18s;
+  --dur-2: .45s;
+  --dur-3: .9s;
+}

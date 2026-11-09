@@ -1,0 +1,31 @@
+/* ==========================================================================
+   ПЛАНШЕТ 768–1023. Подключается с media="(min-width: 768px) and (max-width: 1023px)".
+   База та же, что у ПК: --s = ширина окна / 1440 (на 768 это 0.53, на 1023 это 0.71).
+   Здесь только то, что при таком масштабе перестаёт помещаться: hero, тарифы, кейсы, «Обо мне».
+   ========================================================================== */
+
+/* ---------- Hero: выше сцена, лид-тексты не налезают на заголовки ---------- */
+.hero__stage { height: calc(880 * var(--s)); }
+.hero__bg, .hero__cutout { height: 100%; object-fit: cover; object-position: 66% 0; }
+.hero__lead--r { top: calc(290 * var(--s)); width: calc(520 * var(--s)); }
+.hero__lead--l { top: calc(468 * var(--s)); width: calc(520 * var(--s)); }
+.hero__choice { top: calc(676 * var(--s)); }
+
+/* ---------- Тарифы: 2×2 вместо четырёх узких карточек ---------- */
+.tariffs { grid-template-columns: repeat(2, 1fr); }
+.tariffs .tariff { min-height: calc(300 * var(--s)); }
+.tariffs--3 { grid-template-columns: repeat(3, 1fr); }
+.tariffs--3 .tariff { min-height: calc(340 * var(--s)); }
+
+/* ---------- Кейсы: 2×2, чтобы кнопка «смотреть трансформации» не обрезалась ---------- */
+.cases__grid { grid-template-columns: repeat(2, 1fr); }
+.case { min-height: calc(620 * var(--s)); }
+.stack { min-height: calc(330 * var(--s)); margin-bottom: calc(40 * var(--s)); }
+
+/* ---------- Обо мне: подписи над веером, а не поверх него ---------- */
+.about__bottom { min-height: calc(470 * var(--s)); }
+.about__note { align-self: start; padding-bottom: 0; max-width: calc(400 * var(--s)); }
+.stat__label { max-width: calc(280 * var(--s)); }
+
+/* ---------- Мелочи читаемости ---------- */
+.consent { font-size: max(12px, calc(14 * var(--s))); max-width: none; }

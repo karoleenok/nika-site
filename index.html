@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ника Дупина — фитнес-тренер и специалист по питанию, Хабаровск</title>
+  <meta name="description" content="Онлайн-сопровождение по тренировкам и питанию от Ники Дупиной: индивидуальный план, видеоинструкции, обратная связь. Хабаровск.">
+  <meta name="theme-color" content="#05060b">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="preload" href="fonts/BebasNeue-Bold.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="fonts/InterTight-Variable.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="assets/img/hero.webp" as="image" type="image/webp" media="(min-width: 768px)" fetchpriority="high">
+  <link rel="preload" href="assets/img/hero-m.webp" as="image" type="image/webp" media="(max-width: 767px)" fetchpriority="high">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/mobile.css" media="(max-width: 767px)">
+  <link rel="stylesheet" href="css/tablet.css" media="(min-width: 768px) and (max-width: 1023px)">
+  <script src="js/boot.js"></script>
+</head>
+<body data-wa-phone="">
+<!-- ПРОВЕРИТЬ: номер WhatsApp Ники (data-wa-phone) и актуальность канала для клиентов из РФ -->
+<a class="skip-link" href="#main">К содержимому</a>
+
+<!-- Мобильное меню: на ПК скрыто (display:none в CSS) -->
+<button class="burger" type="button" aria-expanded="false" aria-controls="menu" aria-label="Открыть меню"><span></span><span></span></button>
+<div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Меню" hidden>
+  <nav class="menu__nav" aria-label="Разделы сайта">
+    <a href="#services" style="--i:0">услуги</a>
+    <a href="#about" style="--i:1">обо мне</a>
+    <a href="#cases" style="--i:2">кейсы</a>
+    <a href="#shop" style="--i:3">магазин</a>
+    <a href="#contacts" style="--i:4">контакты</a>
+  </nav>
+  <div class="menu__bottom" style="--i:5">
+    <a class="btn btn--white btn--block" href="#test">пройти тест</a>
+    <a class="btn btn--red btn--block" href="#contacts" data-wa="Здравствуйте, Ника! Хочу узнать подробнее о сопровождении.">написать в WhatsApp</a>
+  </div>
+</div>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero on-dark" aria-label="Главный экран">
+  <div class="hero__stage">
+    <picture><source media="(max-width: 767px)" srcset="assets/img/hero-m.webp" width="800" height="1280"><img class="hero__bg" src="assets/img/hero.webp" width="2400" height="1600" alt="" fetchpriority="high" decoding="async"></picture>
+
+    <header class="site-header">
+      <nav class="nav nav--left" aria-label="Основное меню">
+        <a href="#services">услуги</a>
+        <a href="#about">обо мне</a>
+        <a href="#cases">кейсы</a>
+        <a href="#shop">магазин</a>
+      </nav>
+      <a class="site-header__logo" href="#top" aria-label="Ника Дупина, на главную">
+        <img src="assets/logo-hd.svg" width="97" height="53" alt="Н.Д.">
+      </a>
+      <nav class="nav nav--right" aria-label="Контакты">
+        <a href="#contacts">контакты</a>
+        <a class="u" href="#test">пройти тест</a>
+        <a class="u" href="#contacts" data-wa="Здравствуйте, Ника! Хочу узнать подробнее о сопровождении.">связаться</a>
+      </nav>
+    </header>
+
+    <h1 class="hero__title hero__title--l display lines" id="top">
+      <span class="line"><span>Тренируйся</span></span>
+      <span class="line" style="--i:1"><span>с умом</span></span>
+    </h1>
+    <h2 class="hero__title hero__title--r display lines">
+      <span class="line" style="--i:2"><span>Меняйся</span></span>
+      <span class="line" style="--i:3"><span>системно</span></span>
+    </h2>
+
+    <picture><source media="(max-width: 767px)" srcset="assets/img/hero-m-cutout.webp" width="800" height="1280"><img class="hero__cutout" src="assets/img/hero-cutout.webp" width="2146" height="1336" alt="Ника Дупина, фитнес-тренер" decoding="async"></picture>
+
+    <ul class="socials socials--hero" aria-label="Соцсети">
+      <li><a class="social" href="#" data-wa="Здравствуйте, Ника! Хочу узнать подробнее о сопровождении." aria-label="WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.65-4.8A8.5 8.5 0 1 1 8 19.4L3 21z"/><path d="M9 8.6c.2 2.9 2.7 5.3 5.8 5.8l1-1.5-1.9-1-.8.8a4 4 0 0 1-1.9-1.9l.8-.8-1-1.9L9 8.6z"/></svg></a></li>
+      <li><a class="social" href="#" aria-label="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 3L21 4z"/><path d="M9 13l12-9"/></svg></a></li>
+      <li><a class="social social--ig" href="#" aria-label="Instagram*"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r=".6"/></svg><sup aria-hidden="true">*</sup></a></li>
+    </ul>
+
+    <p class="hero__lead hero__lead--r">Онлайн сопровождение – это индивидуальная система без шаблонных решений, кропотливая работа с четкой обратной связью</p>
+    <p class="hero__lead hero__lead--l">Персональные тренировки и&nbsp;сопровождение по&nbsp;питанию с&nbsp;учётом твоих целей и&nbsp;особенностей</p>
+
+    <div class="hero__choice">
+      <p class="hero__choice-q">Что тебя интересует?</p>
+      <div class="hero__choice-btns">
+        <a class="btn btn--red" href="#services" data-tab-link="training">тренировки</a>
+        <a class="btn btn--white" href="#services" data-tab-link="food">питание</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee__track">
+      <span>видимый результат</span><i></i><span>индивидуальное сопровождение</span><i></i>
+      <span>видимый результат</span><i></i><span>индивидуальное сопровождение</span><i></i>
+      <span>видимый результат</span><i></i><span>индивидуальное сопровождение</span><i></i>
+      <span>видимый результат</span><i></i><span>индивидуальное сопровождение</span><i></i>
+    </div>
+  </div>
+</section>
+
+<main id="main">
+
+<!-- ===================== УСЛУГИ ===================== -->
+<section class="services" id="services" aria-labelledby="services-label">
+  <div class="wrap">
+    <p class="label" id="services-label">услуги</p>
+
+    <div class="tabs" role="tablist" aria-label="Направление">
+      <button class="tab is-active" role="tab" id="tab-training" aria-selected="true" aria-controls="panel-training" data-tab="training">тренировки</button>
+      <button class="tab" role="tab" id="tab-food" aria-selected="false" aria-controls="panel-food" data-tab="food" tabindex="-1">питание</button>
+    </div>
+  </div>
+
+  <div class="panels">
+    <!-- ---------- ТРЕНИРОВКИ ---------- -->
+    <div class="panel is-active" role="tabpanel" id="panel-training" aria-labelledby="tab-training">
+
+      <article class="block block--paper block--online" data-reveal>
+        <div class="block__head">
+          <div>
+            <h2 class="display block__title block__title--red">Онлайн-сопровождение</h2>
+            <p class="block__sub">Индивидуальный план тренировок с учётом твоих целей, уровня подготовки и возможностей, на основе библиотеки тренировок</p>
+          </div>
+          <img class="script-img script-img--head script-img--2t" src="assets/script/script-2t.svg" width="522" height="140" alt="Больше 2 тонн жира сожжено подопечными">
+        </div>
+
+        <div class="info">
+          <details class="info__col" open>
+            <summary class="info__sum"><h3 class="display info__title">Кому подходит</h3></summary>
+            <ul class="info__list">
+              <li>1/ нет возможности подстраиваться под график тренера</li>
+              <li>2/ тренируешься, но не видишь результата</li>
+              <li>3/ готов соблюдать план и работать на результат</li>
+            </ul>
+          </details>
+          <details class="info__col" open>
+            <summary class="info__sum"><h3 class="display info__title">Этапы работы</h3></summary>
+            <ul class="info__list">
+              <li>1/ первичная консультация и знакомство</li>
+              <li>2/ разработка индивидуального плана тренировок</li>
+              <li>3/ выполнение упражнений на платформе с видеоуроками</li>
+              <!-- ПРОВЕРИТЬ: в макете здесь тоже «3/», по смыслу должно быть «4/» -->
+              <li>4/ обратная связь и корректировка нагрузки</li>
+            </ul>
+          </details>
+          <details class="info__col" open>
+            <summary class="info__sum"><h3 class="display info__title">Формат работы</h3></summary>
+            <p class="info__list">Онлайн на тренировочной платформе с видеоинструкциями и обратной связью от тренера</p>
+          </details>
+        </div>
+
+        <h3 class="display info__title info__title--tariffs">Тарифы</h3>
+        <ul class="tariffs">
+          <li class="tariff">
+            <h4 class="tariff__name">24 часа</h4>
+            <p class="tariff__desc">разовый доступ на 24 часа</p>
+            <p class="price"><s class="price__old">2499&nbsp;₽</s><span class="price__now">999&nbsp;₽</span></p>
+            <a class="btn btn--red btn--block" href="#" data-buy="train-24h">открыть доступ</a>
+          </li>
+          <li class="tariff">
+            <h4 class="tariff__name">1 месяц</h4>
+            <p class="tariff__desc">полноценное ведение тренера</p>
+            <p class="price"><s class="price__old">12&nbsp;799&nbsp;₽</s><span class="price__now">9&nbsp;999&nbsp;₽</span></p>
+            <a class="btn btn--red btn--block" href="#" data-buy="train-1m">открыть доступ</a>
+          </li>
+          <li class="tariff">
+            <h4 class="tariff__name">2 месяца</h4>
+            <p class="tariff__desc">полноценное ведение тренера</p>
+            <p class="price"><s class="price__old">24&nbsp;999&nbsp;₽</s><span class="price__now">17&nbsp;999&nbsp;₽</span></p>
+            <a class="btn btn--red btn--block" href="#" data-buy="train-2m">открыть доступ</a>
+          </li>
+          <li class="tariff">
+            <h4 class="tariff__name">4 месяца</h4>
+            <p class="tariff__desc">полноценное ведение тренера</p>
+            <p class="price"><s class="price__old">42&nbsp;799&nbsp;₽</s><span class="price__now">33&nbsp;999&nbsp;₽</span></p>
+            <a class="btn btn--red btn--block" href="#" data-buy="train-4m">открыть доступ</a>
+          </li>
+        </ul>
+      </article>
+
+      <div class="duo">
+        <article class="block block--paper block--half" data-reveal>
+          <h2 class="display block__title block__title--red">Офлайн</h2>
+          <div class="tariff tariff--wide">
+            <h4 class="tariff__name">1 тренировка</h4>
+            <p class="tariff__desc">в LEVEL UP г. Хабаровск</p>
+            <p class="price"><span class="price__now">2700&nbsp;₽</span></p>
+            <!-- ПРОВЕРИТЬ: что с кнопкой, когда появится место (сейчас disabled) -->
+            <button class="btn btn--disabled btn--block" type="button" disabled>SOLD OUT</button>
+          </div>
+        </article>
+        <article class="block block--paper block--half" data-reveal style="--d:.08s">
+          <h2 class="display block__title block__title--red">По видеосвязи</h2>
+          <div class="tariff tariff--wide">
+            <h4 class="tariff__name">1 тренировка – 1 час</h4>
+            <p class="tariff__desc">рекомендую начать тренировочный процесс с нескольких созвонов</p>
+            <p class="price"><s class="price__old">2700&nbsp;₽</s><span class="price__now">2499&nbsp;₽</span></p>
+            <a class="btn btn--red btn--block" href="#" data-wa="Здравствуйте, Ника! Хочу обсудить тренировку по видеосвязи.">обсудить детали</a>
+          </div>
+        </article>
+      </div>
+
+      <article class="block block--ink package on-dark" data-reveal>
+        <span class="glow glow--tr" aria-hidden="true"></span>
+        <span class="glow glow--bl" aria-hidden="true"></span>
+        <h2 class="display block__title">Полный пакет</h2>
+        <div class="package__card">
+          <p class="package__label">что входит:</p>
+          <ul class="package__list">
+            <li>Консультация по питанию</li>
+            <li>2 месяца онлайн-тренировок (сопровождение)</li>
+            <li>2 месяца сопровождения по питанию</li>
+          </ul>
+          <p class="price price--inline"><s class="price__old">47&nbsp;999&nbsp;₽</s><span class="price__now">37&nbsp;899&nbsp;₽</span></p>
+          <a class="btn btn--red btn--block" href="#" data-buy="package">забрать полный пакет</a>
+        </div>
+      </article>
+    </div>
+
+    <!-- ---------- ПИТАНИЕ ---------- -->
+    <div class="panel" role="tabpanel" id="panel-food" aria-labelledby="tab-food" hidden>
+
+      <article class="block block--paper block--food" data-reveal>
+        <div class="block__head">
+          <div>
+            <h2 class="display block__title block__title--red">Сопровождение по питанию</h2>
+            <!-- ПРОВЕРИТЬ: в макете «вашего организма», на сайте везде «ты» — поставила «твоего» -->
+            <p class="block__sub">Индивидуальный подход к питанию, основанный на особенностях твоего организма, образе жизни и личных целях</p>
+          </div>
+          <img class="script-img script-img--head script-img--clients" src="assets/script/script-clients.svg" width="481" height="162" alt="Подопечные доверяют мне уже более 7 лет">
+        </div>
+
+        <div class="info">
+          <details class="info__col" open>
+            <summary class="info__sum"><h3 class="display info__title">Кому подходит</h3></summary>
+            <ul class="info__list">
+              <li>1/ кто хочет наладить питание и сформировать здоровые пищевые привычки</li>
+              <li>2/ кто хочет разобраться в дефицитах и особенностях организма на основании анализов</li>
+              <li>3/ кто устал от строгих диет и постоянных ограничений</li>
+            </ul>
+          </details>
+          <details class="info__col" open>
+            <summary class="info__sum"><h3 class="display info__title">Этапы работы</h3></summary>
+            <ul class="info__list">
+              <li>1/ первичная консультация и знакомство</li>
+              <li>2/ анализ и стратегия</li>
+              <li>3/ индивидуальные рекомендации</li>
+              <li>4/ внедрение и корректировка</li>
+            </ul>
+          </details>
+          <details class="info__col" open>
+            <summary class="info__sum"><h3 class="display info__title">Формат работы</h3></summary>
+            <p class="info__list">Онлайн с постоянной поддержкой</p>
+          </details>
+        </div>
+
+        <h3 class="display info__title info__title--tariffs">Услуги</h3>
+        <ul class="tariffs tariffs--3">
+          <li class="tariff">
+            <h4 class="tariff__name">Индивидуальная консультация<br class="br-d"> по питанию</h4>
+            <p class="tariff__desc">разбор текущего рациона и пищевых привычек, выявление зон роста и составление рекомендаций для улучшения питания</p>
+            <p class="price"><s class="price__old">8&nbsp;499&nbsp;₽</s><span class="price__now">4&nbsp;999&nbsp;₽</span></p>
+            <a class="btn btn--red btn--block" href="#" data-buy="food-consult">открыть доступ</a>
+          </li>
+          <li class="tariff">
+            <h4 class="tariff__name">Рекомендации по составлению<br class="br-d"> рациона исходя из анализов</h4>
+            <p class="tariff__desc">комплексный разбор результатов анализов с точки зрения питания, выявление возможных дефицитов и индивидуальные рекомендации</p>
+            <p class="price"><s class="price__old">12&nbsp;799&nbsp;₽</s><span class="price__now">4&nbsp;999&nbsp;₽</span></p>
+            <a class="btn btn--red btn--block" href="#" data-buy="food-labs">открыть доступ</a>
+          </li>
+          <li class="tariff">
+            <h4 class="tariff__name">Персональное<br class="br-d"> сопровождение</h4>
+            <p class="tariff__desc">Комплексная работа над питанием с регулярной обратной связью, корректировкой рациона и поддержкой на каждом этапе изменений</p>
+            <p class="price"><s class="price__old">24&nbsp;999&nbsp;₽</s><span class="price__now">11&nbsp;999&nbsp;₽</span></p>
+            <a class="btn btn--red btn--block" href="#" data-buy="food-support">открыть доступ</a>
+          </li>
+        </ul>
+      </article>
+
+      <!-- Тест показываем в панели «питание»; в финале на этой вкладке он скрыт (см. [data-tab="food"] в CSS), чтобы форма не дублировалась -->
+      <div class="test test--panel" id="test-food" aria-labelledby="test-food-title" data-reveal>
+        <div class="test__left">
+          <p class="label label--tight">тест</p>
+          <h2 class="display test__title" id="test-food-title">Чувствуешь постоянное недомогание, но явных причин нет?</h2>
+          <p class="test__text">Проходи мой тест, после которого ты получишь индивидуальный рекомендательный список сдачи анализов и обследований от меня</p>
+        </div>
+        <div class="test__right">
+          <img class="script-img script-img--test" src="assets/script/script-proven.svg" width="266" height="39" alt="" loading="lazy" decoding="async">
+          <form class="form" id="test-form-food" data-test-form novalidate autocomplete="on">
+            <label class="field"><span class="sr-only">Имя</span>
+              <input type="text" name="name" placeholder="имя" autocomplete="given-name" required maxlength="80">
+            </label>
+            <label class="field"><span class="sr-only">Номер телефона</span>
+              <input type="tel" name="phone" placeholder="номер телефона" autocomplete="tel" inputmode="tel" required maxlength="24">
+            </label>
+            <button class="btn btn--red btn--block" type="submit">начать тестирование</button>
+            <label class="consent">
+              <input type="checkbox" name="consent" required>
+              <span>Я даю согласие на обработку персональных данных и подтверждаю, что ознакомлен(а) с <a href="legal/privacy.html" target="_blank" rel="noopener">Политикой конфиденциальности</a></span>
+            </label>
+            <p class="form__msg" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+
+      <article class="block block--ink package on-dark" data-reveal>
+        <span class="glow glow--tr" aria-hidden="true"></span>
+        <span class="glow glow--bl" aria-hidden="true"></span>
+        <h2 class="display block__title">Полный пакет</h2>
+        <div class="package__card">
+          <p class="package__label">что входит:</p>
+          <ul class="package__list">
+            <li>Консультация по питанию</li>
+            <li>2 месяца онлайн-тренировок (сопровождение)</li>
+            <li>2 месяца сопровождения по питанию</li>
+          </ul>
+          <p class="price price--inline"><s class="price__old">47&nbsp;999&nbsp;₽</s><span class="price__now">37&nbsp;899&nbsp;₽</span></p>
+          <a class="btn btn--red btn--block" href="#" data-buy="package">забрать полный пакет</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ОБО МНЕ ===================== -->
+<section class="about" id="about" aria-labelledby="about-title">
+  <div class="about__head">
+    <div class="about__stage">
+      <h2 class="display about__name" id="about-title"><span>Ника</span> <span>Дупина</span></h2>
+      <img class="about__photo" src="assets/img/about-nika.webp" width="1024" height="1536" alt="Ника Дупина в солнцезащитных очках" loading="lazy" decoding="async">
+    </div>
+  </div>
+
+  <div class="about__card on-dark" data-reveal>
+    <span class="about__pedestal" aria-hidden="true"></span>
+    <h3 class="display about__role">Фитнес-тренер и специалист по питанию</h3>
+    <p class="about__text">Помогаю менять тело, формировать здоровые привычки и добиваться результатов без жёстких ограничений и шаблонных решений.<br>Мой подход — это грамотные тренировки, сбалансированное питание и система, которую легко интегрировать в свою жизнь</p>
+
+    <ul class="stats">
+      <li class="stat">
+        <p class="stat__label">Повышений квалификации</p>
+        <span class="stat__line" aria-hidden="true"></span>
+        <p class="stat__value display">Более <span data-count="8">8</span></p>
+      </li>
+      <li class="stat">
+        <p class="stat__label">Суммарно сброшено моими подопечными</p>
+        <span class="stat__line" aria-hidden="true"></span>
+        <p class="stat__value display">&gt;<span data-count="2">2</span> тонны</p>
+      </li>
+    </ul>
+
+    <div class="about__bottom">
+      <p class="about__note about__note--l">Больше обо мне и моем подходе<br>вы найдете в соц сетях</p>
+      <div class="fan" aria-hidden="true">
+        <span class="fan__card"></span><span class="fan__card"></span><span class="fan__card"></span><span class="fan__card"></span><span class="fan__card"></span>
+      </div>
+      <!-- ПРОВЕРИТЬ: в макете «Искренни» — скорее всего «Искренне» -->
+      <p class="about__note about__note--r">Искренне люблю то,<br>чем занимаюсь, и отношусь<br>к подопечным с большой отдачей</p>
+    </div>
+    <a class="btn btn--white about__more" href="#">смотреть больше</a>
+  </div>
+</section>
+
+<!-- ===================== КЕЙСЫ ===================== -->
+<section class="cases" id="cases" aria-labelledby="cases-title">
+  <div class="wrap">
+    <p class="label">реальные истории</p>
+    <h2 class="display section-title" id="cases-title">Не словами –<br class="br-m"> а результатами</h2>
+    <p class="section-sub">За каждой трансформацией — индивидуальный подход, последовательная работа и система, которая помогает достигать поставленных целей</p>
+
+    <ul class="cases__grid">
+      <li class="case" data-reveal>
+        <h3 class="display case__title">Трансформация<br class="br-d"> тела</h3>
+        <p class="case__text">Результаты работы над композицией тела, снижением веса и набором мышечной массы</p>
+        <div class="stack" aria-hidden="true">
+          <img class="stack__img stack__img--a" src="assets/img/case-collage.webp" width="824" height="560" alt="" loading="lazy">
+          <img class="stack__img stack__img--b" src="assets/img/case-side.webp" width="1169" height="1072" alt="" loading="lazy">
+          <img class="stack__img stack__img--c" src="assets/img/case-pair.webp" width="739" height="519" alt="" loading="lazy">
+        </div>
+        <a class="btn btn--red btn--block" href="#">смотреть трансформации</a>
+      </li>
+      <li class="case" data-reveal style="--d:.06s">
+        <h3 class="display case__title">Изменение<br class="br-d"> привычек</h3>
+        <p class="case__text">Истории о том, как грамотный подход к питанию и тренировкам меняет образ жизни</p>
+        <div class="stack stack--ph" aria-hidden="true"><span></span><span></span><span></span></div>
+        <a class="btn btn--red btn--block" href="#">смотреть больше</a>
+      </li>
+      <li class="case" data-reveal style="--d:.12s">
+        <h3 class="display case__title">Работа<br class="br-d"> над формой</h3>
+        <p class="case__text">Путь от поставленной цели до результата с помощью персональной программы</p>
+        <div class="stack stack--ph" aria-hidden="true"><span></span><span></span><span></span></div>
+        <a class="btn btn--red btn--block" href="#">смотреть больше</a>
+      </li>
+      <li class="case case--photo on-dark" data-reveal style="--d:.18s">
+        <img class="case__bg" src="assets/img/cta-card.webp" width="1000" height="1500" alt="" loading="lazy">
+        <h3 class="display case__title">Хочешь таких<br>же результатов</h3>
+        <p class="case__text case__text--bottom">Пиши мне – подберу для тебя самый эффективный вариант</p>
+        <a class="btn btn--white btn--block" href="#" data-wa="Здравствуйте, Ника! Хочу такие же результаты, подберите вариант.">начать свой путь</a>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================== МАГАЗИН ===================== -->
+<section class="shop" id="shop" aria-labelledby="shop-title">
+  <div class="block block--ink on-dark" data-reveal>
+    <span class="glow glow--tr" aria-hidden="true"></span>
+    <h2 class="display block__title" id="shop-title">Магазин полезных материалов</h2>
+    <p class="shop__sub">Точечная польза от меня в вопросах, которые давно мучают вас</p>
+
+    <div class="shop__grid">
+      <article class="product">
+        <p class="product__kind">гайд</p>
+        <div class="stack stack--shop" aria-hidden="true">
+          <span class="stack__ph stack__ph--1"></span><span class="stack__ph stack__ph--2"></span><span class="stack__ph stack__ph--3"></span>
+          <img class="stack__cover" src="assets/img/cover-guide.webp" width="800" height="1073" alt="" loading="lazy">
+        </div>
+        <h3 class="product__title">Как перестать заедать эмоции?</h3>
+        <p class="product__desc">Что делать, если вы постоянно переедаете и заедаете эмоции</p>
+        <p class="price"><s class="price__old">1699&nbsp;₽</s><span class="price__now">899&nbsp;₽</span></p>
+        <a class="btn btn--red btn--block" href="#" data-buy="guide-emotions">забрать гайд</a>
+      </article>
+      <article class="product">
+        <p class="product__kind">видео-разбор</p>
+        <div class="stack stack--shop" aria-hidden="true">
+          <span class="stack__ph stack__ph--1"></span><span class="stack__ph stack__ph--2"></span><span class="stack__ph stack__ph--3"></span>
+          <img class="stack__cover" src="assets/img/cover-video.webp" width="800" height="1000" alt="" loading="lazy">
+        </div>
+        <h3 class="product__title">Как не отказывать себе в алкоголе при похудении?</h3>
+        <!-- ПРОВЕРИТЬ: в макете «не отказывать себе в бокале», сверить с текстом Ники -->
+        <p class="product__desc">Как без вреда не отказывать себе в бокале вина на корпоративе или дне рождении</p>
+        <p class="price"><s class="price__old">1699&nbsp;₽</s><span class="price__now">899&nbsp;₽</span></p>
+        <a class="btn btn--red btn--block" href="#" data-buy="video-alcohol">забрать видео-разбор</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ТЕСТ + ФИНАЛ ===================== -->
+<section class="finale on-dark" id="contacts">
+  <div class="finale__frame">
+
+    <div class="test" id="test" aria-labelledby="test-title">
+      <div class="test__left">
+        <p class="label label--tight">тест</p>
+        <h2 class="display test__title" id="test-title">Чувствуешь постоянное недомогание, но явных причин нет?</h2>
+        <p class="test__text">Проходи мой тест, после которого ты получишь индивидуальный рекомендательный список сдачи анализов и обследований от меня</p>
+      </div>
+      <div class="test__right">
+        <img class="script-img script-img--test" src="assets/script/script-proven.svg" width="266" height="39" alt="" loading="lazy" decoding="async">
+        <!-- Форма пока без бэкенда: отправка подключается на этапе админки -->
+        <form class="form" id="test-form" data-test-form novalidate autocomplete="on">
+          <label class="field"><span class="sr-only">Имя</span>
+            <input type="text" name="name" placeholder="имя" autocomplete="given-name" required maxlength="80">
+          </label>
+          <label class="field"><span class="sr-only">Номер телефона</span>
+            <input type="tel" name="phone" placeholder="номер телефона" autocomplete="tel" inputmode="tel" required maxlength="24">
+          </label>
+          <button class="btn btn--red btn--block" type="submit">начать тестирование</button>
+          <label class="consent">
+            <input type="checkbox" name="consent" required>
+            <span>Я даю согласие на обработку персональных данных и подтверждаю, что ознакомлен(а) с <a href="legal/privacy.html" target="_blank" rel="noopener">Политикой конфиденциальности</a></span>
+          </label>
+          <p class="form__msg" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+
+    <div class="final">
+      <img class="final__bg" src="assets/img/final-bg.webp" width="1268" height="1900" alt="" loading="lazy" decoding="async">
+      <h2 class="display final__title">Готов к <span class="final__nb">переменам?</span></h2>
+      <img class="final__cutout" src="assets/img/final-m-cutout.webp" width="800" height="1142" alt="" loading="lazy" decoding="async">
+      <p class="final__text">Не откладывай свои цели на потом. Давай вместе выстроим систему тренировок и питания, которая приведёт тебя к желаемому результату</p>
+      <img class="script-img script-img--final" src="assets/script/script-now.svg" width="387" height="83" alt="Сейчас самое время" loading="lazy" decoding="async">
+      <div class="final__cta">
+        <a class="btn btn--red final__btn" href="#" data-wa="Здравствуйте, Ника! Готов начать совместную работу.">начать совместную работу</a>
+        <ul class="socials">
+          <li><a class="social social--red" href="#" data-wa="Здравствуйте, Ника! Готов начать совместную работу." aria-label="WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.65-4.8A8.5 8.5 0 1 1 8 19.4L3 21z"/><path d="M9 8.6c.2 2.9 2.7 5.3 5.8 5.8l1-1.5-1.9-1-.8.8a4 4 0 0 1-1.9-1.9l.8-.8-1-1.9L9 8.6z"/></svg></a></li>
+          <li><a class="social social--red" href="#" aria-label="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 3L21 4z"/><path d="M9 13l12-9"/></svg></a></li>
+          <li><a class="social social--red social--ig" href="#" aria-label="Instagram*"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r=".6"/></svg></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ===================== ФУТЕР ===================== -->
+<footer class="footer on-dark">
+  <span class="footer__glow" aria-hidden="true"></span>
+  <div class="footer__top">
+    <nav class="nav nav--left" aria-label="Меню в подвале">
+      <a href="#services">услуги</a><a href="#about">обо мне</a><a href="#cases">кейсы</a><a href="#shop">магазин</a>
+    </nav>
+    <a class="footer__logo" href="#top" aria-label="Ника Дупина, наверх"><img src="assets/logo-name.svg" width="316" height="63" alt="Ника Дупина"></a>
+    <nav class="nav nav--right" aria-label="Контакты в подвале">
+      <a href="#contacts">контакты</a><a class="u" href="#test">пройти тест</a><a class="u" href="#contacts" data-wa="Здравствуйте, Ника! Хочу узнать подробнее о сопровождении.">связаться</a>
+    </nav>
+  </div>
+  <div class="footer__bottom">
+    <div class="footer__legal">
+      <p>Дупина Ника Николаевна</p>
+      <ul>
+        <li><a class="u" href="legal/offer.html">оферта</a></li>
+        <li><a class="u" href="legal/privacy.html">политика обработки персональных данных</a></li>
+        <li><a class="u" href="legal/consent.html">согласие на обработку персональных данных</a></li>
+      </ul>
+    </div>
+    <div class="footer__made">
+      <p>сайт создан</p>
+      <p class="footer__studio">Di Sign Studio</p>
+    </div>
+  </div>
+  <!-- ПРОВЕРИТЬ: сноска про Instagram. Формулировку и необходимость согласовать с юристом -->
+  <p class="footer__note">* Instagram принадлежит компании Meta, признанной в России экстремистской организацией и запрещённой.</p>
+</footer>
+
+<a class="wa-fab" href="#contacts" data-wa="Здравствуйте, Ника! Хочу узнать подробнее о сопровождении." aria-label="Написать Нике в WhatsApp" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.65-4.8A8.5 8.5 0 1 1 8 19.4L3 21z"/><path d="M9 8.6c.2 2.9 2.7 5.3 5.8 5.8l1-1.5-1.9-1-.8.8a4 4 0 0 1-1.9-1.9l.8-.8-1-1.9L9 8.6z"/></svg>
+  <span>написать Нике</span>
+</a>
+
+<script src="js/main.js" defer></script>
+</body>
+</html>
