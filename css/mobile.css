@@ -180,7 +180,10 @@ body.menu-lock { overflow: hidden; }
 .tariff .price { margin-top: 28px; margin-bottom: 14px; }
 .tariff .btn { margin-top: 0; }
 .tariff--wide { margin-top: 16px; }
-.price__old { top: calc(-17 * var(--m)); font-size: var(--fs-tiny); }
+.price, .package__card .price { display: inline-flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; width: auto; }
+.price__old { position: static; order: 2; margin: 0; font-size: calc(15 * var(--m)); line-height: 1; opacity: .9; }
+.br-m { display: inline; }
+.br-d { display: none; }
 .duo { grid-template-columns: 1fr; gap: var(--gap); }
 .duo .block { margin-bottom: 0; }
 .panel .duo { margin-bottom: var(--gap); }
@@ -273,7 +276,7 @@ body.menu-lock { overflow: hidden; }
 .product { min-height: 0; padding: 16px; }
 .product__kind { font-size: var(--fs-tiny); }
 /* Обложки не веером, а по одной: тап по карточке листает (js/main.js). Без JS видна только обложка. */
-.stack--shop { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; height: calc(212 * var(--m)); min-height: 0; margin-block: 12px 28px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.stack--shop { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; height: calc(200 * var(--m)); min-height: 0; margin-block: 12px 28px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .stack--shop > .stack__cover, .stack--shop > .stack__ph {
   grid-area: 1 / 1; position: static; left: auto; top: auto; width: auto; height: 100%; max-width: 100%;
   border-radius: 12px; transform: none; z-index: 0;
@@ -295,7 +298,7 @@ body.menu-lock { overflow: hidden; }
 .stack__dots i.is-on { opacity: 1; transform: scale(1.25); }
 .product__title { margin-top: 16px; font-size: var(--fs-card-t); line-height: 1.15; }
 .product__desc { margin-top: 8px; font-size: var(--fs-tiny); line-height: var(--lh-small); }
-.product .price { margin-top: 24px; margin-bottom: 14px; }
+.product .price { margin-top: 16px; margin-bottom: 12px; }
 
 /* ==========================================================================
    ТЕСТ + ФИНАЛ + ПОДВАЛ
@@ -324,7 +327,7 @@ body.menu-lock { overflow: hidden; }
 
 /* Соцсети в подвале: белые, при тапе вспыхивают красным и плавно гаснут */
 .socials--footer { display: flex; gap: 8px; margin-top: 28px; padding-right: 16px; }   /* запас справа под звёздочку Instagram */
-.socials--footer .social { width: var(--btn-h); height: var(--btn-h); min-width: 44px; min-height: 44px; color: var(--c-white); transition: color .45s var(--ease-out); -webkit-tap-highlight-color: transparent; }
+.socials--footer .social { width: max(44px, calc(38 * var(--m))); height: max(44px, calc(38 * var(--m))); min-width: 44px; min-height: 44px; color: var(--c-white); transition: color .45s var(--ease-out); -webkit-tap-highlight-color: transparent; }
 .socials--footer .social:active { color: var(--c-red); transition-duration: 0s; transform: none; }
 .socials--footer .social:focus-visible { color: var(--c-red); outline: 2px solid var(--c-red); outline-offset: 4px; border-radius: 12px; }
 
@@ -374,7 +377,7 @@ body.menu-lock { overflow: hidden; }
    Высоту коллажей держим пропорцией ширины, иначе фото налезают на кнопку. */
 @media (min-width: 431px) {
   .stack { min-height: 0; aspect-ratio: 355 / 224; }
-  .stack--shop { height: calc(212 * var(--m)); }
+  .stack--shop { height: calc(200 * var(--m)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
