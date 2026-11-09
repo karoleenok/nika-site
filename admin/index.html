@@ -34,6 +34,8 @@
   <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 10l6 6 6-6"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5" fill="currentColor"/><circle cx="15" cy="6" r="1.5" fill="currentColor"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1.5" fill="currentColor"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
 </svg>
 <a class="skip-link" href="#main">К содержимому</a>
@@ -49,7 +51,7 @@
     <nav class="lk-nav" aria-label="Разделы админки">
       <a href="#/" data-nav="today"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span>Сегодня</span></a>
       <a href="#/clients" data-nav="clients"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span>Клиенты</span></a>
-      <a href="#/video" data-nav="video"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span>Видео</span></a>
+      <a href="#/content" data-nav="content"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span>Контент</span></a>
       <a href="#/leads" data-nav="leads"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg><span>Заявки</span><i class="dot" data-leads-dot hidden></i></a>
       <a href="#/more" data-nav="more"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg><span>Ещё</span></a>
     </nav>
@@ -74,9 +76,10 @@
         <svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg>
       </a>
       <div class="lk-block">
-        <h2 class="lk-h2">Нужно сделать</h2>
+        <h2 class="lk-h2">Напомнить о продлении</h2>
+        <p class="lk-p adm-sub">Здесь клиенты, у которых доступ скоро закончится или уже закончился. Кнопка откроет WhatsApp с готовым текстом.</p>
         <ul class="todo-list" data-todo></ul>
-        <p class="empty-line" data-todo-empty hidden>Всё в порядке: сроки никто не просрочил.</p>
+        <p class="empty-line" data-todo-empty hidden>Напоминать никому не нужно: у всех доступ в порядке.</p>
       </div>
       <div class="lk-block">
         <h2 class="lk-h2">Новые покупки</h2>
@@ -125,27 +128,169 @@
         <button class="btn btn--line-dark btn--block" type="button" data-c-remind>напомнить о продлении</button>
         <button class="btn btn--line-dark btn--block adm-gap" type="button" data-c-wa>написать в WhatsApp</button>
       </div>
+
+      <div class="lk-block">
+        <h2 class="lk-h2">Тренировки</h2>
+        <div class="lk-card prog">
+          <p class="prog__t" data-c-prog-t></p>
+          <div class="bar bar--dark" role="img" data-c-prog><i></i></div>
+          <p class="lk-p">Сколько видео клиент отметил просмотренными.</p>
+        </div>
+      </div>
+
+      <div class="lk-block">
+        <h2 class="lk-h2">Материалы клиента</h2>
+        <p class="lk-p adm-sub">Включи переключатель, чтобы открыть материал клиенту без покупки.</p>
+        <ul class="sw-list" data-c-mats></ul>
+      </div>
+
       <div class="lk-block lk-card">
         <label class="field">
-          <span class="field__label">Заметка о клиенте</span>
+          <span class="field__label">Заметка о клиенте (видишь только ты)</span>
           <textarea class="field__input field__input--area" rows="3" maxlength="500" placeholder="Например: колено, без прыжков" data-c-note></textarea>
         </label>
       </div>
-      <div class="lk-block">
-        <h2 class="lk-h2">История</h2>
-        <ul class="hist" data-c-hist></ul>
+
+      <details class="fold" data-c-data>
+        <summary>Данные клиента</summary>
+        <form class="fold__in" data-c-form novalidate>
+          <label class="field"><span class="field__label">Имя</span><input class="field__input" type="text" name="name" autocomplete="off"></label>
+          <label class="field"><span class="field__label">Почта (для входа в кабинет)</span><input class="field__input" type="email" name="email" autocomplete="off" inputmode="email"></label>
+          <label class="field"><span class="field__label">Телефон для WhatsApp</span><input class="field__input" type="tel" name="phone" autocomplete="off" inputmode="tel" placeholder="+7 ..."></label>
+          <label class="field"><span class="field__label">Тариф</span><select class="field__input" name="plan" data-c-plan-sel></select></label>
+          <span class="field__err" role="alert" data-c-err></span>
+          <button class="btn btn--red btn--block" type="submit">сохранить</button>
+        </form>
+      </details>
+      <details class="fold">
+        <summary>Оплаты</summary>
+        <ul class="pay pay--in" data-c-pay></ul>
+      </details>
+      <details class="fold">
+        <summary>История действий</summary>
+        <ul class="hist hist--in" data-c-hist></ul>
+      </details>
+    </section>
+
+    <!-- ===== Контент ===== -->
+    <section data-view="content" hidden aria-labelledby="h-content">
+      <h1 class="display lk-h1" id="h-content" tabindex="-1">Контент</h1>
+      <p class="lk-p adm-sub">Всё, что клиент видит в кабинете, меняется здесь. Правки появляются у клиентов сразу после сохранения.</p>
+      <div class="seg" role="tablist" aria-label="Раздел контента">
+        <a class="seg__i" href="#/content" role="tab" data-seg="videos">Тренировки</a>
+        <a class="seg__i" href="#/content/materials" role="tab" data-seg="materials">Материалы</a>
+      </div>
+
+      <div data-pane="videos">
+        <div class="pane-h">
+          <p class="lk-p" data-v-sum></p>
+          <button class="btn btn--line-dark btn--sm" type="button" data-g-add>+ группа</button>
+        </div>
+        <p class="hint">Клиенты видят видео в таком порядке, как здесь. Чтобы поменять, потяни за значок <svg class="ic ic--inl" aria-hidden="true"><use href="#i-grip"/></svg> и отпусти на новом месте. Чтобы изменить видео, нажми на него.</p>
+        <div class="groups" data-groups></div>
+      </div>
+
+      <div data-pane="materials" hidden>
+        <div class="pane-h">
+          <p class="lk-p" data-m-sum></p>
+          <a class="btn btn--red btn--sm" href="#/material/new">+ материал</a>
+        </div>
+        <ul class="mlist" data-mlist></ul>
       </div>
     </section>
 
-    <!-- ===== Видео ===== -->
+    <!-- ===== Редактор видео ===== -->
     <section data-view="video" hidden aria-labelledby="h-video">
-      <div class="head-row">
-        <h1 class="display lk-h1" id="h-video" tabindex="-1">Видео</h1>
-        <button class="btn btn--red btn--sm" type="button" data-v-add>загрузить</button>
-      </div>
-      <div class="chips lk-chips" data-v-chips role="group" aria-label="Группа мышц"></div>
-      <p class="lk-count" data-v-count aria-live="polite"></p>
-      <ul class="rows rows--v" data-v-list></ul>
+      <a class="back" href="#/content"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>все тренировки</a>
+      <h1 class="display lk-h1" id="h-video" tabindex="-1" data-ve-h></h1>
+      <form class="ed" data-ve novalidate>
+        <div class="lk-card ed__card">
+          <p class="field__label">Видеофайл</p>
+          <label class="drop" data-ve-drop>
+            <input class="drop__in" type="file" accept="video/*" data-ve-file>
+            <span class="drop__t" data-ve-file-t>Выбрать видеофайл</span>
+            <span class="drop__s">Демо: файл пока никуда не загружается, хранилище подключим позже.</span>
+          </label>
+        </div>
+
+        <div class="lk-card ed__card">
+          <label class="field"><span class="field__label">Название</span><input class="field__input" type="text" maxlength="80" name="title" placeholder="Например: Выпады с гантелями" autocomplete="off"><span class="field__err" role="alert" data-ve-err></span></label>
+          <label class="field"><span class="field__label">В какой группе</span><select class="field__input" name="group" data-ve-group></select></label>
+          <label class="field"><span class="field__label">Номер в группе</span><select class="field__input" name="pos" data-ve-pos></select><small class="field__help">Клиенты увидят видео под этим номером.</small></label>
+          <label class="field"><span class="field__label">Описание под видео</span><textarea class="field__input field__input--area" rows="4" maxlength="400" name="text" placeholder="Что показано, на что смотреть, как подобрать вес"></textarea></label>
+          <div class="ed__two">
+            <label class="field"><span class="field__label">Уровень</span><select class="field__input" name="level"><option>базовый</option><option>средний</option><option>продвинутый</option></select></label>
+            <label class="field"><span class="field__label">Длительность, мин</span><input class="field__input" type="text" inputmode="numeric" name="min" maxlength="3" autocomplete="off"></label>
+          </div>
+          <div class="field">
+            <span class="field__label">Что понадобится</span>
+            <ul class="tags" data-ve-tags></ul>
+            <div class="tags__add">
+              <input class="field__input" type="text" maxlength="30" placeholder="Например: коврик" data-ve-tag-in aria-label="Добавить предмет">
+              <button class="btn btn--line-dark btn--sm" type="button" data-ve-tag-add>добавить</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="lk-card ed__card">
+          <label class="sw-row">
+            <span class="sw-row__t"><b>Показывать клиентам</b><small data-ve-vis-s>Пока выключено, клиенты это видео не видят.</small></span>
+            <input class="sw" type="checkbox" role="switch" name="on" data-ve-on>
+          </label>
+        </div>
+
+        <div class="ed__act">
+          <button class="btn btn--red" type="submit">сохранить</button>
+          <button class="btn btn--line-dark" type="button" data-ve-preview>посмотреть как клиент</button>
+        </div>
+        <button class="btn-del" type="button" data-ve-del>удалить видео</button>
+      </form>
+    </section>
+
+    <!-- ===== Редактор материала ===== -->
+    <section data-view="material" hidden aria-labelledby="h-material">
+      <a class="back" href="#/content/materials"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>все материалы</a>
+      <h1 class="display lk-h1" id="h-material" tabindex="-1" data-me-h></h1>
+      <form class="ed" data-me novalidate>
+        <div class="lk-card ed__card">
+          <label class="field"><span class="field__label">Тип</span><select class="field__input" name="kind"><option>гайд</option><option>видео-разбор</option></select></label>
+          <label class="field"><span class="field__label">Название</span><input class="field__input" type="text" maxlength="90" name="title" autocomplete="off"><span class="field__err" role="alert" data-me-err></span></label>
+          <label class="field"><span class="field__label">Описание</span><textarea class="field__input field__input--area" rows="3" maxlength="300" name="text" placeholder="О чём материал, для кого"></textarea></label>
+          <div class="ed__two">
+            <label class="field"><span class="field__label">Цена, ₽</span><input class="field__input" type="text" inputmode="numeric" name="price" autocomplete="off"></label>
+            <label class="field"><span class="field__label">Старая цена, ₽</span><input class="field__input" type="text" inputmode="numeric" name="old" autocomplete="off" placeholder="не обязательно"></label>
+          </div>
+        </div>
+        <div class="lk-card ed__card">
+          <p class="field__label">Обложка</p>
+          <div class="cov">
+            <img class="cov__img" alt="" width="96" height="120" data-me-cover hidden>
+            <label class="drop drop--sm">
+              <input class="drop__in" type="file" accept="image/*" data-me-cover-in>
+              <span class="drop__t" data-me-cover-t>Выбрать картинку</span>
+              <span class="drop__s">Лучше вертикальная, 4 к 5.</span>
+            </label>
+          </div>
+          <p class="field__label adm-gap">Файл материала</p>
+          <label class="drop drop--sm">
+            <input class="drop__in" type="file" accept=".pdf,video/*" data-me-file>
+            <span class="drop__t" data-me-file-t>Выбрать файл (PDF или видео)</span>
+            <span class="drop__s">Демо: пока никуда не загружается.</span>
+          </label>
+        </div>
+        <div class="lk-card ed__card">
+          <label class="sw-row">
+            <span class="sw-row__t"><b>Показывать клиентам и на сайте</b><small>Если выключить, материал пропадёт из кабинета и из магазина.</small></span>
+            <input class="sw" type="checkbox" role="switch" name="on" data-me-on>
+          </label>
+          <label class="sw-row">
+            <span class="sw-row__t"><b>Дарить при сопровождении по питанию</b><small>Материал автоматически откроется клиентам этого тарифа.</small></span>
+            <input class="sw" type="checkbox" role="switch" name="gift" data-me-gift>
+          </label>
+        </div>
+        <div class="ed__act"><button class="btn btn--red" type="submit">сохранить</button></div>
+        <button class="btn-del" type="button" data-me-del>удалить материал</button>
+      </form>
     </section>
 
     <!-- ===== Заявки ===== -->
@@ -162,7 +307,7 @@
         <li><a href="#/prices"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg><span class="menu__t"><b>Тарифы и цены</b><small>изменить без разработчика</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
         <li><a href="#/log"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span class="menu__t"><b>Журнал действий</b><small>кто и когда менял доступы</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
       </ul>
-      <div class="stack"><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
+      <div class="stack"><button class="btn btn--line-dark" type="button" data-reset-demo>сбросить демо-данные</button><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
     </section>
 
     <!-- ===== Telegram ===== -->
@@ -251,37 +396,37 @@
   </form>
 </dialog>
 
-<dialog class="sheet" data-dlg="close" aria-labelledby="dc-t">
-  <form class="sheet__in" data-form="close" method="dialog">
-    <h2 class="sheet__t" id="dc-t">Закрыть доступ?</h2>
+<dialog class="sheet" data-dlg="confirm" aria-labelledby="dc-t">
+  <form class="sheet__in" data-form="confirm" method="dialog">
+    <h2 class="sheet__t" id="dc-t" data-dc-title>Точно?</h2>
     <p class="sheet__p" data-dc-text></p>
     <div class="sheet__act">
       <button class="btn btn--line-dark" type="button" data-close>отмена</button>
-      <button class="btn btn--red" type="submit">закрыть</button>
+      <button class="btn btn--red" type="submit" data-dc-ok>да</button>
     </div>
   </form>
 </dialog>
 
-<dialog class="sheet" data-dlg="upload" aria-labelledby="du-t">
-  <form class="sheet__in" data-form="upload" method="dialog" novalidate>
-    <h2 class="sheet__t" id="du-t">Новое видео</h2>
-    <p class="sheet__p">Демо: файл пока никуда не загружается. Хранилище подключим позже.</p>
+<dialog class="sheet" data-dlg="group" aria-labelledby="dg-t">
+  <form class="sheet__in" data-form="group" method="dialog" novalidate>
+    <h2 class="sheet__t" id="dg-t" data-dg-title>Группа</h2>
     <label class="field">
-      <span class="field__label">Файл</span>
-      <input class="field__input field__input--file" type="file" accept="video/*" data-du-file>
+      <span class="field__label">Название группы</span>
+      <input class="field__input" type="text" maxlength="30" placeholder="Например: Ягодицы" data-dg-name>
+      <span class="field__err" role="alert" data-dg-err></span>
     </label>
-    <label class="field">
-      <span class="field__label">Название</span>
-      <input class="field__input" type="text" maxlength="80" placeholder="Например: Выпады с гантелями" data-du-title required>
-      <span class="field__err" role="alert" data-du-err></span>
+    <label class="sw-row">
+      <span class="sw-row__t"><b>Показывать клиентам</b><small>Если выключить, вся группа спрячется из кабинета.</small></span>
+      <input class="sw" type="checkbox" role="switch" data-dg-on>
     </label>
-    <label class="field">
-      <span class="field__label">Группа мышц</span>
-      <select class="field__input" data-du-group></select>
-    </label>
+    <div class="sheet__mv" data-dg-mv>
+      <button class="btn btn--line-dark btn--sm" type="button" data-dg-up>поднять группу выше</button>
+      <button class="btn btn--line-dark btn--sm" type="button" data-dg-down>опустить группу ниже</button>
+    </div>
+    <button class="btn-del" type="button" data-dg-del>удалить группу</button>
     <div class="sheet__act">
       <button class="btn btn--line-dark" type="button" data-close>отмена</button>
-      <button class="btn btn--red" type="submit">добавить</button>
+      <button class="btn btn--red" type="submit">сохранить</button>
     </div>
   </form>
 </dialog>

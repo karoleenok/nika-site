@@ -35,3 +35,23 @@ window.LK_DATA = {
     { date: '2026-11-01', title: 'Гайд «Как перестать заедать эмоции?»', sum: '899 ₽' }
   ]
 };
+
+/* Общее хранилище демо: админка пишет сюда правки контента, кабинет клиента их показывает.
+   Когда появится бэкенд, оба читают один и тот же API, а этот блок удаляется. */
+(function () {
+  try {
+    var s = JSON.parse(localStorage.getItem('nika_demo_content') || 'null');
+    if (!s) return;
+    var D = window.LK_DATA;
+    D.all = s;
+    var hidden = {};
+    (s.groups || []).forEach(function (g) { if (g.on === false) hidden[g.id] = true; });
+    if (s.groups) D.groups = s.groups.filter(function (g) { return g.on !== false; });
+    if (s.videos) D.videos = s.videos.filter(function (v) { return v.on !== false && !hidden[v.group]; });
+    if (s.extras) D.extras = s.extras.filter(function (x) { return x.on !== false; }).map(function (x) {
+      var y = Object.assign({}, x);
+      if (typeof y.price === 'number') y.price = y.price.toLocaleString('ru-RU') + ' ₽';
+      return y;
+    });
+  } catch (e) {}
+})();
