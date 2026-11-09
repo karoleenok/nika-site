@@ -46,7 +46,7 @@ body { font-size: var(--fs-body); }
 .btn { padding: 0 calc(16 * var(--m)); font-size: var(--fs-lead); white-space: normal; }
 .btn:active { transform: scale(.985); }
 .label { font-size: var(--fs-tiny); line-height: 1.2; }
-.social { width: var(--btn-h); height: var(--btn-h); border-width: 2px; border-radius: calc(12 * var(--m)); min-width: 44px; min-height: 44px; }
+.social { width: var(--btn-h); height: var(--btn-h); min-width: 44px; min-height: 44px; }
 
 /* ---------- Бургер и меню ---------- */
 .burger {
@@ -98,7 +98,7 @@ body.menu-lock { overflow: hidden; }
 }
 .wa-fab[hidden] { display: none; }
 .wa-fab.is-visible { opacity: 1; transform: none; pointer-events: auto; }
-.wa-fab svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.wa-fab svg { width: 40px; height: 40px; margin-inline: -8px; fill: currentColor; }   /* знак WhatsApp 24 px внутри поля 40 */
 
 /* ==========================================================================
    HERO
@@ -288,7 +288,7 @@ body.menu-lock { overflow: hidden; }
 .finale__frame { border-radius: 28px 28px 0 0; padding: var(--gutter) var(--gutter) 0; }
 
 .final { min-height: 0; margin-inline: calc(-1 * var(--gutter)); padding: calc(44 * var(--m)) var(--gutter) calc(24 * var(--m)); overflow: hidden; }
-.final::before, .final__bg { display: none; }
+.final::before { display: none; }
 .final > * { position: static; inset: auto; }
 .final {
   background: radial-gradient(ellipse 85% 30% at 50% 80%, rgba(140, 146, 168, .5) 0, rgba(140, 146, 168, 0) 100%);
@@ -303,8 +303,8 @@ body.menu-lock { overflow: hidden; }
 .script-img--final { position: relative; inset: auto; z-index: 3; display: block; width: calc(220 * var(--m)); margin: 12px 0 0 auto; }
 .final__cta { position: relative; inset: auto; z-index: 3; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
 .final__btn { flex: 1 0 100%; min-width: 0; }
-.final__cta .socials { flex: 1 0 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.social--red { width: 100%; height: var(--btn-h); min-width: 44px; }
+.final__cta .socials { flex: 1 0 100%; gap: 8px; }
+.social--red { width: var(--btn-h); height: var(--btn-h); min-width: 44px; }
 
 .footer { padding: calc(40 * var(--m)) var(--gutter) calc(24 * var(--m) + var(--safe-b)); }
 .footer__glow { width: calc(360 * var(--m)); height: calc(180 * var(--m)); bottom: calc(-110 * var(--m)); }

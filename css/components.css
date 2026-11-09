@@ -33,27 +33,19 @@
 }
 .u { text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
 
-/* ---------- Соцсети ---------- */
+/* ---------- Соцсети (иконки из файлов Каролины: рамка + знак, цвет через currentColor) ---------- */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .socials { display: flex; gap: var(--sp-2); }
 .social {
-  position: relative;
-  display: grid; place-items: center;
+  position: relative; display: block; flex: none;
   width: calc(40 * var(--s)); height: calc(40 * var(--s));
   min-width: 36px; min-height: 36px;
-  border: calc(3 * var(--s)) solid currentColor; border-radius: calc(12 * var(--s));
   color: var(--c-white);
-  transition: background-color var(--dur-1), color var(--dur-1), transform var(--dur-1);
+  transition: color var(--dur-1), opacity var(--dur-1), transform var(--dur-1);
 }
-.social svg {
-  width: 76%; height: 76%; fill: none; stroke: currentColor;
-  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
-}
-.social--ig svg circle:last-child { fill: currentColor; }
-.social sup {
-  position: absolute; right: calc(-8 * var(--s)); top: calc(-12 * var(--s));
-  font-size: var(--fs-tiny); line-height: 1; color: var(--c-white);
-}
-@media (hover: hover) { .social:hover { background: var(--c-white); color: var(--c-ink); transform: translateY(-2px); } }
+.social svg { display: block; width: 100%; height: 100%; fill: currentColor; overflow: visible; }
+.social--ig svg { position: absolute; left: 0; bottom: -2%; width: 117.5%; height: 117.5%; }   /* в иконке есть звёздочка (сноска про Meta), рамка остаётся 40×40 */
+@media (hover: hover) { .social:hover { opacity: .7; transform: translateY(-2px); } }
 
 /* ---------- Рукописные акценты ---------- */
 .script {
@@ -106,7 +98,7 @@
 
 .hero__title {
   --ls: -.006em;
-  position: absolute; z-index: 1;
+  position: absolute; z-index: 3;
   font-size: var(--fs-hero); color: var(--c-red);
   white-space: nowrap;
 }
@@ -431,19 +423,28 @@
 .form__msg.is-ok { color: var(--c-ink); }
 
 .final { position: relative; min-height: calc(839 * var(--s)); margin-inline: calc(-1 * var(--sp-3)); overflow: hidden; }
-.final__bg {
-  position: absolute; left: 0; top: calc(-240 * var(--s)); width: 100%; height: auto; max-width: none; z-index: 0;
-}
 .final::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, var(--c-ink) 0, rgba(14,14,14,.55) 22%, rgba(14,14,14,0) 45%, rgba(14,14,14,0) 70%, var(--c-ink) 100%); }
 .final > * { position: absolute; z-index: 2; }
-.final .final__bg { z-index: 0; }
+@media (min-width: 768px) {
+  /* свет за Никой, иначе чёрная одежда сливается с фоном */
+  .final {
+    background:
+      radial-gradient(ellipse 34% 52% at 53% 56%, rgba(140, 146, 168, .42) 0, rgba(140, 146, 168, 0) 100%),
+      radial-gradient(ellipse 70% 26% at 50% 100%, rgba(150, 156, 170, .2) 0, rgba(150, 156, 170, 0) 100%),
+      var(--c-ink);
+  }
+  .final picture { display: contents; }
+  /* Ника стоит поверх заголовка: «Готов к переменам?» уходит за неё */
+  .final__cutout { display: block; position: absolute; z-index: 3; left: calc(472 * var(--s)); top: calc(120 * var(--s)); width: calc(740 * var(--s)); height: auto; max-width: none; pointer-events: none; user-select: none; -webkit-mask-image: linear-gradient(180deg, #000 0, #000 74%, transparent 96%); mask-image: linear-gradient(180deg, #000 0, #000 74%, transparent 96%); }
+  .final__text, .script-img--final, .final__cta { z-index: 4; }
+}
 .final__title { --ls: -.025em; left: 0; right: 0; top: calc(159 * var(--s)); text-align: center; white-space: nowrap; font-size: var(--fs-cta); color: var(--c-white); }
 .final__text { left: var(--gutter); top: calc(339 * var(--s)); width: calc(380 * var(--s)); font-size: var(--fs-small); line-height: 1.125; }
 .final__cta { left: var(--gutter); right: var(--gutter); bottom: calc(39 * var(--s)); display: flex; gap: var(--sp-2); align-items: stretch; }
 .final__btn { flex: 1; }
 .final__cta .socials { flex: none; }
-.social--red { width: var(--btn-h); height: var(--btn-h); color: var(--c-red); border-radius: calc(12 * var(--s)); }
-@media (hover: hover) { .social--red:hover { background: var(--c-red); color: var(--c-white); } }
+.social--red { width: var(--btn-h); height: var(--btn-h); color: var(--c-red); }
+@media (hover: hover) { .social--red:hover { color: var(--c-white); opacity: 1; } }
 
 .footer { position: relative; overflow: hidden; background: var(--c-ink); color: var(--c-white); padding: calc(47 * var(--s)) var(--gutter) calc(20 * var(--s)); }
 .footer > * { position: relative; z-index: 1; }
@@ -485,7 +486,7 @@
 [data-tab="food"] .finale .test { display: none; }
 
 /* ---------- Элементы, которые есть только на мобильной версии (на ПК скрыты) ---------- */
-.burger, .menu, .wa-fab, .final__cutout, .br-m { display: none; }
+.burger, .menu, .wa-fab, .br-m { display: none; }
 .hero picture { display: contents; }
 .info__sum { display: block; list-style: none; pointer-events: none; cursor: default; }
 .info__sum::-webkit-details-marker { display: none; }
