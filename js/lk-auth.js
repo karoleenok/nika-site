@@ -3,10 +3,11 @@
 (() => {
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);
-  const KEY = 'nika_lk_session';
+  const KEY = document.body.dataset.sessionKey || 'nika_lk_session';
+  const GO = document.body.dataset.redirect || 'index.html';
   const store = (k, v) => { try { return v === undefined ? (localStorage.getItem(k) || sessionStorage.getItem(k)) : (v ? localStorage : sessionStorage).setItem(k, '1'); } catch (_) { return null; } };
 
-  if (store(KEY)) { location.replace('index.html'); return; }
+  if (store(KEY)) { location.replace(GO); return; }
 
   const demo = !!(window.LK_DATA && window.LK_DATA.demo);
   const phone = (document.body.dataset.waPhone || '').replace(/\D/g, '');
@@ -74,7 +75,7 @@
     if (code.value.length !== 6) { setErr(code, errCode, 'Введи шесть цифр из письма.'); code.focus(); return; }
     if (code.value === '123456') {              // ДЕМО: настоящую проверку делает сервер
       store(KEY, $('[data-remember]').checked);
-      location.replace('index.html');
+      location.replace(GO);
       return;
     }
     attempts += 1;

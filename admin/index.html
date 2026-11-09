@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Админка — Ника Дупина</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0e0e0e">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="../favicon.ico" sizes="48x48">
+  <link rel="apple-touch-icon" href="../favicon.png">
+  <link rel="preload" href="../fonts/BebasNeue-Bold.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="../fonts/InterTight-Variable.woff" as="font" type="font/woff" crossorigin>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/pages.css">
+  <link rel="stylesheet" href="../css/lk.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="lk adm">
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="i-today" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.2-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.8a3.5 3.5 0 010 6.4M18 14.8c2 .6 3.3 2.3 3.8 5.2"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M10 9.2v5.6l4.6-2.8z" fill="currentColor"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 13l2.5-7.5A2 2 0 018.4 4h7.2a2 2 0 011.9 1.5L20 13v5a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><path d="M4 13h4.5a1 1 0 011 .8 2.5 2.5 0 005 0 1 1 0 011-.8H20"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18.5" cy="12" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 4L3 11l6.5 2.5L12 20l2.7-5.2z"/><path d="M9.5 13.5L21 4"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 14l6-6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 10l6 6 6-6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+</svg>
+<a class="skip-link" href="#main">К содержимому</a>
+
+<div class="lk-shell">
+  <header class="lk-top">
+    <a class="lk-top__logo" href="../index.html" aria-label="Ника Дупина, на сайт"><img src="../assets/logo-hd.svg" width="97" height="53" alt="Н.Д."></a>
+    <span class="adm-top__t">админка</span>
+  </header>
+
+  <aside class="lk-side">
+    <a class="lk-side__logo" href="../index.html" aria-label="Ника Дупина, на сайт"><img src="../assets/logo-name.svg" width="316" height="63" alt="Ника Дупина"></a>
+    <nav class="lk-nav" aria-label="Разделы админки">
+      <a href="#/" data-nav="today"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span>Сегодня</span></a>
+      <a href="#/clients" data-nav="clients"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span>Клиенты</span></a>
+      <a href="#/video" data-nav="video"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span>Видео</span></a>
+      <a href="#/leads" data-nav="leads"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg><span>Заявки</span><i class="dot" data-leads-dot hidden></i></a>
+      <a href="#/more" data-nav="more"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg><span>Ещё</span></a>
+    </nav>
+    <div class="lk-side__foot">
+      <a href="../index.html">сайт</a>
+      <a href="#" data-logout>выйти</a>
+    </div>
+  </aside>
+
+  <main id="main" class="lk-main">
+    <noscript><p class="lk-card">Для админки нужен включённый JavaScript.</p></noscript>
+    <p class="demo-bar" data-demo-bar hidden>Демо-данные: сроки считаются от сегодняшнего дня, изменения не сохраняются после обновления страницы.</p>
+
+    <!-- ===== Сегодня ===== -->
+    <section data-view="today" hidden aria-labelledby="h-today">
+      <p class="label adm-date" data-date></p>
+      <h1 class="display lk-h1" id="h-today" tabindex="-1">Сегодня</h1>
+      <ul class="kpis" data-kpis></ul>
+      <a class="tgban" href="#/telegram" data-tgban hidden>
+        <svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>
+        <span class="tgban__t"><b>Подключи Telegram</b><small>Будут приходить новые покупки и напоминания о сроках</small></span>
+        <svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg>
+      </a>
+      <div class="lk-block">
+        <h2 class="lk-h2">Нужно сделать</h2>
+        <ul class="todo-list" data-todo></ul>
+        <p class="empty-line" data-todo-empty hidden>Всё в порядке: сроки никто не просрочил.</p>
+      </div>
+      <div class="lk-block">
+        <h2 class="lk-h2">Новые покупки</h2>
+        <ul class="pay" data-purchases></ul>
+      </div>
+    </section>
+
+    <!-- ===== Клиенты ===== -->
+    <section data-view="clients" hidden aria-labelledby="h-clients">
+      <h1 class="display lk-h1" id="h-clients" tabindex="-1">Клиенты</h1>
+      <form class="search" role="search" data-cl-form>
+        <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+        <label class="sr-only" for="cq">Найти клиента</label>
+        <input id="cq" class="search__input" type="search" placeholder="Найти клиента по имени" autocomplete="off" enterkeyhint="search" data-cl-q>
+      </form>
+      <div class="chips lk-chips" data-cl-chips role="group" aria-label="Статус доступа"></div>
+      <p class="lk-count" data-cl-count aria-live="polite"></p>
+      <ul class="rows" data-cl-list></ul>
+      <div class="empty" data-cl-empty hidden>
+        <p class="empty__t">Никого не нашла</p>
+        <p class="empty__p">Попробуй другое имя или сбрось фильтр.</p>
+        <button class="btn btn--red" type="button" data-cl-reset>показать всех</button>
+      </div>
+    </section>
+
+    <!-- ===== Карточка клиента ===== -->
+    <section data-view="client" hidden aria-labelledby="h-client">
+      <a class="back" href="#/clients"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>все клиенты</a>
+      <div class="who">
+        <span class="ava ava--lg" data-c-ava aria-hidden="true"></span>
+        <div class="who__b">
+          <h1 class="display lk-h1 who__n" id="h-client" tabindex="-1"></h1>
+          <p class="who__p" data-c-plan></p>
+        </div>
+      </div>
+      <article class="acc acc--adm" data-c-acc>
+        <p class="label acc__kicker" data-c-kicker></p>
+        <p class="display acc__date" data-c-date></p>
+        <p class="acc__sub" data-c-sub></p>
+        <div class="acc__actions">
+          <button class="btn btn--red" type="button" data-c-extend>продлить</button>
+          <button class="btn btn--line" type="button" data-c-close>закрыть доступ</button>
+        </div>
+      </article>
+      <div class="lk-block">
+        <button class="btn btn--line-dark btn--block" type="button" data-c-remind>напомнить о продлении</button>
+        <button class="btn btn--line-dark btn--block adm-gap" type="button" data-c-wa>написать в WhatsApp</button>
+      </div>
+      <div class="lk-block lk-card">
+        <label class="field">
+          <span class="field__label">Заметка о клиенте</span>
+          <textarea class="field__input field__input--area" rows="3" maxlength="500" placeholder="Например: колено, без прыжков" data-c-note></textarea>
+        </label>
+      </div>
+      <div class="lk-block">
+        <h2 class="lk-h2">История</h2>
+        <ul class="hist" data-c-hist></ul>
+      </div>
+    </section>
+
+    <!-- ===== Видео ===== -->
+    <section data-view="video" hidden aria-labelledby="h-video">
+      <div class="head-row">
+        <h1 class="display lk-h1" id="h-video" tabindex="-1">Видео</h1>
+        <button class="btn btn--red btn--sm" type="button" data-v-add>загрузить</button>
+      </div>
+      <div class="chips lk-chips" data-v-chips role="group" aria-label="Группа мышц"></div>
+      <p class="lk-count" data-v-count aria-live="polite"></p>
+      <ul class="rows rows--v" data-v-list></ul>
+    </section>
+
+    <!-- ===== Заявки ===== -->
+    <section data-view="leads" hidden aria-labelledby="h-leads">
+      <h1 class="display lk-h1" id="h-leads" tabindex="-1">Заявки</h1>
+      <ul class="leads" data-leads></ul>
+    </section>
+
+    <!-- ===== Ещё ===== -->
+    <section data-view="more" hidden aria-labelledby="h-more">
+      <h1 class="display lk-h1" id="h-more" tabindex="-1">Ещё</h1>
+      <ul class="menu">
+        <li><a href="#/telegram"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><span class="menu__t"><b>Telegram-уведомления</b><small data-menu-tg>не подключено</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
+        <li><a href="#/prices"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg><span class="menu__t"><b>Тарифы и цены</b><small>изменить без разработчика</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
+        <li><a href="#/log"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span class="menu__t"><b>Журнал действий</b><small>кто и когда менял доступы</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
+      </ul>
+      <div class="stack"><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
+    </section>
+
+    <!-- ===== Telegram ===== -->
+    <section data-view="telegram" hidden aria-labelledby="h-tg">
+      <a class="back" href="#/more"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>ещё</a>
+      <h1 class="display lk-h1" id="h-tg" tabindex="-1">Telegram</h1>
+
+      <div class="lk-card" data-tg-off>
+        <h2 class="lk-h2 lk-h2--in">Подключи бота за минуту</h2>
+        <ol class="tg-steps">
+          <li>Нажми «Подключить Telegram».</li>
+          <li>В Telegram нажми «Запустить» (Start).</li>
+          <li>Вернись сюда, статус изменится сам.</li>
+        </ol>
+        <button class="btn btn--red btn--block" type="button" data-tg-connect>подключить Telegram</button>
+        <p class="lk-p adm-gap">Бот только присылает уведомления. Писать в него и переписываться не нужно.</p>
+      </div>
+
+      <div class="lk-card tg-on" data-tg-on hidden>
+        <p class="tg-on__row"><span class="stat stat--ok">подключено</span><span data-tg-user></span></p>
+        <div class="stack">
+          <button class="btn btn--line-dark" type="button" data-tg-test>отправить тест</button>
+          <button class="btn btn--line-dark" type="button" data-tg-off>отключить</button>
+        </div>
+      </div>
+
+      <div class="lk-block">
+        <h2 class="lk-h2">О чём сообщать</h2>
+        <ul class="sw-list" data-tg-sw></ul>
+      </div>
+
+      <div class="lk-block lk-card" data-tg-days-box>
+        <p class="field__label">Напоминать об окончании доступа</p>
+        <div class="pills" data-tg-days role="group" aria-label="За сколько дней"></div>
+        <label class="field adm-gap">
+          <span class="field__label">Время сводки (по Хабаровску)</span>
+          <input class="field__input field__input--time" type="time" step="900" value="09:00" data-tg-time>
+        </label>
+      </div>
+
+      <div class="lk-block lk-card">
+        <label class="sw-row">
+          <span class="sw-row__t"><b>Дублировать на почту</b><small>Telegram у тебя может работать нестабильно. Письмо дойдёт всегда.</small></span>
+          <input class="sw" type="checkbox" role="switch" data-tg-email>
+        </label>
+      </div>
+
+      <div class="lk-block">
+        <h2 class="lk-h2">Так выглядит уведомление</h2>
+        <div class="tg-msg"><b>Доступ заканчивается</b><span>Мария С., тариф «1 месяц» — осталось 2 дня.</span><span>Напомнить ей в WhatsApp?</span></div>
+      </div>
+    </section>
+
+    <!-- ===== Цены ===== -->
+    <section data-view="prices" hidden aria-labelledby="h-prices">
+      <a class="back" href="#/more"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>ещё</a>
+      <h1 class="display lk-h1" id="h-prices" tabindex="-1">Тарифы и цены</h1>
+      <p class="lk-p adm-gap">Цены на сайте обновятся после сохранения. Старую цену можно оставить пустой: тогда она не покажется.</p>
+      <form class="tariffs" data-prices novalidate></form>
+    </section>
+
+    <!-- ===== Журнал ===== -->
+    <section data-view="log" hidden aria-labelledby="h-log">
+      <a class="back" href="#/more"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>ещё</a>
+      <h1 class="display lk-h1" id="h-log" tabindex="-1">Журнал</h1>
+      <ul class="hist hist--page" data-log></ul>
+    </section>
+  </main>
+</div>
+
+<!-- ===== Диалоги ===== -->
+<dialog class="sheet" data-dlg="extend" aria-labelledby="dx-t">
+  <form class="sheet__in" data-form="extend" method="dialog" novalidate>
+    <h2 class="sheet__t" id="dx-t" data-dx-title>Продлить доступ</h2>
+    <p class="sheet__p" data-dx-who></p>
+    <div class="pills pills--grid" data-dx-opts role="radiogroup" aria-label="На сколько"></div>
+    <p class="sheet__new" data-dx-new aria-live="polite"></p>
+    <label class="field">
+      <span class="field__label">Почему (по желанию)</span>
+      <input class="field__input" type="text" maxlength="120" placeholder="Например: оплата переводом" data-dx-note>
+    </label>
+    <div class="sheet__act">
+      <button class="btn btn--line-dark" type="button" data-close>отмена</button>
+      <button class="btn btn--red" type="submit" data-dx-ok>продлить</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" data-dlg="close" aria-labelledby="dc-t">
+  <form class="sheet__in" data-form="close" method="dialog">
+    <h2 class="sheet__t" id="dc-t">Закрыть доступ?</h2>
+    <p class="sheet__p" data-dc-text></p>
+    <div class="sheet__act">
+      <button class="btn btn--line-dark" type="button" data-close>отмена</button>
+      <button class="btn btn--red" type="submit">закрыть</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" data-dlg="upload" aria-labelledby="du-t">
+  <form class="sheet__in" data-form="upload" method="dialog" novalidate>
+    <h2 class="sheet__t" id="du-t">Новое видео</h2>
+    <p class="sheet__p">Демо: файл пока никуда не загружается. Хранилище подключим позже.</p>
+    <label class="field">
+      <span class="field__label">Файл</span>
+      <input class="field__input field__input--file" type="file" accept="video/*" data-du-file>
+    </label>
+    <label class="field">
+      <span class="field__label">Название</span>
+      <input class="field__input" type="text" maxlength="80" placeholder="Например: Выпады с гантелями" data-du-title required>
+      <span class="field__err" role="alert" data-du-err></span>
+    </label>
+    <label class="field">
+      <span class="field__label">Группа мышц</span>
+      <select class="field__input" data-du-group></select>
+    </label>
+    <div class="sheet__act">
+      <button class="btn btn--line-dark" type="button" data-close>отмена</button>
+      <button class="btn btn--red" type="submit">добавить</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" data-toast role="status" aria-live="polite" hidden>
+  <span class="toast__t" data-toast-t></span>
+  <button class="toast__b" type="button" data-toast-b hidden></button>
+</div>
+
+<script src="../js/lk-data.js"></script>
+<script src="../js/admin-data.js"></script>
+<script src="../js/admin.js"></script>
+</body>
+</html>
