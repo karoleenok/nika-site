@@ -362,6 +362,8 @@
 .product { display: flex; flex-direction: column; background: var(--c-white); color: var(--c-ink); border-radius: var(--r-card); padding: var(--sp-5); min-height: calc(564 * var(--s)); }
 .product__kind { font-size: var(--fs-small); line-height: 1.2; color: var(--c-muted); }
 .product__title { margin-top: var(--sp-3); font-size: var(--fs-card-t); font-weight: 450; line-height: 1.2; letter-spacing: -.01em; }
+.product__title a { color: inherit; }
+@media (hover: hover) { .product__title a:hover { text-decoration: underline; text-underline-offset: .15em; text-decoration-thickness: 1px; } }
 .product__desc { margin-top: var(--sp-2); font-size: var(--fs-small); line-height: var(--lh-small); color: var(--c-muted); }
 .product .price { margin-bottom: var(--sp-4); align-self: flex-start; }
 .product .btn { margin-top: auto; }
