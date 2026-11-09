@@ -249,6 +249,32 @@
     });
   })();
 
+  /* ---------- Рилсы в «обо мне» (мобилка): беззвучное превью играет, пока карточка на экране; тап включает звук ---------- */
+  (() => {
+    const btns = $$('.reel__btn');
+    if (!btns.length) return;
+    const vids = btns.map(b => $('video', b));
+    const label = (b, on) => {
+      b.setAttribute('aria-pressed', String(on));
+      b.setAttribute('aria-label', b.getAttribute('aria-label').replace(/\. .*$/, '') + (on ? '. Выключить звук' : '. Включить звук'));
+    };
+    const play = v => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
+    btns.forEach((b, i) => b.addEventListener('click', () => {
+      const v = vids[i], on = v.muted;           // был без звука → включаем
+      vids.forEach((o, j) => { o.muted = true; label(btns[j], false); });
+      v.muted = !on; label(b, on);
+      if (on) { v.currentTime = 0; play(v); }
+    }));
+    if (reduce || !('IntersectionObserver' in window)) return;   // без анимации: остаётся постер
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      const v = e.target;
+      if (e.isIntersecting && mobileMQ.matches) play(v);
+      else { v.pause(); if (!v.muted) { v.muted = true; label(btns[vids.indexOf(v)], false); } }
+    }), { threshold: .6 });
+    vids.forEach(v => io.observe(v));
+    document.addEventListener('visibilitychange', () => { if (document.hidden) vids.forEach(v => v.pause()); });
+  })();
+
   /* iOS Safari включает :active только если на странице есть touchstart-слушатель.
      Нужно для красной вспышки иконок в подвале при тапе. */
   document.addEventListener('touchstart', () => {}, { passive: true });

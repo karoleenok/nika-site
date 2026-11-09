@@ -3,7 +3,9 @@
    Система выведена из макета мобилка.pdf (канвас 320):
      поля страницы 16 · внутренний отступ карточки 16 · зазор между карточками 12
      радиус карточки 20 · радиус кнопки 8 · кнопка 51
-     h2 Bebas 44 / лид 0.8 · h3 36 · текст 16 / 18 · подпись 14
+     Иерархия шрифтов (Bebas, line-height .8): h2 44 · h3 36 (в т.ч. заголовки карточек и CTA-карточки) · цифры-акценты 40 (никогда не выше h2)
+     Inter Tight: название товара/тарифа 20 · текст 16 · подпись 14 · цена 28 / старая цена 15
+     Склейка: предлоги и союзы до 3 букв связаны неразрывным пробелом с следующим словом, тире — с предыдущим
    Единица --m растёт от 1px (320) до ~1.18px (430), чтобы текст не раздувался.
    Всё, что в ПК-вёрстке считалось от --s, на мобиле считается от --m,
    поэтому «сырые» числа из ПК-правил дают px, а не доли пикселя.
@@ -40,6 +42,9 @@
 }
 
 html { scroll-padding-top: calc(16 * var(--m)); }
+.display, .product__title, .tariff__name { text-wrap: balance; }
+p, li { text-wrap: pretty; }
+.product__desc { text-wrap: wrap; }
 body { font-size: var(--fs-body); }
 
 /* ---------- Кнопки ---------- */
@@ -225,20 +230,42 @@ body.menu-lock { overflow: hidden; }
   font-size: min(38vw, 190px);
 }
 .about__photo { left: 50%; top: calc(var(--aw) * -.245); width: var(--aw); transform: translateX(-50%); }
-.about__card { width: calc(100% - 2 * var(--gutter)); padding: calc(28 * var(--m)) var(--inset) calc(28 * var(--m)); }
+.about__card { grid-template-columns: minmax(0, 1fr); width: calc(100% - 2 * var(--gutter)); padding: calc(28 * var(--m)) var(--inset) calc(28 * var(--m)); }
 .about__role { text-align: left; font-size: var(--fs-h2-xl); line-height: .8; }
 .about__text { max-width: none; margin-top: 16px; font-size: var(--fs-body); line-height: 1.2; }
 .stats { margin-top: 24px; gap: 8px; }
 .stat { flex-wrap: wrap; gap: 8px 12px; padding: 14px 16px; min-height: 0; }
 .stat__label { max-width: none; flex: 1 0 100%; font-size: var(--fs-tiny); line-height: 1.2; }
-.stat__value { font-size: calc(48 * var(--m)); }
+.stat { column-gap: calc(16 * var(--m)); }
+.stat__value { flex: 0 0 calc(148 * var(--m)); font-size: calc(40 * var(--m)); text-align: right; }   /* одинаковая колонка: линии-стрелки в обеих карточках равной длины */
 .stat__line { min-width: 24px; }
-.about__bottom { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 32px; min-height: 0; }
+.stat__sign { margin-right: .08em; font-size: .8em; vertical-align: .16em; opacity: .55; }   /* «>» не сливается с ромбом стрелки */
+.about__bottom { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: 28px; min-height: 0; }
 .about__note { max-width: none; padding-bottom: 0; text-align: center; font-size: var(--fs-tiny); line-height: 1.25; }
 .about__note--r { justify-self: auto; text-align: center; }
-.fan { order: -1; width: 100%; height: calc(150 * var(--m)); }
-.fan__card { width: calc(78 * var(--m)); height: calc(118 * var(--m)); margin-left: calc(-39 * var(--m)); border-radius: 10px; }
-.fan__card:nth-child(1), .fan__card:nth-child(5) { height: calc(98 * var(--m)); }
+.fan { display: none; }   /* на мобилке вместо веера из заглушек — полоса рилсов */
+.reels {
+  order: -1; display: flex; gap: 8px; width: calc(100% + 2 * var(--inset)); margin-inline: calc(-1 * var(--inset));
+  padding: 0 var(--inset) 4px; list-style: none;
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: var(--inset);
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.reels::-webkit-scrollbar { display: none; }
+.reel { flex: 0 0 calc(128 * var(--m)); scroll-snap-align: start; }
+.reel__btn {
+  position: relative; display: block; width: 100%; aspect-ratio: 9 / 16; padding: 0; border: 0; overflow: hidden;
+  border-radius: calc(12 * var(--m)); background: #1a1a1a; color: #fff; cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .28); -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.reel__btn video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.reel__btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.reel__snd {
+  position: absolute; right: 8px; bottom: 8px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(14, 14, 14, .5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.reel__ico { width: 20px; height: 20px; }
+.reel__btn[aria-pressed="false"] .reel__wave, .reel__btn[aria-pressed="true"] .reel__mute { display: none; }
+.reel__btn:active .reel__snd { transform: scale(.92); }
 /* закрыто: колода. открыто (карточка в зоне видимости): веер */
 .fan__card { transform: translate(0, 8px) rotate(0) scale(.94); transition: transform 1.1s var(--ease-out); }
 .fan.is-open .fan__card:nth-child(1) { transform: translate(calc(-98 * var(--m)), 0) rotate(-10deg); }
@@ -260,10 +287,12 @@ body.menu-lock { overflow: hidden; }
 .case { min-height: 0; padding: var(--inset); border-radius: var(--r-section); }
 .case__title { min-height: 0; line-height: .8; }
 .case__text { max-width: none; margin-top: 12px; font-size: var(--fs-body); line-height: var(--lh-small); }
-.stack { flex: none; min-height: calc(190 * var(--m)); margin-block: 14px 24px; }
+.case .stack { margin-block: auto 24px; }   /* остаток высоты — над коллажем, кнопки стоят на одной линии */
+.case__text { margin-bottom: 14px; }
+.stack { flex: none; min-height: calc(170 * var(--m)); margin-block: 14px 24px; }
 .case .btn { margin-top: 0; }
-.case--photo { min-height: calc(510 * var(--m)); }
-.case--photo .case__title { font-size: var(--fs-h2); }
+.case--photo { min-height: 0; }   /* раньше 510·m тянула все карточки карусели и давала пустоту под кнопкой */
+.case--photo .case__title { font-size: var(--fs-h3); }
 .case--photo .case__bg { object-position: 50% 22%; }
 .case__text--bottom { margin-top: auto; margin-bottom: 12px; }
 
@@ -298,7 +327,9 @@ body.menu-lock { overflow: hidden; }
 .stack__dots i.is-on { opacity: 1; transform: scale(1.25); }
 .product__title { margin-top: 16px; font-size: var(--fs-card-t); line-height: 1.15; }
 .product__desc { margin-top: 8px; font-size: var(--fs-tiny); line-height: var(--lh-small); }
-.product .price { margin-top: 16px; margin-bottom: 12px; }
+.product__desc { margin-bottom: 16px; }
+.product .price { margin-top: auto; margin-bottom: 12px; }   /* остаток высоты — над ценой; цена и кнопка у всех карточек на одной линии */
+.product .btn { margin-top: 0; }
 
 /* ==========================================================================
    ТЕСТ + ФИНАЛ + ПОДВАЛ

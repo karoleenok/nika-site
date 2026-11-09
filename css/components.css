@@ -287,6 +287,7 @@
 .about__note { font-size: var(--fs-small); line-height: var(--lh-small); max-width: calc(300 * var(--s)); padding-bottom: calc(150 * var(--s)); }
 .about__note--r { justify-self: end; text-align: right; }
 
+.reels { display: none; }   /* рилсы только на мобилке, см. mobile.css */
 .fan { position: relative; width: calc(500 * var(--s)); height: calc(250 * var(--s)); }
 .fan__card {
   position: absolute; bottom: 0; left: 50%;
