@@ -49,7 +49,7 @@
   const sub = $('[data-acc-sub]'); sub.textContent = '';
   sub.appendChild(chip());
   sub.appendChild(el('span', '', locked ? Math.abs(days) + ' ' + plural(Math.abs(days), 'день', 'дня', 'дней') + ' назад' : 'осталось ' + days + ' ' + plural(days, 'день', 'дня', 'дней')));
-  $('[data-acc-plan]').textContent = 'Тариф «' + D.plan.name + '»';
+  $('[data-acc-plan]').textContent = 'Тариф «' + D.plan.name + '»' + (D.plan.weeks ? ' · ' + D.plan.weeks + ' ' + plural(D.plan.weeks, 'неделя', 'недели', 'недель') : '');
   const bar = $('[data-acc-bar]');
   const pct = Math.max(0, Math.min(100, Math.round(days / span * 100)));
   bar.setAttribute('aria-label', locked ? 'Доступ закончился' : 'Осталось ' + pct + '% срока тарифа');

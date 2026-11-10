@@ -367,16 +367,12 @@
 .product__title a { color: inherit; }
 @media (hover: hover) { .product__title a:hover { text-decoration: underline; text-underline-offset: .15em; text-decoration-thickness: 1px; } }
 .product__desc { margin-top: var(--sp-2); font-size: var(--fs-small); line-height: var(--lh-small); color: var(--c-muted); }
-.product .price { margin-bottom: var(--sp-4); align-self: flex-start; }
-.product .btn { margin-top: auto; }
+.product__desc { margin-bottom: max(20px, calc(24 * var(--s))); }   /* запас под зачёркнутую цену, которая выступает над новой */
+.product .price { margin-top: auto; margin-bottom: var(--sp-4); align-self: flex-start; }   /* остаток высоты над ценой, цена и кнопка рядом */
+.product .btn { margin-top: 0; }
 
-.stack--shop { min-height: calc(290 * var(--s)); margin-block: var(--sp-3) 0; }
-.stack__cover { position: absolute; left: 1%; top: 4%; width: 34%; border-radius: calc(12 * var(--s)); box-shadow: 0 calc(14 * var(--s)) calc(28 * var(--s)) rgba(0,0,0,.28); transform: rotate(-5deg); z-index: 3; transition: transform var(--dur-3) var(--ease-out); }
-.stack__ph { position: absolute; border-radius: calc(16 * var(--s)); box-shadow: 0 calc(14 * var(--s)) calc(28 * var(--s)) rgba(0,0,0,.14); }
-.stack__ph--1 { left: 32%; top: 5%; width: 23%; height: 85%; background: #d9d9d9; transform: rotate(-2deg); z-index: 2; }
-.stack__ph--2 { left: 53%; top: 0; width: 28%; height: 92%; background: #ececec; transform: rotate(1deg); z-index: 1; }
-.stack__ph--3 { left: 68%; top: 2%; width: 27%; height: 88%; background: #bcbcbc; transform: rotate(4deg); z-index: 0; }
-@media (hover: hover) { .product:hover .stack__cover { transform: rotate(-8deg) translateY(-2%); } }
+.stack--shop { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; flex: none; height: calc(290 * var(--s)); min-height: 0; margin-block: var(--sp-3) 0; }
+.stack__cover { height: 100%; width: auto; max-width: 100%; min-height: 0; border-radius: calc(12 * var(--s)); box-shadow: 0 calc(14 * var(--s)) calc(28 * var(--s)) rgba(0,0,0,.28); }
 
 /* ==========================================================================
    ТЕСТ + ФИНАЛ + ФУТЕР

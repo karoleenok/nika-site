@@ -199,7 +199,7 @@ body.lk--auth { background: var(--c-ink); color: var(--c-white); }
 .auth__in { position: relative; width: 100%; max-width: 480px; margin-inline: auto; }
 .auth__logo img { height: 44px; width: auto; }
 .auth__title { margin-top: var(--sp-7); font-size: var(--fs-pg-h1); color: var(--c-red); padding-top: .12em; }
-.auth__lead { margin-top: var(--sp-4); color: var(--c-on-dark-2); font-size: var(--fs-lead); line-height: 1.35; }
+.auth__lead { margin-top: var(--sp-4); color: var(--c-on-dark-2); font-size: var(--fs-lead); line-height: 1.35; text-wrap: pretty; }
 .auth__card { margin-top: var(--sp-6); background: var(--c-white); color: var(--c-ink); border-radius: var(--r-section); padding: var(--inset); }
 .auth__step { display: grid; gap: var(--sp-4); }
 .auth__step[hidden] { display: none; }

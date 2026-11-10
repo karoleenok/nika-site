@@ -27,7 +27,7 @@
 
   --fs-hero:   min(22vw, 100px);
   --fs-giant:  min(37vw, 190px);
-  --fs-cta:    min(22vw, 110px);
+  --fs-cta:    min(calc((100vw - 2 * var(--gutter)) / 4.55), 110px);   /* «К ПЕРЕМЕНАМ?» ≈ 4,45 em в ширину: строка всегда помещается в колонку */
   --fs-h2:     calc(44 * var(--m));
   --fs-h2-xl:  calc(36 * var(--m));
   --fs-h3:     calc(36 * var(--m));
@@ -186,7 +186,7 @@ body.menu-lock { overflow: hidden; }
 .tariff__name, .tariffs--3 .tariff__name { font-size: var(--fs-card-t); line-height: 1.15; }
 .tariff__desc { margin-top: 8px; font-size: var(--fs-tiny); line-height: var(--lh-small); }
 .tariff .price { margin-top: 28px; margin-bottom: 14px; }
-.tariff .btn { margin-top: 0; }
+.tariff .btn { margin-top: 0; }   /* в каруселях карточки равной высоты: остаток уходит над ценой (правило ниже), цена и кнопка всегда рядом */
 .tariff--wide { margin-top: 16px; }
 .price, .package__card .price { display: inline-flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; width: auto; }
 .price__old { position: static; order: 2; margin: 0; font-size: calc(15 * var(--m)); line-height: 1; opacity: .9; }
@@ -299,27 +299,9 @@ body.menu-lock { overflow: hidden; }
 .shop__grid { grid-template-columns: 1fr; margin-top: 24px; gap: var(--gap); }
 .product { min-height: 0; padding: 16px; }
 .product__kind { font-size: var(--fs-tiny); }
-/* Обложки не веером, а по одной: тап по карточке листает (js/main.js). Без JS видна только обложка. */
-.stack--shop { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; height: calc(200 * var(--m)); min-height: 0; margin-block: 12px 28px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-.stack--shop > .stack__cover, .stack--shop > .stack__ph {
-  grid-area: 1 / 1; position: static; left: auto; top: auto; width: auto; height: 100%; max-width: 100%;
-  border-radius: 12px; transform: none; z-index: 0;
-  transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out);
-}
-.stack--shop > .stack__cover { box-shadow: 0 14px 28px rgba(0, 0, 0, .28); }
-.stack--shop > .stack__ph { aspect-ratio: 4 / 5.4; box-shadow: 0 14px 28px rgba(0, 0, 0, .14); opacity: 0; }
-.stack--shop > .stack__ph--1 { background: #d9d9d9; }
-.stack--shop > .stack__ph--2 { background: #ececec; }
-.stack--shop > .stack__ph--3 { background: #bcbcbc; }
-.stack--shop[role="button"] { cursor: pointer; }
-.stack--shop[role="button"]:focus-visible { outline: 2px solid var(--c-red); outline-offset: 4px; border-radius: 16px; }
-.js .stack--shop[data-cycle] > .is-before, .js .stack--shop[data-cycle] > .is-after { opacity: 0; pointer-events: none; }
-.js .stack--shop[data-cycle] > .is-before { transform: translateX(-28px) scale(.94); }
-.js .stack--shop[data-cycle] > .is-after  { transform: translateX(28px) scale(.94); }
-.js .stack--shop[data-cycle] > .is-active { opacity: 1; z-index: 1; }
-.stack__dots { position: absolute; left: 0; right: 0; bottom: -18px; display: flex; justify-content: center; gap: 6px; pointer-events: none; }
-.stack__dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--c-ink); opacity: .2; transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
-.stack__dots i.is-on { opacity: 1; transform: scale(1.25); }
+/* Одна обложка по центру карточки. */
+.stack--shop { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; height: calc(200 * var(--m)); min-height: 0; margin-block: 12px 0; }
+.stack--shop > .stack__cover { position: static; left: auto; top: auto; width: auto; height: 100%; max-width: 100%; min-height: 0; transform: none; border-radius: 12px; box-shadow: 0 14px 28px rgba(0, 0, 0, .28); }
 .product__title { margin-top: 16px; font-size: var(--fs-card-t); line-height: 1.15; }
 .product__desc { margin-top: 8px; font-size: var(--fs-tiny); line-height: var(--lh-small); }
 .product__desc { margin-bottom: 16px; }
@@ -423,7 +405,9 @@ body.menu-lock { overflow: hidden; }
 .cases__grid, .shop__grid { gap: var(--gap); }
 .tariffs > .tariff, .shop__grid > .product, .cases__grid > .case { align-self: stretch; }
 .tariffs > .tariff { display: flex; flex-direction: column; }
-.tariffs > .tariff .btn { margin-top: auto; }
+.tariffs > .tariff .price { margin-top: auto; }
+.tariffs > .tariff .tariff__desc { margin-bottom: 20px; }
+.tariffs > .tariff .btn { margin-top: 0; }
 /* Карточки в каруселях не выплывают при свайпе (раньше каждая въезжала на 24 px вверх и мигала прозрачностью — страница «тряслась») */
 .js .tariffs > [data-reveal], .js .cases__grid > [data-reveal], .js .shop__grid > [data-reveal] { opacity: 1; transform: none; transition: none; }
 .case:active, .product:active, .tariff:active { transform: none; }

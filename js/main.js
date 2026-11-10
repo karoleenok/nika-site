@@ -205,44 +205,6 @@
     });
   })();
 
-  /* ---------- Магазин на мобилке: обложки листаются тапом, не лежат веером ---------- */
-  (() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    $$('.stack--shop').forEach(stack => {
-      const cards = [...stack.querySelectorAll('.stack__cover, .stack__ph')].sort((a, b) => b.matches('.stack__cover') - a.matches('.stack__cover'));
-      if (cards.length < 2) return;
-      const dots = document.createElement('div');
-      dots.className = 'stack__dots'; dots.setAttribute('aria-hidden', 'true');
-      cards.forEach(() => dots.appendChild(document.createElement('i')));
-      let idx = 0;
-      const paint = () => {
-        cards.forEach((c, i) => {
-          c.classList.toggle('is-active', i === idx);
-          c.classList.toggle('is-before', i < idx);
-          c.classList.toggle('is-after', i > idx);
-        });
-        [...dots.children].forEach((d, i) => d.classList.toggle('is-on', i === idx));
-        stack.setAttribute('aria-label', 'Превью материала, ' + (idx + 1) + ' из ' + cards.length + '. Нажми, чтобы листать');
-      };
-      const next = () => { idx = (idx + 1) % cards.length; paint(); };
-      const onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); next(); } };
-      const toggle = () => {
-        if (mq.matches) {
-          stack.dataset.cycle = ''; stack.removeAttribute('aria-hidden');
-          stack.setAttribute('role', 'button'); stack.tabIndex = 0;
-          stack.appendChild(dots); idx = 0; paint();
-          stack.addEventListener('click', next); stack.addEventListener('keydown', onKey);
-        } else {
-          delete stack.dataset.cycle; stack.setAttribute('aria-hidden', 'true');
-          stack.removeAttribute('role'); stack.removeAttribute('aria-label'); stack.removeAttribute('tabindex');
-          stack.removeEventListener('click', next); stack.removeEventListener('keydown', onKey);
-          dots.remove(); cards.forEach(c => c.classList.remove('is-active', 'is-before', 'is-after'));
-        }
-      };
-      mq.addEventListener('change', toggle); toggle();
-    });
-  })();
-
   /* ---------- Рилсы в «обо мне» (веер на ПК, полоса на мобилке): беззвучное превью играет, пока карточка на экране; тап включает звук ---------- */
   (() => {
     const btns = $$('.reel__btn');

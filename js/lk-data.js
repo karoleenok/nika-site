@@ -3,7 +3,7 @@
 window.LK_DATA = {
   demo: true,
   client: { name: 'Анна', email: 'anna@example.com' },
-  plan: { name: '2 месяца', span: 56 },          // span — длительность тарифа в днях (для демо-дат)
+  plan: { name: '2 месяца', weeks: 8, span: 56 }, // доступ считается неделями (1 месяц = 4 недели); span = weeks × 7, дней (для демо-дат)
   groups: [
     { id: 'legs',      name: 'Ноги' },
     { id: 'glutes',    name: 'Ягодицы' },

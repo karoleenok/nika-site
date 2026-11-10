@@ -27,7 +27,6 @@
   const fmt = d => d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-  const addMonths = (d, n) => { const x = new Date(d); x.setMonth(x.getMonth() + n); return x; };
   const first = name => name.split(' ')[0];
   const num = v => Number(String(v || '').replace(/\D/g, '')) || 0;
 
@@ -57,7 +56,9 @@
   };
 
   /* ---------- Клиенты (демо) ---------- */
-  const SPAN = { '24 часа': 1, '1 месяц': 30, '2 месяца': 61, '4 месяца': 122, 'Полный пакет': 61 };
+  /* Доступ считается неделями, а не календарными месяцами: 1 месяц = 4 недели, 2 = 8, 4 = 16. Срок = недели × 7 дней. */
+  const WEEKS = { '24 часа': 0, '1 месяц': 4, '2 месяца': 8, '4 месяца': 16, 'Полный пакет': 8 };
+  const planDays = name => (name === '24 часа' ? 1 : (WEEKS[name] || 4) * 7);
   const clients = A.clients.map((c, i) => ({
     ...c, until: addDays(today, c.days), reminded: false, closed: false, email: '', phone: '',
     watched: [0, 5, 7, 3, 9, 4, 12, 8, 6, 10, 2, 1][i] || 0, mats: {}
@@ -231,7 +232,7 @@
     /* Данные, оплаты, история */
     const f = $('[data-c-form]'); f.elements.name.value = c.name; f.elements.email.value = c.email; f.elements.phone.value = c.phone; planSel.value = c.plan; $('[data-c-err]').textContent = '';
     const price = (tariffs.find(t => t.name === c.plan) || {}).price || 0, pay = $('[data-c-pay]'); pay.textContent = '';
-    const pli = el('li'); pli.appendChild(el('span', '', 'Тариф «' + c.plan + '»')); pli.appendChild(el('span', 'pay__s', price.toLocaleString('ru-RU') + ' ₽')); pli.appendChild(el('span', 'pay__d', fmt(addDays(c.until, -(SPAN[c.plan] || 30))))); pay.appendChild(pli);
+    const pli = el('li'); pli.appendChild(el('span', '', 'Тариф «' + c.plan + '»')); pli.appendChild(el('span', 'pay__s', price.toLocaleString('ru-RU') + ' ₽')); pli.appendChild(el('span', 'pay__d', fmt(addDays(c.until, -planDays(c.plan))))); pay.appendChild(pli);
     const h = $('[data-c-hist]'); h.textContent = ''; const mine = log.filter(x => x.cid === c.id);
     if (!mine.length) h.appendChild(el('li', 'hist__e', 'Пока ничего не менялось.'));
     mine.forEach(x => h.appendChild(histItem(x, false)));
@@ -250,11 +251,11 @@
   });
 
   /* Продлить / открыть */
-  const OPTS = [['+7 дней', 7, 0], ['+14 дней', 14, 0], ['+1 месяц', 0, 1], ['+2 месяца', 0, 2], ['+4 месяца', 0, 4]];
+  const OPTS = [['+1 неделя', 1], ['+2 недели', 2], ['+4 недели', 4], ['+8 недель', 8], ['+16 недель', 16]];   // [подпись, недель]
   const fx = $('[data-form="extend"]'), optBox = $('[data-dx-opts]'), newLine = $('[data-dx-new]');
   const base = c => (c.until > today ? c.until : today);
   const pick = () => { const r = $('input:checked', optBox); return OPTS[Number(r ? r.value : 2)]; };
-  const newDate = () => { const o = pick(); return o[1] ? addDays(base(cur), o[1]) : addMonths(base(cur), o[2]); };
+  const newDate = () => addDays(base(cur), pick()[1] * 7);
   const drawNew = () => { newLine.textContent = 'Доступ будет открыт до ' + fmt(newDate()); };
   OPTS.forEach((o, i) => {
     const l = el('label', 'pill'); const r = el('input'); r.type = 'radio'; r.name = 'span'; r.value = String(i); if (i === 2) r.checked = true;
@@ -264,7 +265,7 @@
     if (!cur) return; const bad = stateOf(cur) === 'bad';
     $('[data-dx-title]').textContent = bad ? 'Открыть доступ' : 'Продлить доступ';
     $('[data-dx-ok]').textContent = bad ? 'открыть' : 'продлить';
-    $('[data-dx-who]').textContent = cur.name + ', тариф «' + cur.plan + '»';
+    $('[data-dx-who]').textContent = cur.name + ', тариф «' + cur.plan + '»' + (WEEKS[cur.plan] ? ' (' + WEEKS[cur.plan] + ' ' + plural(WEEKS[cur.plan], 'неделя', 'недели', 'недель') + ')' : '');
     $('[data-dx-note]').value = ''; $$('input', optBox)[2].checked = true; drawNew(); openDlg('extend');
   });
   fx.addEventListener('submit', e => {
