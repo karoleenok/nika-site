@@ -85,28 +85,46 @@
     if (lk) lk.hidden = ty.dataset.ty !== 'pay';
   }
 
-  /* ---------- Кейсы: фильтр по категории, #body | #habits | #form ---------- */
-  const chips = $$('.chip[data-cat]');
-  const stories = $$('.story[data-cat]');
-  if (chips.length && stories.length) {
-    const apply = (cat, push) => {
-      chips.forEach(c => c.setAttribute('aria-pressed', String(c.dataset.cat === cat)));
-      let i = 0;
-      stories.forEach(s => {
-        const show = cat === 'all' || s.dataset.cat === cat;
-        s.hidden = !show;
-        s.classList.remove('is-shown');
-        if (show) {
-          s.style.setProperty('--d', (i++ * 0.05) + 's');
-          void s.offsetWidth;                // перезапуск анимации
-          s.classList.add('is-shown');
-        }
-      });
-      if (push) { try { history.replaceState(null, '', cat === 'all' ? location.pathname : '#' + cat); } catch (_) {} }
+  /* ---------- Кейсы: лента, «до / после», ракурс, «читать полностью» ---------- */
+  const track = $('#cs-track');
+  if (track) {
+    const setView = (card) => {
+      const before = card.dataset.view === 'before';
+      $('.cs-ph__b', card).setAttribute('aria-hidden', String(!before));
+      $('.cs-ph__a', card).setAttribute('aria-hidden', String(before));
+      $$('.cs-vbtn', card).forEach(b => b.setAttribute('aria-pressed', String((b.dataset.view === 'before') === before)));
     };
-    chips.forEach(c => c.addEventListener('click', () => apply(c.dataset.cat, true)));
-    const fromHash = location.hash.slice(1);
-    apply(chips.some(c => c.dataset.cat === fromHash) ? fromHash : 'all', false);
+    $$('.cs-card[data-id]', track).forEach(card => {
+      setView(card);
+      $$('.cs-vbtn', card).forEach(b => b.addEventListener('click', () => { card.dataset.view = b.dataset.view; setView(card); }));
+      $$('.cs-ang', card).forEach(b => b.addEventListener('click', () => {
+        card.dataset.angle = b.dataset.angle;
+        $$('.cs-ang', card).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        $('.cs-ph__b', card).src = 'assets/img/cases/' + card.dataset.id + '_' + b.dataset.angle + '_b.webp';
+        $('.cs-ph__a', card).src = 'assets/img/cases/' + card.dataset.id + '_' + b.dataset.angle + '_a.webp';
+      }));
+      const tog = $('.cs-tog', card);
+      if (tog) tog.addEventListener('click', () => {
+        const open = card.classList.toggle('is-open');
+        tog.setAttribute('aria-expanded', String(open));
+        tog.textContent = open ? 'свернуть' : 'читать полностью';
+      });
+    });
+    const prev = $('.cs-arrow[data-dir="-1"]'), next = $('.cs-arrow[data-dir="1"]'), thumb = $('.cs-prog__thumb');
+    const step = (d) => () => track.scrollBy({ left: d * (track.firstElementChild.offsetWidth + 12), behavior: 'smooth' });
+    if (prev) prev.addEventListener('click', step(-1));
+    if (next) next.addEventListener('click', step(1));
+    const upd = () => {
+      const max = track.scrollWidth - track.clientWidth;
+      const p = max > 0 ? track.scrollLeft / max * 100 : 100;
+      const v = Math.max(12, Math.min(100, track.clientWidth / track.scrollWidth * 100));
+      if (prev) prev.disabled = p <= 1;
+      if (next) next.disabled = p >= 99;
+      if (thumb) { thumb.style.width = v + '%'; thumb.style.marginLeft = ((100 - v) * p / 100) + '%'; }
+    };
+    track.addEventListener('scroll', upd, { passive: true });
+    window.addEventListener('resize', upd);
+    upd();
   }
 
   /* ---------- Материал: липкая панель покупки на мобилке ---------- */
