@@ -220,6 +220,15 @@
 .cs-cta .display { font-size: var(--fs-pg-h2); line-height: .85; padding-top: .12em; }
 .cs-cta p { margin-top: var(--sp-3); color: var(--c-on-dark-2); font-size: var(--fs-small); line-height: 1.35; }
 
+/* ПК: героя и карточки компактнее, чтобы фото и текст помещались в окно 1440×900 и 1210×760 */
+@media (min-width: 768px) {
+  .cs-hero { padding-block: calc(32 * var(--s)) calc(52 * var(--s)); }
+  .cs-h1 { font-size: calc(96 * var(--s)); }
+  .cs-kpi { font-size: max(44px, calc(52 * var(--s))); }
+}
+@media (min-width: 1024px) { .cs-card { flex-basis: calc((100% - 2 * var(--gap)) / 3); } }
+@media (min-width: 1100px) { .cs-card { flex-basis: calc((100% - 3 * var(--gap)) / 4); } }
+
 .cs-prog { display: none; margin-top: var(--sp-5); height: 4px; border-radius: 2px; background: rgba(14, 14, 14, .12); overflow: hidden; }
 .cs-prog__thumb { height: 100%; border-radius: 2px; background: var(--c-ink); }
 @media (max-width: 767px) { .cs-prog { display: block; } }
