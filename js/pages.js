@@ -85,29 +85,27 @@
     if (lk) lk.hidden = ty.dataset.ty !== 'pay';
   }
 
-  /* ---------- Кейсы: лента, «до / после», ракурс, «читать полностью» ---------- */
+  /* ---------- Кейсы: лента, «до | после», ракурс, «читать полностью» ---------- */
   const track = $('#cs-track');
   if (track) {
-    const setView = (card) => {
-      const before = card.dataset.view === 'before';
-      $('.cs-ph__b', card).setAttribute('aria-hidden', String(!before));
-      $('.cs-ph__a', card).setAttribute('aria-hidden', String(before));
-      $$('.cs-vbtn', card).forEach(b => b.setAttribute('aria-pressed', String((b.dataset.view === 'before') === before)));
-    };
     $$('.cs-card[data-id]', track).forEach(card => {
-      setView(card);
-      $$('.cs-vbtn', card).forEach(b => b.addEventListener('click', () => { card.dataset.view = b.dataset.view; setView(card); }));
       $$('.cs-ang', card).forEach(b => b.addEventListener('click', () => {
         card.dataset.angle = b.dataset.angle;
         $$('.cs-ang', card).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-        $('.cs-ph__b', card).src = 'assets/img/cases/' + card.dataset.id + '_' + b.dataset.angle + '_b.webp';
-        $('.cs-ph__a', card).src = 'assets/img/cases/' + card.dataset.id + '_' + b.dataset.angle + '_a.webp';
+        const base = 'assets/img/cases/' + card.dataset.id + '_' + b.dataset.angle;
+        $('.cs-img-b', card).src = base + '_b.webp';
+        $('.cs-img-a', card).src = base + '_a.webp';
       }));
       const tog = $('.cs-tog', card);
+      if (tog) {
+        // кнопка нужна только там, где текст реально обрезан (на широкой карточке он может влезть целиком)
+        const fit = () => { tog.hidden = !card.classList.contains('is-open') && !$$('.cs-p.is-clamp', card).some(p => p.scrollHeight > p.clientHeight + 1); };
+        fit(); window.addEventListener('resize', fit); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+      }
       if (tog) tog.addEventListener('click', () => {
         const open = card.classList.toggle('is-open');
         tog.setAttribute('aria-expanded', String(open));
-        tog.textContent = open ? 'свернуть' : 'читать полностью';
+        tog.textContent = open ? 'свернуть' : 'читать историю';
       });
     });
     const prev = $('.cs-arrow[data-dir="-1"]'), next = $('.cs-arrow[data-dir="1"]'), thumb = $('.cs-prog__thumb');
