@@ -34,76 +34,149 @@
   <section class="pg-hero">
     <div class="pg-wrap">
       <p class="label pg-hero__kicker pg-in">реальные истории</p>
-      <h1 class="display pg-hero__title pg-in" style="--d:.06s">Не словами –<br>а результатами</h1>
+      <h1 class="display pg-hero__title cs-h1 pg-in" style="--d:.06s">Не словами –<br>а результатами</h1>
       <p class="pg-hero__lead pg-in" style="--d:.12s">За каждой трансформацией – индивидуальный подход, последовательная работа и система, которая помогает достигать поставленных целей</p>
     </div>
   </section>
 
-  <section class="pg-sec pg-sec--tight">
-    <div class="pg-wrap">
-      <!-- ПРОВЕРИТЬ: убрать noindex и заглушки «фото до / после», когда Ника пришлёт фото в хорошем качестве.
-           Фото публиковать только с письменного согласия клиентов. -->
-      <div class="chips" role="group" aria-label="Категория историй">
-        <button class="chip" type="button" data-cat="all" aria-pressed="true">все</button>
-        <button class="chip" type="button" data-cat="body" aria-pressed="false">трансформация тела</button>
-        <button class="chip" type="button" data-cat="habits" aria-pressed="false">изменение привычек</button>
-        <button class="chip" type="button" data-cat="form" aria-pressed="false">работа над формой</button>
+  <section class="pg-sec pg-sec--tight" aria-labelledby="cs-title">
+    <!-- ПРОВЕРИТЬ перед публикацией: убрать noindex в <head>; письменные согласия клиентов на фото;
+         формулировка про Елену (диабет, сахар) с юристом; оригиналы фото Анжелики и Дарьи (сейчас растянуты).
+         Екатерина 37 и кейс без имени скрыты до получения текстов. -->
+    <div class="pg-wrap cs-head">
+      <h2 id="cs-title" class="display cs-title">Истории клиентов</h2>
+      <div class="cs-arrows">
+        <button class="cs-arrow" type="button" data-dir="-1" aria-label="Назад"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 6 10l6 6"/></svg></button>
+        <button class="cs-arrow" type="button" data-dir="1" aria-label="Дальше"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m8 4 6 6-6 6"/></svg></button>
       </div>
-      <ul class="stories">
-      <li class="story" data-cat="body">
-        <div class="story__media"><img src="assets/img/case-collage.webp" width="824" height="560" alt="Фото до и после, история 1" loading="lazy" decoding="async"></div>
-        <div class="story__body">
-          <p class="story__cat">Трансформация тела</p>
-          <h3 class="story__title">История 1</h3>
+    </div>
+    <div class="cs-track" id="cs-track" role="region" aria-label="Истории клиентов, лента" tabindex="0">
+      <article class="cs-card" data-id="c" data-view="after" data-angle="front">
+        <div class="cs-ph">
+          <img class="cs-ph__b" src="assets/img/cases/c_front_b.webp" width="800" height="1000" alt="Елена, 56 лет, до" loading="lazy" decoding="async" draggable="false">
+          <img class="cs-ph__a" src="assets/img/cases/c_front_a.webp" width="800" height="1000" alt="Елена, 56 лет, после" loading="lazy" decoding="async" draggable="false">
+          <div class="cs-view" role="group" aria-label="Показать до или после">
+            <button class="cs-vbtn" type="button" data-view="before" aria-pressed="false">до</button>
+            <button class="cs-vbtn" type="button" data-view="after" aria-pressed="true">после</button>
+          </div>
         </div>
-      </li>
-      <li class="story" data-cat="body">
-        <div class="story__media"><img src="assets/img/case-pair.webp" width="739" height="519" alt="Фото до и после, история 2" loading="lazy" decoding="async"></div>
-        <div class="story__body">
-          <p class="story__cat">Трансформация тела</p>
-          <h3 class="story__title">История 2</h3>
+        <div class="cs-body">
+          <div class="cs-angles" role="group" aria-label="Ракурс"><button class="cs-ang" type="button" data-angle="front" aria-pressed="true">анфас</button><button class="cs-ang" type="button" data-angle="side" aria-pressed="false">профиль</button><button class="cs-ang" type="button" data-angle="back" aria-pressed="false">спина</button></div>
+          <div>
+            <h3 class="cs-name">Елена, 56 лет</h3>
+            <p class="cs-kpi display">−13,1 кг</p>
+            <p class="cs-meta">3 месяца работы · −13 см в талии</p>
+          </div>
+          <div class="cs-text">
+            <div><p class="cs-lab cs-lab--a">точка А</p><p class="cs-p is-clamp">Сахарный диабет, постоянно высокий уровень глюкозы, лишний вес и большой живот, алкоголь по выходным.</p></div>
+            <div><p class="cs-lab cs-lab--b">точка Б</p><p class="cs-p is-clamp">Отказ от алкоголя, −13 см в талии, за 3 месяца удалось сбросить 13,1 кг без спорта, нормализовали уровень сахара.</p></div>
+          </div>
+          <div class="cs-more"><button class="cs-tog" type="button" aria-expanded="false">читать полностью</button></div>
         </div>
-      </li>
-      <li class="story" data-cat="body">
-        <div class="story__media"><img src="assets/img/case-side.webp" width="1169" height="1072" alt="Фото до и после, история 3" loading="lazy" decoding="async"></div>
-        <div class="story__body">
-          <p class="story__cat">Трансформация тела</p>
-          <h3 class="story__title">История 3</h3>
+      </article>
+      <article class="cs-card" data-id="b" data-view="after" data-angle="front">
+        <div class="cs-ph">
+          <img class="cs-ph__b" src="assets/img/cases/b_front_b.webp" width="800" height="1000" alt="Екатерина, 40 лет, до" loading="lazy" decoding="async" draggable="false">
+          <img class="cs-ph__a" src="assets/img/cases/b_front_a.webp" width="800" height="1000" alt="Екатерина, 40 лет, после" loading="lazy" decoding="async" draggable="false">
+          <div class="cs-view" role="group" aria-label="Показать до или после">
+            <button class="cs-vbtn" type="button" data-view="before" aria-pressed="false">до</button>
+            <button class="cs-vbtn" type="button" data-view="after" aria-pressed="true">после</button>
+          </div>
         </div>
-      </li>
-      <li class="story" data-cat="habits">
-        <div class="story__media story__media--empty" aria-hidden="true"><span>фото до / после</span></div>
-        <div class="story__body">
-          <p class="story__cat">Изменение привычек</p>
-          <h3 class="story__title">История 4</h3>
+        <div class="cs-body">
+          <div class="cs-angles" role="group" aria-label="Ракурс"><button class="cs-ang" type="button" data-angle="front" aria-pressed="true">анфас</button><button class="cs-ang" type="button" data-angle="side" aria-pressed="false">профиль</button></div>
+          <div>
+            <h3 class="cs-name">Екатерина, 40 лет</h3>
+            <p class="cs-kpi display">−8,8 кг</p>
+            <p class="cs-meta">3 месяца работы · +1,7 кг мышц · −6 см в талии</p>
+          </div>
+          <div class="cs-text">
+            <div><p class="cs-lab cs-lab--a">точка А</p><p class="cs-p is-clamp">Ходила годами в зал, но так и не видела заветного результата, хотела похудеть именно за счёт жира, максимально сохранить мышечную массу.</p></div>
+            <div><p class="cs-lab cs-lab--b">точка Б</p><p class="cs-p is-clamp">Через 3 месяца питания и регулярных тренировок скинули 8,8 кг, набрали 1,7 кг мышц, обновили гардероб и избавились от 6 см талии.</p></div>
+          </div>
+          <div class="cs-more"><button class="cs-tog" type="button" aria-expanded="false">читать полностью</button></div>
         </div>
-      </li>
-      <li class="story" data-cat="habits">
-        <div class="story__media story__media--empty" aria-hidden="true"><span>фото до / после</span></div>
-        <div class="story__body">
-          <p class="story__cat">Изменение привычек</p>
-          <h3 class="story__title">История 5</h3>
+      </article>
+      <article class="cs-card" data-id="e" data-view="after" data-angle="one">
+        <div class="cs-ph">
+          <img class="cs-ph__b" src="assets/img/cases/e_one_b.webp" width="800" height="1000" alt="Дарья, 24 года, до" loading="lazy" decoding="async" draggable="false">
+          <img class="cs-ph__a" src="assets/img/cases/e_one_a.webp" width="800" height="1000" alt="Дарья, 24 года, после" loading="lazy" decoding="async" draggable="false">
+          <div class="cs-view" role="group" aria-label="Показать до или после">
+            <button class="cs-vbtn" type="button" data-view="before" aria-pressed="false">до</button>
+            <button class="cs-vbtn" type="button" data-view="after" aria-pressed="true">после</button>
+          </div>
         </div>
-      </li>
-      <li class="story" data-cat="form">
-        <div class="story__media story__media--empty" aria-hidden="true"><span>фото до / после</span></div>
-        <div class="story__body">
-          <p class="story__cat">Работа над формой</p>
-          <h3 class="story__title">История 6</h3>
+        <div class="cs-body">
+          <div class="cs-angles is-single" role="group" aria-label="Ракурс"><button class="cs-ang" type="button" data-angle="one" aria-pressed="true">кадр</button></div>
+          <div>
+            <h3 class="cs-name">Дарья, 24 года</h3>
+            <p class="cs-kpi display">−8 кг</p>
+            <p class="cs-meta"></p>
+          </div>
+          <div class="cs-text">
+            <div><p class="cs-lab cs-lab--a">точка А</p><p class="cs-p">Стеснялась носить обтягивающую одежду, мечтала похудеть.</p></div>
+            <div><p class="cs-lab cs-lab--b">точка Б</p><p class="cs-p">Ушло 8 кг, и отражение в зеркале стало нравиться намного больше. Теперь любая одежда сидит идеально.</p></div>
+          </div>
+          <div class="cs-more"></div>
         </div>
-      </li>
-      <li class="story" data-cat="form">
-        <div class="story__media story__media--empty" aria-hidden="true"><span>фото до / после</span></div>
-        <div class="story__body">
-          <p class="story__cat">Работа над формой</p>
-          <h3 class="story__title">История 7</h3>
+      </article>
+      <article class="cs-card" data-id="g" data-view="after" data-angle="one">
+        <div class="cs-ph">
+          <img class="cs-ph__b" src="assets/img/cases/g_one_b.webp" width="800" height="1000" alt="Валентина, 34 года, до" loading="lazy" decoding="async" draggable="false">
+          <img class="cs-ph__a" src="assets/img/cases/g_one_a.webp" width="800" height="1000" alt="Валентина, 34 года, после" loading="lazy" decoding="async" draggable="false">
+          <div class="cs-view" role="group" aria-label="Показать до или после">
+            <button class="cs-vbtn" type="button" data-view="before" aria-pressed="false">до</button>
+            <button class="cs-vbtn" type="button" data-view="after" aria-pressed="true">после</button>
+          </div>
         </div>
-      </li>
-      <li class="story story--cta on-dark">
+        <div class="cs-body">
+          <div class="cs-angles is-single" role="group" aria-label="Ракурс"><button class="cs-ang" type="button" data-angle="one" aria-pressed="true">кадр</button></div>
+          <div>
+            <h3 class="cs-name">Валентина, 34 года</h3>
+            <p class="cs-kpi display">−5,3 кг</p>
+            <p class="cs-meta">2 месяца работы · −5 см в талии</p>
+          </div>
+          <div class="cs-text">
+            <div><p class="cs-lab cs-lab--a">точка А</p><p class="cs-p">Хотела стать более рельефной, скинуть лишние кг.</p></div>
+            <div><p class="cs-lab cs-lab--b">точка Б</p><p class="cs-p">Спустя 2 месяца минус 5,3 кг, появился давно забытый пресс, талия −5 см.</p></div>
+          </div>
+          <div class="cs-more"></div>
+        </div>
+      </article>
+      <article class="cs-card" data-id="f" data-view="after" data-angle="one">
+        <div class="cs-ph">
+          <img class="cs-ph__b" src="assets/img/cases/f_one_b.webp" width="800" height="1000" alt="Анжелика, 49 лет, до" loading="lazy" decoding="async" draggable="false">
+          <img class="cs-ph__a" src="assets/img/cases/f_one_a.webp" width="800" height="1000" alt="Анжелика, 49 лет, после" loading="lazy" decoding="async" draggable="false">
+          <div class="cs-view" role="group" aria-label="Показать до или после">
+            <button class="cs-vbtn" type="button" data-view="before" aria-pressed="false">до</button>
+            <button class="cs-vbtn" type="button" data-view="after" aria-pressed="true">после</button>
+          </div>
+        </div>
+        <div class="cs-body">
+          <div class="cs-angles is-single" role="group" aria-label="Ракурс"><button class="cs-ang" type="button" data-angle="one" aria-pressed="true">кадр</button></div>
+          <div>
+            <h3 class="cs-name">Анжелика, 49 лет</h3>
+            <p class="cs-kpi display">−5 кг</p>
+            <p class="cs-meta">полгода силовых</p>
+          </div>
+          <div class="cs-text">
+            <div><p class="cs-lab cs-lab--a">точка А</p><p class="cs-p">Дряблая кожа, была уверена, что в её возрасте невозможно убрать нависший животик.</p></div>
+            <div><p class="cs-lab cs-lab--b">точка Б</p><p class="cs-p">Спустя полгода силовых появился пресс и ушли несколько лишних кг.</p></div>
+          </div>
+          <div class="cs-more"></div>
+        </div>
+      </article>
+      <aside class="cs-card cs-cta on-dark">
         <div><h3 class="display">Хочешь таких<br>же результатов</h3><p>Пиши мне – подберу для тебя самый эффективный вариант</p></div>
         <a class="btn btn--white btn--block" href="#" data-wa="Здравствуйте, Ника! Хочу такие же результаты, подберите вариант.">начать свой путь</a>
-      </li>
-      </ul>
+      </aside>
+    </div>
+    <div class="pg-wrap">
+      <div class="cs-prog" aria-hidden="true"><div class="cs-prog__thumb"></div></div>
+      <div class="cs-foot">
+        <a class="cs-ig" href="#" rel="noopener noreferrer" target="_blank">Ещё больше кейсов – в Instagram*<svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14 14 6M7 6h7v7"/></svg></a>
+        <p class="cs-note">Фото публикуем с письменного согласия клиентов. Результат индивидуален и зависит от исходных данных, режима и состояния здоровья. * Instagram принадлежит компании Meta, признанной в России экстремистской организацией и запрещённой.</p>
+      </div>
     </div>
   </section>
 </main>
