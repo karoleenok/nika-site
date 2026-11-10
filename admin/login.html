@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="../css/pages.css">
   <link rel="stylesheet" href="../css/lk.css">
 </head>
-<body class="lk lk--auth" data-session-key="nika_admin_session" data-redirect="index.html">
+<body class="lk lk--auth" data-session-key="nika_admin_session" data-session-days="14" data-redirect="index.html">
 <a class="skip-link" href="#main">К содержимому</a>
 <main id="main" class="auth">
   <div class="auth__in">
@@ -49,7 +49,7 @@
         <label class="check">
           <input type="checkbox" name="remember" checked data-remember>
           <span class="check__box" aria-hidden="true"></span>
-          <span>Запомнить меня на этом устройстве</span>
+          <span>Запомнить меня на <span data-days>14</span>&nbsp;дней на этом устройстве</span>
         </label>
         <button class="btn btn--red btn--block" type="submit">войти</button>
         <div class="auth__row">
@@ -63,6 +63,7 @@
 
   </div>
 </main>
+<script src="../js/session.js"></script>
 <script src="../js/lk-data.js"></script>
 <script src="../js/lk-auth.js"></script>
 </body>

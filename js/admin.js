@@ -11,7 +11,7 @@
   const rd = k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch (_) { return null; } };
   const wr = (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} };
 
-  if (!rd(KEY)) { location.replace('login.html'); return; }   // ДЕМО: настоящая сессия — HttpOnly-кука + 2FA
+  if (!window.NikaSession || !window.NikaSession.active(KEY)) { location.replace('login.html'); return; }   // ДЕМО: настоящая сессия — HttpOnly-кука + 2FA
   const L = window.LK_DATA, A = window.ADMIN_DATA;
   if (!L || !A) return;
 
@@ -517,7 +517,7 @@
 
   /* ---------- Журнал, выход, сброс демо ---------- */
   const drawLog = () => { const ul = $('[data-log]'); ul.textContent = ''; log.forEach(x => ul.appendChild(histItem(x, true))); };
-  $$('[data-logout]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); try { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); } catch (_) {} location.replace('login.html'); }));
+  $$('[data-logout]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); window.NikaSession.end(KEY); location.replace('login.html'); }));
   $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Контент вернётся к исходному, настройки Telegram сбросятся. Настоящих данных здесь нет.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); localStorage.removeItem(TGK); } catch (_) {} location.hash = '#/'; location.reload(); }));
 
   /* ---------- Роутер ---------- */

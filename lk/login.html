@@ -17,14 +17,14 @@
   <link rel="stylesheet" href="../css/pages.css">
   <link rel="stylesheet" href="../css/lk.css">
 </head>
-<body class="lk lk--auth" data-wa-phone="">
+<body class="lk lk--auth" data-wa-phone="" data-session-days="30">
 <a class="skip-link" href="#main">К содержимому</a>
 <main id="main" class="auth">
   <div class="auth__in">
     <a class="auth__logo" href="../index.html" aria-label="Ника Дупина, на главную"><img src="../assets/logo-hd.svg" width="97" height="53" alt="Н.Д."></a>
 
     <h1 class="display auth__title pg-in">Вход<br>в кабинет</h1>
-    <p class="auth__lead pg-in" style="--d:.06s">Пароль не&nbsp;нужен. Пришлём код на&nbsp;почту, с&nbsp;которой была выполнена оплата.</p>
+    <p class="auth__lead pg-in" style="--d:.06s">Пришлём код на&nbsp;почту, с&nbsp;которой была выполнена оплата.</p>
 
     <div class="auth__card pg-in" style="--d:.12s">
       <!-- Шаг 1: почта -->
@@ -35,12 +35,13 @@
           <span class="field__err" data-err="email" role="alert"></span>
         </label>
         <button class="btn btn--red btn--block" type="submit">получить код</button>
-        <p class="auth__hint">Нажимая кнопку, ты соглашаешься с <a class="u" href="../legal/privacy.html">политикой обработки персональных данных</a>.</p>
+        <p class="auth__hint">В&nbsp;одном письме придут код и&nbsp;ссылка для входа. Нажимая кнопку, ты&nbsp;соглашаешься с <a class="u" href="../legal/privacy.html">политикой обработки персональных данных</a>.</p>
+        <div class="auth__alt"><button class="linkbtn" type="button" data-to-pass>у&nbsp;меня есть пароль</button></div>
       </form>
 
-      <!-- Шаг 2: код -->
+      <!-- Шаг 2: код или ссылка из письма -->
       <form class="auth__step" data-step="code" novalidate hidden>
-        <p class="auth__sent">Если эта почта есть в базе Ники, мы отправили код на <strong data-sent-to></strong>. Письмо может прийти в течение минуты, загляни в «Спам».</p>
+        <p class="auth__sent">Если эта почта есть в&nbsp;базе Ники, мы&nbsp;отправили письмо на&nbsp;<strong data-sent-to></strong>. Введи код из&nbsp;письма или нажми на&nbsp;ссылку в&nbsp;нём. Письмо может прийти в&nbsp;течение минуты, загляни в&nbsp;«Спам».</p>
         <label class="field">
           <span class="field__label">Код из письма</span>
           <input class="field__input field__input--code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="······" aria-describedby="code-err" required data-code>
@@ -49,7 +50,7 @@
         <label class="check">
           <input type="checkbox" name="remember" checked data-remember>
           <span class="check__box" aria-hidden="true"></span>
-          <span>Запомнить меня на этом устройстве</span>
+          <span>Запомнить меня на&nbsp;<span data-days>30</span>&nbsp;дней на&nbsp;этом устройстве</span>
         </label>
         <button class="btn btn--red btn--block" type="submit">войти</button>
         <div class="auth__row">
@@ -57,14 +58,50 @@
           <button class="linkbtn" type="button" data-change>другая почта</button>
         </div>
         <!-- ДЕМО: убрать вместе с js/lk-data.js, когда появится настоящая отправка кода -->
-        <p class="demo-hint" data-demo-hint hidden>Демо: подойдёт код 123456</p>
+        <p class="demo-hint" data-demo-hint hidden>Демо: подойдёт код 123456 или ссылка <a class="u" href="?t=demo">login.html?t=demo</a></p>
       </form>
+
+      <!-- Шаг 3 (необязательный): вход по паролю -->
+      <form class="auth__step" data-step="password" novalidate hidden>
+        <p class="auth__sent">Вход по&nbsp;паролю для&nbsp;<strong data-pass-to></strong></p>
+        <label class="field">
+          <span class="field__label">Пароль</span>
+          <span class="field__pw">
+            <input class="field__input" type="password" name="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" maxlength="128" aria-describedby="pass-err" required data-pass>
+            <button class="field__eye" type="button" aria-pressed="false" aria-label="Показать пароль" data-eye>показать</button>
+          </span>
+          <span class="field__err" id="pass-err" data-err="pass" role="alert"></span>
+        </label>
+        <label class="check">
+          <input type="checkbox" name="remember" checked data-remember-pass>
+          <span class="check__box" aria-hidden="true"></span>
+          <span>Запомнить меня на&nbsp;<span data-days>30</span>&nbsp;дней на&nbsp;этом устройстве</span>
+        </label>
+        <button class="btn btn--red btn--block" type="submit">войти</button>
+        <div class="auth__row">
+          <button class="linkbtn" type="button" data-forgot>не&nbsp;помню пароль</button>
+          <button class="linkbtn" type="button" data-to-code>войти по&nbsp;коду</button>
+        </div>
+      </form>
+
+      <!-- Вход по ссылке из письма: отдельный шаг с кнопкой, чтобы антивирусы почтовиков не «сжигали» одноразовую ссылку -->
+      <form class="auth__step" data-step="link" novalidate hidden>
+        <p class="auth__sent">Ссылка из&nbsp;письма подошла. Войти в&nbsp;кабинет?</p>
+        <label class="check">
+          <input type="checkbox" name="remember" checked data-remember-link>
+          <span class="check__box" aria-hidden="true"></span>
+          <span>Запомнить меня на&nbsp;<span data-days>30</span>&nbsp;дней на&nbsp;этом устройстве</span>
+        </label>
+        <button class="btn btn--red btn--block" type="submit">войти в&nbsp;кабинет</button>
+      </form>
+      <p class="field__err auth__linkerr" data-err="link" role="alert"></p>
     </div>
 
     <p class="auth__help">Не получается войти? <a class="u" href="#" data-wa="Здравствуйте, Ника! Не получается войти в личный кабинет.">Напиши Нике</a></p>
   </div>
 </main>
 <!-- ПРОВЕРИТЬ: номер WhatsApp Ники (data-wa-phone), тот же, что на главной -->
+<script src="../js/session.js"></script>
 <script src="../js/lk-data.js"></script>
 <script src="../js/lk-auth.js"></script>
 </body>

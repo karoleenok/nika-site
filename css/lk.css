@@ -218,6 +218,22 @@ body.lk--auth { background: var(--c-ink); color: var(--c-white); }
 .field__input--code::placeholder { color: rgba(14, 14, 14, .25); }
 .field__err { min-height: 0; color: var(--c-red); font-size: var(--fs-small); line-height: 1.3; }
 .field__err:empty { display: none; }
+.field__hint { color: var(--c-muted); font-size: var(--fs-tiny); line-height: 1.4; }
+.field__pw { position: relative; display: block; }
+.field__pw .field__input { padding-right: 104px; }
+.field__eye { position: absolute; top: 0; right: 0; bottom: 0; min-width: 88px; padding: 0 16px; font-size: var(--fs-small); color: var(--c-muted); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; border-radius: 0 var(--r-input) var(--r-input) 0; }
+.field__eye:focus-visible { outline: 2px solid var(--c-red); outline-offset: -2px; }
+@media (hover: hover) { .field__eye:hover { color: var(--c-red); } }
+.auth__alt { display: flex; justify-content: center; margin-top: calc(-1 * var(--sp-2)); }
+.auth__linkerr { margin-top: var(--sp-4); }
+.demo-hint a { text-decoration: underline; text-underline-offset: .18em; }
+/* Пароль в профиле */
+.pw__state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-3); }
+.pwform { display: grid; gap: var(--sp-4); margin-top: var(--sp-4); }
+.pwform[hidden] { display: none; }
+.pw__ask { margin-top: var(--sp-4); color: var(--c-ink); font-size: var(--fs-small); line-height: 1.4; }
+.pw__msg { margin-top: var(--sp-3); color: var(--c-ok); font-size: var(--fs-small); line-height: 1.35; }
+.pw__msg:empty { display: none; }
 .linkbtn { min-height: 44px; font-size: var(--fs-small); font-weight: 450; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
 .linkbtn:disabled { color: var(--c-muted); text-decoration: none; cursor: default; }
 @media (hover: hover) { .linkbtn:not(:disabled):hover { color: var(--c-red); } }

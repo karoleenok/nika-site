@@ -151,6 +151,44 @@
         <h2 class="lk-h2">Оплаты</h2>
         <ul class="pay" data-pay></ul>
       </div>
+      <div class="lk-block lk-card" data-pw>
+        <h2 class="lk-h2 lk-h2--in">Пароль для входа</h2>
+        <p class="lk-p" data-pw-lead>Необязательно. Сейчас ты входишь по&nbsp;коду или ссылке из&nbsp;письма. Если удобнее пароль, задай его: код понадобится, только когда ты&nbsp;его забудешь.</p>
+        <div class="pw__state"><span class="stat stat--ok" data-pw-chip hidden>пароль задан</span></div>
+
+        <form class="pwform" data-pw-form novalidate hidden>
+          <label class="field">
+            <span class="field__label" data-pw-l1>Новый пароль</span>
+            <span class="field__pw">
+              <input class="field__input" type="password" name="pw1" autocomplete="new-password" autocapitalize="none" spellcheck="false" maxlength="128" aria-describedby="pw1-hint pw-err" data-pw1>
+              <button class="field__eye" type="button" aria-pressed="false" aria-label="Показать пароль" data-pw-eye>показать</button>
+            </span>
+            <span class="field__hint" id="pw1-hint">Не&nbsp;короче 8&nbsp;символов. Длинная фраза надёжнее короткого слова с&nbsp;цифрами.</span>
+          </label>
+          <label class="field">
+            <span class="field__label">Повтори пароль</span>
+            <input class="field__input" type="password" name="pw2" autocomplete="new-password" autocapitalize="none" spellcheck="false" maxlength="128" data-pw2>
+            <span class="field__err" id="pw-err" data-pw-err role="alert"></span>
+          </label>
+          <div class="stack">
+            <button class="btn btn--red" type="submit">сохранить пароль</button>
+            <button class="btn btn--line-dark" type="button" data-pw-cancel>отмена</button>
+          </div>
+        </form>
+
+        <div class="stack" data-pw-actions>
+          <button class="btn btn--line-dark" type="button" data-pw-open>задать пароль</button>
+          <button class="btn btn--line-dark" type="button" data-pw-remove hidden>убрать пароль</button>
+        </div>
+        <div data-pw-confirm hidden>
+          <p class="pw__ask">Убрать пароль? Вход останется по&nbsp;коду или ссылке из&nbsp;письма.</p>
+          <div class="stack">
+            <button class="btn btn--red" type="button" data-pw-yes>убрать</button>
+            <button class="btn btn--line-dark" type="button" data-pw-no>оставить</button>
+          </div>
+        </div>
+        <p class="pw__msg" data-pw-msg role="status" aria-live="polite"></p>
+      </div>
       <div class="lk-block lk-card">
         <h2 class="lk-h2 lk-h2--in">Данные</h2>
         <p class="lk-p">Хранятся на серверах в России. Чтобы удалить аккаунт и данные, напиши Нике, ответим в течение рабочего дня.</p>
@@ -164,6 +202,7 @@
 
 </div>
 
+<script src="../js/session.js"></script>
 <script src="../js/lk-data.js"></script>
 <script src="../js/lk.js"></script>
 </body>
