@@ -218,9 +218,12 @@
 .cs-want svg { color: var(--c-red); }
 @media (hover: hover) { .cs-want:hover { color: var(--c-red); } .cs-tog:hover, .cs-ig:hover { opacity: .65; } .cs-ang[aria-pressed="false"]:hover { background: rgba(255, 255, 255, .18); } }
 
-.cs-cta { justify-content: space-between; gap: var(--sp-6); padding: var(--sp-5); background: var(--c-ink); }
-.cs-cta .display { font-size: var(--fs-pg-h2); line-height: .85; padding-top: .12em; }
-.cs-cta p { margin-top: var(--sp-3); color: var(--c-on-dark-2); font-size: var(--fs-small); line-height: 1.35; }
+/* Финальный слайд: то же фото и градиент, что на главной. Заголовок сверху, текст и кнопка снизу */
+.cs-cta { position: relative; isolation: isolate; justify-content: flex-start; padding: var(--sp-5); background: #5d6577; }
+.cs-cta__bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 50% 24%; pointer-events: none; }
+.cs-cta::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(10,12,20,.42) 0, rgba(10,12,20,0) 36%, rgba(10,12,20,0) 62%, rgba(10,12,20,.46) 100%); }
+.cs-cta .display { font-size: var(--fs-pg-h2); line-height: .85; padding-top: .12em; color: var(--c-white); }
+.cs-cta p { margin-top: auto; padding-bottom: var(--sp-3); max-width: 21em; color: var(--c-white); font-size: var(--fs-small); line-height: 1.35; }
 
 @media (min-width: 768px) {
   .cs-hero { padding-block: calc(32 * var(--s)) calc(52 * var(--s)); }
