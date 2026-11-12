@@ -73,7 +73,6 @@
     if (!v || locked) { box.hidden = true; return; }
     box.hidden = false;
     $('[data-cont-link]').href = '#/video/' + v.id;
-    $('[data-cont-meta]').textContent = gName(v.group);
     $('[data-cont-title]').textContent = v.title;
   };
 

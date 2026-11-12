@@ -89,7 +89,6 @@ body.lk { background: var(--c-paper); min-height: 100vh; min-height: 100svh; }
 .cont:active { transform: scale(.992); }
 @media (hover: hover) { .cont:hover { transform: translateY(-2px); } }
 .cont__body { display: grid; gap: 4px; min-width: 0; }
-.cont__meta { color: var(--c-muted); font-size: var(--fs-tiny); }
 .cont__title { font-size: var(--fs-card-t); font-weight: 450; line-height: 1.15; }
 
 /* ---------- Превью видео (пока без постеров) ---------- */
