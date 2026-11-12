@@ -79,15 +79,6 @@
 
   /* ---------- Группы мышц ---------- */
   const filt = { group: 'all', q: '' };
-  const tiles = $('[data-tiles]');
-  D.groups.forEach(g => {
-    const n = D.videos.filter(v => v.group === g.id).length;
-    const li = el('li'); const a = el('a', 'tile'); a.href = '#/video';
-    a.appendChild(el('span', 'tile__n', g.name));
-    a.appendChild(el('span', 'tile__c', n + ' ' + plural(n, 'тренировка', 'тренировки', 'тренировок')));
-    a.addEventListener('click', () => { filt.group = g.id; filt.q = ''; $('[data-q]').value = ''; });
-    li.appendChild(a); tiles.appendChild(li);
-  });
 
   /* ---------- Библиотека ---------- */
   const chips = $('[data-chips]'), grid = $('[data-vgrid]'), count = $('[data-count]'), empty = $('[data-empty]');

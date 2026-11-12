@@ -179,7 +179,7 @@
 .info__list li + li { margin-top: calc(8 * var(--s)); }
 .info__col:nth-child(3) .info__list { max-width: calc(400 * var(--s)); }
 .block--food .info__col:nth-child(1) .info__list { max-width: calc(400 * var(--s)); padding-right: 0; }
-.info__title--tariffs { margin-top: calc(40 * var(--s)); }
+.info__title--tariffs { margin-top: calc(40 * var(--s)); color: var(--c-red); }
 
 .tariffs { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); margin-top: var(--sp-6); }
 .tariffs .tariff { min-height: calc(229 * var(--s)); }
