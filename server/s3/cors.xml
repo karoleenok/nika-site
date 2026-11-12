@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CORS для боевого бакета с видео. Заменить https://example.ru на домен сайта (без слеша в конце).
+     Локально это же правило ставит скрипт server/scripts/s3-setup.js. -->
+<CORSConfiguration>
+  <CORSRule>
+    <AllowedOrigin>https://example.ru</AllowedOrigin>
+    <AllowedMethod>GET</AllowedMethod>
+    <AllowedMethod>PUT</AllowedMethod>
+    <AllowedMethod>POST</AllowedMethod>
+    <AllowedMethod>HEAD</AllowedMethod>
+    <AllowedHeader>*</AllowedHeader>
+    <ExposeHeader>ETag</ExposeHeader>
+    <MaxAgeSeconds>3600</MaxAgeSeconds>
+  </CORSRule>
+</CORSConfiguration>

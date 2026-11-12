@@ -1,0 +1,62 @@
+# Локальная среда: база, хранилище видео (S3), ловец писем и сам сайт.
+# Запуск: ./start.sh  (см. README). Все порты открыты только для своего компьютера (127.0.0.1).
+services:
+  db:
+    image: postgres:16.16-alpine
+    environment:
+      POSTGRES_DB: nika
+      POSTGRES_USER: nika
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?нужен DB_PASSWORD в .env}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nika -d nika"]
+      interval: 3s
+      retries: 20
+
+  # Локальная замена S3 Timeweb. MinIO с 2025 года не публикует бесплатные образы, поэтому SeaweedFS.
+  s3:
+    image: chrislusf/seaweedfs:3.97
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?нужен S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?нужен S3_SECRET_KEY}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        printf '{"identities":[{"name":"local","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}' "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" > /tmp/s3.json
+        exec weed server -dir=/data -s3 -s3.port=8333 -s3.config=/tmp/s3.json -master.volumeSizeLimitMB=1024 -volume.max=0
+    ports: ["127.0.0.1:8333:8333"]
+    volumes: [s3-data:/data]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8333/healthz || exit 1"]
+      interval: 3s
+      retries: 30
+
+  # Все письма попадают сюда: http://localhost:8025
+  mail:
+    image: axllent/mailpit:v1.21
+    ports: ["127.0.0.1:1025:1025", "127.0.0.1:8025:8025"]
+
+  app:
+    image: node:22-alpine
+    working_dir: /app/server
+    command: sh -c "npm ci --omit=dev --no-audit --no-fund && node scripts/setup.js && node src/server.js"
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://nika:${DB_PASSWORD}@db:5432/nika
+      S3_ENDPOINT: http://s3:8333
+      SMTP_HOST: mail
+    ports: ["127.0.0.1:3000:3000"]
+    volumes:
+      - .:/app:ro
+      - app-modules:/app/server/node_modules
+    depends_on:
+      db: { condition: service_healthy }
+      s3: { condition: service_healthy }
+      mail: { condition: service_started }
+
+volumes:
+  db-data:
+  s3-data:
+  app-modules:
