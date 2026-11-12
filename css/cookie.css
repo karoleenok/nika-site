@@ -1,0 +1,51 @@
+/* ==========================================================================
+   Баннер cookie. Только токены сайта: цвета, отступы, радиусы, шрифты.
+   Появляется один раз, выбор хранится в localStorage (js/cookie.js).
+   ========================================================================== */
+.ck {
+  position: fixed; z-index: 120;
+  left: var(--gutter); bottom: max(var(--sp-4), env(safe-area-inset-bottom, 0px));
+  width: min(calc(100% - 2 * var(--gutter)), max(360px, calc(560 * var(--s))));
+  display: grid; gap: var(--sp-4);
+  padding: var(--sp-5) var(--inset);
+  background: var(--c-ink); color: var(--c-white);
+  border-radius: var(--r-card);
+  box-shadow: 0 14px 44px rgba(5, 6, 11, .35);
+  font-family: var(--f-text);
+  animation: ck-in var(--dur-2) var(--ease-out) both;
+}
+.ck[hidden] { display: none; }
+.ck.is-out { opacity: 0; transform: translateY(calc(12 * var(--s))); transition: opacity var(--dur-1), transform var(--dur-1); }
+@keyframes ck-in { from { opacity: 0; transform: translateY(calc(16 * var(--s))); } }
+
+.ck__t { font-family: var(--f-display); font-weight: 700; text-transform: uppercase; font-size: max(24px, calc(32 * var(--s))); line-height: var(--lh-display); letter-spacing: 0; padding-top: .12em; }
+.ck__p { margin-top: calc(-1 * var(--sp-2)); color: var(--c-on-dark-2); font-size: var(--fs-small); line-height: var(--lh-small); }
+.ck__p a { color: var(--c-white); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+.ck__btns { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.ck__btn {
+  flex: 1 1 calc(150 * var(--s)); min-width: max(140px, calc(150 * var(--s)));
+  display: inline-flex; align-items: center; justify-content: center; text-align: center;
+  min-height: 44px; padding: 0 var(--sp-5);
+  border-radius: var(--r-btn); font-size: var(--fs-small); font-weight: 450; line-height: 1.1;
+  transition: background-color var(--dur-1), border-color var(--dur-1), transform var(--dur-1);
+  -webkit-tap-highlight-color: transparent;
+}
+.ck__btn--ok { background: var(--c-red); color: var(--c-white); }
+.ck__btn--no { border: 1px solid rgba(255, 255, 255, .28); color: var(--c-white); }
+.ck__btn:active { transform: scale(.985); }
+@media (hover: hover) {
+  .ck__btn--ok:hover { background: #c4161a; }
+  .ck__btn--no:hover { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .6); }
+}
+.ck :focus-visible { outline-color: var(--c-white); }
+
+/* Пока баннер на экране, плавающую кнопку WhatsApp и нижнюю панель покупки прячем, чтобы не лезли друг на друга */
+html.has-ck .wa-fab, html.has-ck .buybar { visibility: hidden; }
+
+@media (max-width: 767px) {
+  .ck { left: var(--gutter); right: var(--gutter); width: auto; }
+  .ck__btn { flex-basis: 100%; }
+}
+
+/* Кнопка «настройки cookie» в подвалах выглядит как соседние ссылки */
+[data-cookie-open] { font: inherit; color: inherit; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; padding-block: 10px; cursor: pointer; }

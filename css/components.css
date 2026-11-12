@@ -61,6 +61,7 @@
 /* ---------- Цена ---------- */
 .price { position: relative; display: inline-block; margin-top: var(--sp-6); line-height: 1; }
 .price__now { font-size: var(--fs-price); font-weight: 450; letter-spacing: -.01em; white-space: nowrap; }
+.price__per { color: var(--c-muted); font-size: var(--fs-small); font-weight: 450; line-height: 1; white-space: nowrap; }
 .price__old {
   position: absolute; left: 100%; top: calc(-16 * var(--s)); margin-left: var(--sp-1);
   font-size: var(--fs-small); line-height: 1; color: var(--c-red); white-space: nowrap; font-weight: 450;

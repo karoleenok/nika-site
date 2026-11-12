@@ -13,6 +13,16 @@
     });
   }
 
+  /* ---------- Кнопки покупки: пока нет оплаты ведут в WhatsApp (как на главной). Позже: ссылка на оплату по data-buy ---------- */
+  if (phone) {
+    const h1 = $('h1');
+    $$('[data-buy]').forEach(a => {
+      const name = (h1 ? h1.textContent : '').replace(/\s+/g, ' ').trim();
+      a.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent('Здравствуйте! Пишу вам с сайта, меня интересует «' + name + '». Подскажите, как оформить покупку?');
+      a.target = '_blank'; a.rel = 'noopener noreferrer';
+    });
+  }
+
   /* ---------- Юр. страницы: оглавление из заголовков h2 ---------- */
   const prose = $('.legal .prose');
   const toc = $('.toc');
@@ -26,7 +36,7 @@
         h.id = h.id || 'sec-' + (i + 1);
         const li = document.createElement('li');
         const a = document.createElement('a');
-        a.href = '#' + h.id; a.textContent = h.textContent;
+        a.href = '#' + h.id; a.textContent = h.textContent.replace(/^\d+\.\s*/, '');  // номер даёт счётчик в CSS
         li.appendChild(a); list.appendChild(li);
       });
       if ('IntersectionObserver' in window) {

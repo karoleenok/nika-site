@@ -149,6 +149,31 @@
     a.rel = 'noopener noreferrer';
   });
 
+  /* ---------- Кнопки покупки ----------
+     Пока оплаты нет, кнопка открывает WhatsApp с названием услуги. Когда подключим платёжку,
+     в PAY_URL указывается ссылка на оплату по ключу data-buy, и кнопка пойдёт туда. */
+  const PAY_URL = {};   // например: 'train-1m': 'https://…'
+  const BUY_NAMES = {
+    'train-24h': 'Тренировки онлайн, 24 часа',
+    'train-1m': 'Тренировки онлайн, 1 месяц',
+    'train-2m': 'Тренировки онлайн, 2 месяца',
+    'train-4m': 'Тренировки онлайн, 4 месяца',
+    'package': 'Фигура под ключ',
+    'food-consult': 'Индивидуальная консультация по питанию',
+    'food-labs': 'Рекомендации по составлению рациона исходя из анализов',
+    'food-support': 'Персональное сопровождение по питанию'
+  };
+  $$('[data-buy]').forEach(a => {
+    const id = a.dataset.buy;
+    if (PAY_URL[id]) { a.href = PAY_URL[id]; a.rel = 'noopener'; return; }
+    if (!phone) return;
+    const card = a.closest('.product');
+    const name = (BUY_NAMES[id] || (card && $('.product__title', card) ? $('.product__title', card).textContent : '')).replace(/\s+/g, ' ').trim();
+    const ask = /^(food-|package)/.test(id) ? 'Подскажите, на какую дату есть ближайшая запись?' : 'Подскажите, как оформить покупку?';
+    a.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent('Здравствуйте! Пишу вам с сайта, меня интересует «' + name + '». ' + ask);
+    a.target = '_blank'; a.rel = 'noopener noreferrer';
+  });
+
   /* ---------- Формы теста (без бэкенда): одна в финале, одна во вкладке «питание» ---------- */
   $$('[data-test-form]').forEach(form => {
     const msg = $('.form__msg', form);
@@ -158,14 +183,25 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = form.elements.name, tel = form.elements.phone, ok = form.elements.consent;
+      const name = form.elements.name, tel = form.elements.phone, ok = form.elements.consent, agree = form.elements.agree;
       let bad = null;
-      [name, tel].forEach(i => i.removeAttribute('aria-invalid'));
+      [name, tel, ok, agree].forEach(i => i.removeAttribute('aria-invalid'));
       if (!name.value.trim()) { name.setAttribute('aria-invalid', 'true'); bad = bad || name; }
       if (!phoneOk(tel.value)) { tel.setAttribute('aria-invalid', 'true'); bad = bad || tel; }
       if (bad) { setMsg('Проверь имя и номер телефона.'); bad.focus(); return; }
-      if (!ok.checked) { setMsg('Нужно согласие на обработку персональных данных.'); ok.focus(); return; }
-      if (!endpoint) { setMsg('Отправка ещё не подключена: это черновик вёрстки.'); return; }
+      if (!ok.checked || !agree.checked) {
+        [ok, agree].forEach(i => { if (!i.checked) i.setAttribute('aria-invalid', 'true'); });
+        setMsg('Поставь обе галочки: согласие на обработку данных и ознакомление с документами.');
+        (ok.checked ? agree : ok).focus(); return;
+      }
+      if (!endpoint) {
+        // Сервера для заявок пока нет: данные не теряем, а передаём Нике сообщением в WhatsApp от самого человека.
+        if (!phone) { setMsg('Не получилось отправить. Напиши Нике в WhatsApp.'); return; }
+        const text = 'Здравствуйте! Пишу вам с сайта, меня зовут ' + name.value.trim() + '. Хочу пройти тест и получить рекомендации. Мой номер: ' + tel.value.trim();
+        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+        form.reset(); setMsg('Открываем WhatsApp. Отправь сообщение, и Ника ответит.', true);
+        return;
+      }
       try {
         const r = await fetch(endpoint, {
           method: 'POST',

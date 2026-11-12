@@ -73,7 +73,7 @@
     if (!v || locked) { box.hidden = true; return; }
     box.hidden = false;
     $('[data-cont-link]').href = '#/video/' + v.id;
-    $('[data-cont-meta]').textContent = gName(v.group) + ' · ' + v.min + ' мин';
+    $('[data-cont-meta]').textContent = gName(v.group);
     $('[data-cont-title]').textContent = v.title;
   };
 
@@ -96,12 +96,11 @@
     const li = el('li'); const a = el('a', 'vcard'); a.href = '#/video/' + v.id;
     const t = el('span', 'thumb'); t.setAttribute('aria-hidden', 'true');
     t.appendChild(icon('i-play', 'ic--play'));
-    const dur = el('span', 'badge badge--t', v.min + ' мин'); t.appendChild(dur);
     if (locked) { const b = el('span', 'badge badge--lock'); b.appendChild(icon('i-lock')); t.appendChild(b); }
     else if (doneSet().has(v.id)) { const b = el('span', 'badge badge--ok'); b.appendChild(icon('i-check')); b.appendChild(document.createTextNode('просмотрено')); t.appendChild(b); }
     const body = el('span', 'vcard__body');
     body.appendChild(el('span', 'vcard__t', v.title));
-    body.appendChild(el('span', 'vcard__m', gName(v.group) + ' · ' + v.level));
+    body.appendChild(el('span', 'vcard__m', gName(v.group)));
     a.appendChild(t); a.appendChild(body); li.appendChild(a); return li;
   };
   const drawLib = () => {
@@ -126,7 +125,7 @@
     cur = v;
     if (!locked) wr(LAST, v.id);
     $('#h-watch').textContent = v.title;
-    $('[data-w-meta]').textContent = gName(v.group) + ' · ' + v.min + ' мин · ' + v.level;
+    $('[data-w-meta]').textContent = gName(v.group);
     $('[data-w-text]').textContent = v.text;
     $('[data-w-gear]').textContent = 'Понадобится: ' + v.gear.join(', ');
     $('[data-player]').hidden = locked; $('[data-locked]').hidden = !locked;

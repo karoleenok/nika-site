@@ -1,4 +1,0 @@
-.doc { max-width: 760px; margin: 0 auto; padding: calc(48 * var(--s)) var(--gutter); }
-.doc h1 { font-size: calc(64 * var(--s)); color: var(--c-red); margin-bottom: var(--sp-6); }
-.doc p { margin-bottom: var(--sp-4); }
-.doc a { text-decoration: underline; }

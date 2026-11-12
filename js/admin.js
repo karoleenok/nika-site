@@ -1,5 +1,5 @@
 /* Админка Ники. Экраны по hash: #/ #/clients #/client/ID #/content #/content/materials
-   #/video/ID|new #/material/ID|new #/leads #/more #/telegram #/prices #/log.
+   #/video/ID|new #/material/ID|new #/leads #/more #/prices #/log.
    ДЕМО: клиенты, заявки и цены живут в памяти и сбрасываются при обновлении страницы.
    Контент (группы, видео, материалы) пишется в localStorage и сразу виден в кабинете клиента.
    Всё из данных вставляется через textContent. */
@@ -7,7 +7,7 @@
   'use strict';
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const KEY = 'nika_admin_session', TGK = 'nika_admin_tg', CONTENT = 'nika_demo_content';
+  const KEY = 'nika_admin_session', CONTENT = 'nika_demo_content';
   const rd = k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch (_) { return null; } };
   const wr = (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} };
 
@@ -74,9 +74,6 @@
   const addLog = (cid, text, note) => log.unshift({ cid, when: 'сейчас', who: 'Ника', text, note: note || '' });
   const sorted = () => clients.slice().sort((a, b) => left(a) - left(b));
   const statText = c => { const d = left(c); return d <= 0 ? (c.closed ? 'закрыт вручную' : 'закончился ' + (d === 0 ? 'сегодня' : dayWord(-d) + ' назад')) : 'до ' + fmt(c.until) + ' · ' + dayWord(d); };
-  let tg = { on: false, user: '', sw: { purchase: true, lead: true, expiring: true, expired: true, digest: false }, days: [7, 3, 1], time: '09:00', email: true };
-  try { const s = JSON.parse(rd(TGK) || 'null'); if (s) tg = { ...tg, ...s }; } catch (_) {}
-  const saveTg = () => wr(TGK, JSON.stringify(tg));
 
   if (L.demo) $('[data-demo-bar]').hidden = false;
   $('[data-demo-bar]').textContent = 'Демо: клиенты, заявки и цены сбрасываются при обновлении. Контент (видео, группы, материалы) сохраняется и сразу виден в кабинете клиента.';
@@ -154,7 +151,6 @@
     k.appendChild(kpiLink('#/clients', warn, 'скоро закончится', warn ? 'warn' : '', 'warn'));
     k.appendChild(kpiLink('#/clients', bad, 'закончился', bad ? 'bad' : '', 'bad'));
     k.appendChild(kpiLink('#/leads', nl, nl === 1 ? 'новая заявка' : 'новых заявок', '', null));
-    $('[data-tgban]').hidden = tg.on;
     const todo = clients.filter(c => stateOf(c) !== 'ok').sort((a, b) => left(a) - left(b));
     const box = $('[data-todo]'); box.textContent = '';
     todo.forEach(c => {
@@ -284,7 +280,7 @@
 
   /* ---------- Контент: тренировки (группы и видео) ---------- */
   const open = new Set();   // свёрнутые группы
-  const vMeta = v => (v.min ? v.min + ' мин' : 'без длительности') + (v.level ? ' · ' + v.level : '');
+  const vMeta = v => (v.on === false ? 'скрыто от клиентов' : 'видно клиентам');
   const drawVideos = () => {
     const box = $('[data-groups]'); box.textContent = '';
     const total = raw.videos.length, hid = raw.videos.filter(v => v.on === false).length;
@@ -376,7 +372,7 @@
     ve = { v, isNew, tags: v ? v.gear.slice() : [], file: v ? v.file || null : null };
     $('[data-ve-h]').textContent = isNew ? 'Новое видео' : v.title;
     vgSel.textContent = ''; raw.groups.forEach(g => { const o = el('option', '', g.name); o.value = g.id; vgSel.appendChild(o); });
-    const f = vf.elements; f.title.value = v ? v.title : ''; f.text.value = v ? v.text : ''; f.level.value = v && v.level ? v.level : 'базовый'; f.min.value = v ? v.min : '';
+    const f = vf.elements; f.title.value = v ? v.title : ''; f.text.value = v ? v.text : '';
     vgSel.value = v ? v.group : (gById(gid) ? gid : raw.groups[0].id);
     vpSel.value = v ? String(inGroup(v.group).indexOf(v) + 1) : ''; drawPos();
     f.on.checked = v ? v.on !== false : false; $('[data-ve-vis-s]').textContent = f.on.checked ? 'Клиенты видят это видео в своём кабинете.' : 'Пока выключено, клиенты это видео не видят.';
@@ -388,7 +384,7 @@
     e.preventDefault(); const f = vf.elements, t = f.title.value.trim();
     if (!t) { $('[data-ve-err]').textContent = 'Напиши название, чтобы клиенты нашли видео.'; f.title.focus(); return; }
     const v = ve.v || { id: 'v' + Date.now() };
-    Object.assign(v, { title: t, text: f.text.value.trim(), level: f.level.value, min: num(f.min.value), gear: ve.tags.slice(), on: f.on.checked, file: ve.file });
+    Object.assign(v, { title: t, text: f.text.value.trim(), gear: ve.tags.slice(), on: f.on.checked, file: ve.file });
     placeVideo(v, vgSel.value, Number(vpSel.value) - 1); persist();
     const was = ve.isNew; toast(was ? 'Видео добавлено' + (v.on ? '' : ' (пока скрыто)') : 'Сохранено'); location.hash = '#/content';
   });
@@ -465,33 +461,6 @@
   };
   const updateDot = () => { $('[data-leads-dot]').hidden = !leads.some(l => l.isNew); };
 
-  /* ---------- Telegram ---------- */
-  const SW = [['purchase', 'Новая покупка', 'Кто и что купил'], ['lead', 'Новая заявка', 'С сайта, из теста и формы'], ['expiring', 'Доступ заканчивается', 'За несколько дней до конца'], ['expired', 'Доступ закончился', 'В день окончания'], ['digest', 'Утренняя сводка', 'Один раз в день: кому писать сегодня']];
-  const drawTg = () => {
-    $('[data-tg-off]').hidden = tg.on; $('[data-tg-on]').hidden = !tg.on; $('[data-tg-user]').textContent = tg.user;
-    const ul = $('[data-tg-sw]'); ul.textContent = '';
-    SW.forEach(([k, t, s]) => {
-      const li = el('li'); const l = el('label', 'sw-row'); const x = el('span', 'sw-row__t'); x.appendChild(el('b', '', t)); x.appendChild(el('small', '', s));
-      const i = el('input', 'sw'); i.type = 'checkbox'; i.setAttribute('role', 'switch'); i.checked = !!tg.sw[k];
-      i.addEventListener('change', () => { tg.sw[k] = i.checked; saveTg(); $('[data-tg-days-box]').hidden = !(tg.sw.expiring || tg.sw.digest); });
-      l.appendChild(x); l.appendChild(i); li.appendChild(l); ul.appendChild(li);
-    });
-    $('[data-tg-days-box]').hidden = !(tg.sw.expiring || tg.sw.digest);
-    const d = $('[data-tg-days]'); d.textContent = '';
-    [7, 3, 1].forEach(n => { const l = el('label', 'pill'); const i = el('input'); i.type = 'checkbox'; i.checked = tg.days.includes(n); i.addEventListener('change', () => { tg.days = [7, 3, 1].filter(x => (x === n ? i.checked : tg.days.includes(x))); saveTg(); }); l.appendChild(i); l.appendChild(el('span', '', 'за ' + dayWord(n))); d.appendChild(l); });
-    $('[data-tg-time]').value = tg.time; $('[data-tg-email]').checked = !!tg.email;
-  };
-  $('[data-tg-connect]').addEventListener('click', e => {
-    const b = e.currentTarget; b.disabled = true; b.textContent = 'ждём нажатия Start…';
-    /* ДЕМО. Настоящая ссылка: https://t.me/<бот>?start=<одноразовый токен от сервера>, статус приходит от бота */
-    toast('Демо: откроется t.me/' + A.botName + ' с одноразовым кодом');
-    setTimeout(() => { tg.on = true; tg.user = '@nika_dupina'; saveTg(); b.disabled = false; b.textContent = 'подключить Telegram'; drawTg(); toast('Telegram подключён'); }, 1600);
-  });
-  $('[data-tg-test]').addEventListener('click', () => toast('Тестовое сообщение отправлено (демо)'));
-  $('[data-tg-off]').addEventListener('click', () => { const prev = { ...tg }; tg.on = false; tg.user = ''; saveTg(); drawTg(); toast('Telegram отключён', 'вернуть', () => { tg = prev; saveTg(); drawTg(); }); });
-  $('[data-tg-time]').addEventListener('change', e => { tg.time = e.target.value || '09:00'; saveTg(); });
-  $('[data-tg-email]').addEventListener('change', e => { tg.email = e.target.checked; saveTg(); });
-
   /* ---------- Цены ---------- */
   const drawPrices = () => {
     const f = $('[data-prices]'); f.textContent = '';
@@ -518,12 +487,12 @@
   /* ---------- Журнал, выход, сброс демо ---------- */
   const drawLog = () => { const ul = $('[data-log]'); ul.textContent = ''; log.forEach(x => ul.appendChild(histItem(x, true))); };
   $$('[data-logout]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); window.NikaSession.end(KEY); location.replace('login.html'); }));
-  $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Контент вернётся к исходному, настройки Telegram сбросятся. Настоящих данных здесь нет.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); localStorage.removeItem(TGK); } catch (_) {} location.hash = '#/'; location.reload(); }));
+  $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Контент вернётся к исходному. Настоящих данных здесь нет.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); localStorage.removeItem(TGK); } catch (_) {} location.hash = '#/'; location.reload(); }));
 
   /* ---------- Роутер ---------- */
   const views = $$('[data-view]');
-  const NAV = { today: 'today', clients: 'clients', client: 'clients', content: 'content', video: 'content', material: 'content', leads: 'leads', more: 'more', telegram: 'more', prices: 'more', log: 'more' };
-  const TITLES = { today: 'Сегодня', clients: 'Клиенты', client: 'Клиент', content: 'Контент', video: 'Видео', material: 'Материал', leads: 'Заявки', more: 'Ещё', telegram: 'Telegram', prices: 'Тарифы и цены', log: 'Журнал' };
+  const NAV = { today: 'today', clients: 'clients', client: 'clients', content: 'content', video: 'content', material: 'content', leads: 'leads', more: 'more', prices: 'more', log: 'more' };
+  const TITLES = { today: 'Сегодня', clients: 'Клиенты', client: 'Клиент', content: 'Контент', video: 'Видео', material: 'Материал', leads: 'Заявки', more: 'Ещё', prices: 'Тарифы и цены', log: 'Журнал' };
   let firstRun = true;
   const route = () => {
     const full = location.hash.replace(/^#\/?/, ''), qi = full.indexOf('?'), path = qi > -1 ? full.slice(0, qi) : full, qs = new URLSearchParams(qi > -1 ? full.slice(qi + 1) : '');
@@ -538,8 +507,8 @@
       $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
       if (tab === 'videos') drawVideos(); else drawMaterials();
     }
-    ({ today: drawToday, clients: drawClients, leads: drawLeads, telegram: drawTg, prices: drawPrices, log: drawLog }[name] || (() => {}))();
-    updateDot(); $('[data-menu-tg]').textContent = tg.on ? 'подключено ' + tg.user : 'не подключено';
+    ({ today: drawToday, clients: drawClients, leads: drawLeads, prices: drawPrices, log: drawLog }[name] || (() => {}))();
+    updateDot();
     views.forEach(v => { v.hidden = v.dataset.view !== name; });
     $$('[data-nav]').forEach(a => { if (a.dataset.nav === NAV[name]) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     document.title = TITLES[name] + ' — админка Ники';

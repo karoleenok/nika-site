@@ -268,3 +268,23 @@
   .buybar .btn { flex: 1; max-width: calc(210 * var(--m)); min-height: 48px; }
   .has-buybar .pg-foot { padding-bottom: calc(90px + var(--safe-b, 0px)); }
 }
+
+/* Страница документов без оглавления (согласие): колонка текста во всю ширину контейнера */
+@media (min-width: 1024px) { .legal--solo { grid-template-columns: minmax(0, 1fr); } }
+.prose .cl { font-weight: 600; white-space: nowrap; }
+.prose h2 { text-wrap: balance; }
+.pg-card__more { display: inline-flex; align-items: center; min-height: 44px; margin: var(--sp-2) 0 0 var(--sp-5); font-size: var(--fs-small); }
+@media (max-width: 767px) { .pg-card__more { display: flex; margin-left: 0; } }
+
+/* Реестр документов: три карточки */
+.docs { display: grid; gap: var(--gap); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1024px) { .docs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.doc-card { display: flex; flex-direction: column; gap: var(--sp-3); height: 100%; min-height: calc(220 * var(--s)); padding: var(--sp-6) var(--inset); border-radius: var(--r-card); background: var(--c-paper); transition: background-color var(--dur-1), transform var(--dur-2) var(--ease-out); }
+@media (max-width: 1023px) { .doc-card { min-height: 0; } }
+.doc-card__t { font-size: var(--fs-card-t); font-weight: 450; line-height: 1.15; text-wrap: balance; }
+.doc-card__p { color: var(--c-muted); font-size: var(--fs-small); line-height: var(--lh-small); }
+.doc-card__go { display: inline-flex; align-items: center; gap: var(--sp-2); margin-top: auto; padding-top: var(--sp-3); color: var(--c-red); font-size: var(--fs-small); font-weight: 450; }
+.doc-card__go svg { transition: transform var(--dur-2) var(--ease-out); }
+@media (hover: hover) { .doc-card:hover { background: #ececec; } .doc-card:hover .doc-card__go svg { transform: translateX(4px); } }
+.docs__q { margin-top: var(--sp-7); max-width: 760px; }
+@media (max-width: 767px) { .docs__q { margin-top: var(--sp-6); } }

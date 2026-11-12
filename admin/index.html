@@ -70,11 +70,6 @@
       <p class="label adm-date" data-date></p>
       <h1 class="display lk-h1" id="h-today" tabindex="-1">Сегодня</h1>
       <ul class="kpis" data-kpis></ul>
-      <a class="tgban" href="#/telegram" data-tgban hidden>
-        <svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>
-        <span class="tgban__t"><b>Подключи Telegram</b><small>Будут приходить новые покупки и напоминания о сроках</small></span>
-        <svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg>
-      </a>
       <div class="lk-block">
         <h2 class="lk-h2">Напомнить о продлении</h2>
         <p class="lk-p adm-sub">Здесь клиенты, у которых доступ скоро закончится или уже закончился. Кнопка откроет WhatsApp с готовым текстом.</p>
@@ -218,10 +213,6 @@
           <label class="field"><span class="field__label">В какой группе</span><select class="field__input" name="group" data-ve-group></select></label>
           <label class="field"><span class="field__label">Номер в группе</span><select class="field__input" name="pos" data-ve-pos></select><small class="field__help">Клиенты увидят видео под этим номером.</small></label>
           <label class="field"><span class="field__label">Описание под видео</span><textarea class="field__input field__input--area" rows="4" maxlength="400" name="text" placeholder="Что показано, на что смотреть, как подобрать вес"></textarea></label>
-          <div class="ed__two">
-            <label class="field"><span class="field__label">Уровень</span><select class="field__input" name="level"><option>базовый</option><option>средний</option><option>продвинутый</option></select></label>
-            <label class="field"><span class="field__label">Длительность, мин</span><input class="field__input" type="text" inputmode="numeric" name="min" maxlength="3" autocomplete="off"></label>
-          </div>
           <div class="field">
             <span class="field__label">Что понадобится</span>
             <ul class="tags" data-ve-tags></ul>
@@ -242,6 +233,7 @@
         <div class="ed__act">
           <button class="btn btn--red" type="submit">сохранить</button>
           <button class="btn btn--line-dark" type="button" data-ve-preview>посмотреть как клиент</button>
+          <small class="field__help ed__hint">Откроется страница видео так, как её увидит клиент.</small>
         </div>
         <button class="btn-del" type="button" data-ve-del>удалить видео</button>
       </form>
@@ -303,62 +295,10 @@
     <section data-view="more" hidden aria-labelledby="h-more">
       <h1 class="display lk-h1" id="h-more" tabindex="-1">Ещё</h1>
       <ul class="menu">
-        <li><a href="#/telegram"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><span class="menu__t"><b>Telegram-уведомления</b><small data-menu-tg>не подключено</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
         <li><a href="#/prices"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg><span class="menu__t"><b>Тарифы и цены</b><small>изменить без разработчика</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
         <li><a href="#/log"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span class="menu__t"><b>Журнал действий</b><small>кто и когда менял доступы</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
       </ul>
       <div class="stack"><button class="btn btn--line-dark" type="button" data-reset-demo>сбросить демо-данные</button><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
-    </section>
-
-    <!-- ===== Telegram ===== -->
-    <section data-view="telegram" hidden aria-labelledby="h-tg">
-      <a class="back" href="#/more"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>ещё</a>
-      <h1 class="display lk-h1" id="h-tg" tabindex="-1">Telegram</h1>
-
-      <div class="lk-card" data-tg-off>
-        <h2 class="lk-h2 lk-h2--in">Подключи бота за минуту</h2>
-        <ol class="tg-steps">
-          <li>Нажми «Подключить Telegram».</li>
-          <li>В Telegram нажми «Запустить» (Start).</li>
-          <li>Вернись сюда, статус изменится сам.</li>
-        </ol>
-        <button class="btn btn--red btn--block" type="button" data-tg-connect>подключить Telegram</button>
-        <p class="lk-p adm-gap">Бот только присылает уведомления. Писать в него и переписываться не нужно.</p>
-      </div>
-
-      <div class="lk-card tg-on" data-tg-on hidden>
-        <p class="tg-on__row"><span class="stat stat--ok">подключено</span><span data-tg-user></span></p>
-        <div class="stack">
-          <button class="btn btn--line-dark" type="button" data-tg-test>отправить тест</button>
-          <button class="btn btn--line-dark" type="button" data-tg-off>отключить</button>
-        </div>
-      </div>
-
-      <div class="lk-block">
-        <h2 class="lk-h2">О чём сообщать</h2>
-        <ul class="sw-list" data-tg-sw></ul>
-      </div>
-
-      <div class="lk-block lk-card" data-tg-days-box>
-        <p class="field__label">Напоминать об окончании доступа</p>
-        <div class="pills" data-tg-days role="group" aria-label="За сколько дней"></div>
-        <label class="field adm-gap">
-          <span class="field__label">Время сводки (по Хабаровску)</span>
-          <input class="field__input field__input--time" type="time" step="900" value="09:00" data-tg-time>
-        </label>
-      </div>
-
-      <div class="lk-block lk-card">
-        <label class="sw-row">
-          <span class="sw-row__t"><b>Дублировать на почту</b><small>Telegram у тебя может работать нестабильно. Письмо дойдёт всегда.</small></span>
-          <input class="sw" type="checkbox" role="switch" data-tg-email>
-        </label>
-      </div>
-
-      <div class="lk-block">
-        <h2 class="lk-h2">Так выглядит уведомление</h2>
-        <div class="tg-msg"><b>Доступ заканчивается</b><span>Мария С., тариф «1 месяц» — осталось 2 дня.</span><span>Напомнить ей в WhatsApp?</span></div>
-      </div>
     </section>
 
     <!-- ===== Цены ===== -->
