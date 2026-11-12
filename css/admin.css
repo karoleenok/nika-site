@@ -153,6 +153,7 @@ select.field__input { appearance: none; -webkit-appearance: none; background: va
 .tariffs { display: grid; gap: var(--gap); margin-top: var(--sp-4); }
 @media (min-width: 900px) { .tariffs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .tcard { display: grid; gap: var(--sp-3); padding: var(--sp-4); background: var(--c-white); border-radius: var(--r-card); }
+.tcard__g { font-size: var(--fs-tiny); line-height: var(--lh-small); color: var(--c-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: calc(-1 * var(--sp-2)); }
 .tcard__n { font-size: var(--fs-card-t); font-weight: 450; }
 .tcard__f { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
 .tcard .field__input { min-height: 52px; }

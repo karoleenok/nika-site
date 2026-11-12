@@ -57,7 +57,7 @@
 
   /* ---------- Клиенты (демо) ---------- */
   /* Доступ считается неделями, а не календарными месяцами: 1 месяц = 4 недели, 2 = 8, 4 = 16. Срок = недели × 7 дней. */
-  const WEEKS = { '24 часа': 0, '1 месяц': 4, '2 месяца': 8, '4 месяца': 16, 'Полный пакет': 8 };
+  const WEEKS = { '24 часа': 0, '1 месяц': 4, '2 месяца': 8, '4 месяца': 16, 'Фигура под ключ': 8 };
   const planDays = name => (name === '24 часа' ? 1 : (WEEKS[name] || 4) * 7);
   const clients = A.clients.map((c, i) => ({
     ...c, until: addDays(today, c.days), reminded: false, closed: false, email: '', phone: '',
@@ -200,7 +200,7 @@
 
   /* ---------- Карточка клиента ---------- */
   let cur = null;
-  const planSel = $('[data-c-plan-sel]'); tariffs.forEach(t => { const o = el('option', '', t.name); o.value = t.name; planSel.appendChild(o); });
+  const planSel = $('[data-c-plan-sel]'); tariffs.filter(t => t.access !== false).forEach(t => { const o = el('option', '', t.name); o.value = t.name; planSel.appendChild(o); });
   const histItem = (x, who) => { const li = el('li'); li.appendChild(el('span', '', x.text)); if (x.note) li.appendChild(el('span', 'hist__n', 'Заметка: ' + x.note)); li.appendChild(el('span', 'hist__w', x.when + (who ? ' · ' + x.who : ''))); return li; };
   const drawClient = id => {
     const c = byId(id); if (!c) { location.replace('#/clients'); return false; }
@@ -496,7 +496,7 @@
   const drawPrices = () => {
     const f = $('[data-prices]'); f.textContent = '';
     tariffs.forEach(t => {
-      const box = el('div', 'tcard'); box.appendChild(el('p', 'tcard__n', t.name));
+      const box = el('div', 'tcard'); if (t.group) box.appendChild(el('p', 'tcard__g', t.group)); box.appendChild(el('p', 'tcard__n', t.name));
       const g = el('div', 'tcard__f');
       const fld = (lab, val, name) => { const l = el('label', 'field'); l.appendChild(el('span', 'field__label', lab)); const i = el('input', 'field__input'); i.type = 'text'; i.inputMode = 'numeric'; i.value = val || ''; i.name = name; i.autocomplete = 'off'; l.appendChild(i); return [l, i]; };
       const [l1, i1] = fld('Цена, ₽', t.price, 'price'), [l2, i2] = fld('Старая цена, ₽', t.old, 'old');
