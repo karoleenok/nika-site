@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /lk/
+Disallow: /admin/
+Disallow: /checkout.html
+Disallow: /spasibo.html
+
+Sitemap: https://karoleenok.github.io/nika-site/sitemap.xml

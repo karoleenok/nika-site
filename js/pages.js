@@ -13,15 +13,7 @@
     });
   }
 
-  /* ---------- Кнопки покупки: пока нет оплаты ведут в WhatsApp (как на главной). Позже: ссылка на оплату по data-buy ---------- */
-  if (phone) {
-    const h1 = $('h1');
-    $$('[data-buy]').forEach(a => {
-      const name = (h1 ? h1.textContent : '').replace(/\s+/g, ' ').trim();
-      a.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent('Здравствуйте! Пишу вам с сайта, меня интересует «' + name + '». Подскажите, как оформить покупку?');
-      a.target = '_blank'; a.rel = 'noopener noreferrer';
-    });
-  }
+  /* Кнопки покупки живут в js/pay.js. */
 
   /* ---------- Юр. страницы: оглавление из заголовков h2 ---------- */
   const prose = $('.legal .prose');
@@ -79,8 +71,24 @@
         note: 'Это рекомендации по обследованиям, а не диагноз. Диагноз и лечение назначает врач.'
       }
     };
-    const key = new URLSearchParams(location.search).get('t');
-    const v = V[key] || null;
+    const qs = new URLSearchParams(location.search);
+    const key = qs.get('t');
+    const v = V[key] ? Object.assign({}, V[key]) : null;
+    /* После оплаты: заказ берём из каталога по ?item=id, почту из sessionStorage (её туда положил checkout) */
+    if (key === 'pay') {
+      const C = window.NDCatalog || {}, id = qs.get('item');
+      const it = Object.prototype.hasOwnProperty.call(C, id || '') ? C[id] : null;
+      let mail = '';
+      try { const o = JSON.parse(sessionStorage.getItem('nd_order') || 'null'); if (o && o.id === id) mail = o.email; } catch (_) {}
+      if (it) {
+        v.lead = 'Спасибо. Заказ «' + it.title + '» оплачен.' + (mail ? ' Чек придёт на ' + mail + '.' : ' Чек придёт на указанную при оплате почту.');
+        v.steps = it.after === 'lk'
+          ? ['Проверь почту: там чек и ссылка для входа.', 'Войди в личный кабинет, доступ уже открыт.', 'Если что-то не открылось, напиши Нике в WhatsApp.']
+          : ['Ника получила заказ и напишет тебе в течение рабочего дня.', 'Вы договоритесь о дате и формате.', 'Если не дождёшься сообщения, напиши Нике в WhatsApp сам(а).'];
+        v.needAccount = it.after === 'lk';
+        document.title = 'Оплата прошла — Ника Дупина';
+      }
+    }
     if (v) {
       $('[data-ty-title]').innerHTML = v.title;
       $('[data-ty-lead]').textContent = v.lead;
@@ -92,7 +100,7 @@
     }
     // кнопка в кабинет нужна только после оплаты
     const lk = $('[data-ty-account]');
-    if (lk) lk.hidden = ty.dataset.ty !== 'pay';
+    if (lk) lk.hidden = !(ty.dataset.ty === 'pay' && (!v || v.needAccount !== false));
   }
 
   /* ---------- Кейсы: лента, «до | после», ракурс, «читать полностью» ---------- */

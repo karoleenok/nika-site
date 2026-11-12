@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Оформление заказа — Ника Дупина</title>
+  <meta name="description" content="Оформление заказа на сайте Ники Дупиной.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0e0e0e">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <link rel="preload" href="fonts/BebasNeue-Bold.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="fonts/InterTight-Variable.woff" as="font" type="font/woff" crossorigin>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/cookie.css">
+</head>
+<body data-wa-phone="79141636665">
+<a class="skip-link" href="#main">К содержимому</a>
+<header class="pg-bar">
+  <div class="pg-wrap pg-bar__in">
+    <a class="pg-bar__logo" href="index.html" aria-label="Ника Дупина, на главную"><img src="assets/logo-hd.svg" width="97" height="53" alt="Н.Д."></a>
+    <nav class="pg-bar__nav" aria-label="Навигация">
+      <a href="index.html#shop" data-co-back>← назад</a>
+      <a class="btn btn--red" href="#" data-wa="Здравствуйте, Ника! У меня вопрос по оформлению заказа.">написать Нике</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="pg-hero pg-hero--sm">
+    <div class="pg-wrap">
+      <p class="label pg-hero__kicker pg-in">заказ</p>
+      <h1 class="display pg-hero__title pg-in" style="--d:.06s" data-co-h1>Оформление</h1>
+    </div>
+  </section>
+
+  <section class="pg-sec pg-sec--tight">
+    <div class="pg-wrap">
+
+      <!-- Товар не найден -->
+      <div class="pg-card co__empty" data-co-empty hidden>
+        <p class="pg-card__t">Не нашли, что вы хотели купить</p>
+        <p class="pg-card__p">Вернись в магазин и нажми кнопку у нужного товара.</p>
+        <a class="btn btn--red" href="index.html#shop">в магазин</a>
+      </div>
+
+      <div class="co" data-co hidden>
+        <aside class="co__sum" aria-label="Ваш заказ">
+          <p class="co__kind" data-co-kind></p>
+          <h2 class="co__title" data-co-title></h2>
+          <p class="co__note" data-co-note hidden></p>
+          <p class="price co__price"><s class="price__old" data-co-old hidden></s><span class="price__now" data-co-price></span><span class="price__per" data-co-per hidden></span></p>
+        </aside>
+
+        <div class="co__main">
+          <!-- Шаг 1: почта и согласия -->
+          <form class="co__form" data-co-form novalidate>
+            <h2 class="co__h">Куда прислать чек и вход</h2>
+            <label class="co__field">
+              <span class="co__label">Почта</span>
+              <input type="email" name="email" placeholder="name@mail.ru" autocomplete="email" inputmode="email" required maxlength="120">
+            </label>
+            <p class="co__hint" data-co-hint>На эту почту придёт чек. Для&nbsp;материалов и&nbsp;тарифов с&nbsp;доступом по&nbsp;ней же входишь в&nbsp;личный кабинет.</p>
+
+            <label class="co__check">
+              <input type="checkbox" name="consent" required>
+              <span>Я&nbsp;даю <a href="legal/consent.html" target="_blank" rel="noopener">согласие на&nbsp;обработку персональных данных</a></span>
+            </label>
+            <label class="co__check">
+              <input type="checkbox" name="agree" required>
+              <span>Я&nbsp;ознакомился(ась) с&nbsp;<a href="legal/privacy.html" target="_blank" rel="noopener">Политикой обработки персональных данных</a> и&nbsp;<a href="legal/offer.html" target="_blank" rel="noopener">Офертой</a></span>
+            </label>
+            <p class="co__msg" role="status" aria-live="polite" data-co-msg></p>
+            <button class="btn btn--red btn--block" type="submit" data-co-go>перейти к&nbsp;оплате</button>
+            <p class="co__fine">Оплату принимает платёжный сервис. Данные карты на&nbsp;этом сайте не&nbsp;вводятся и&nbsp;не&nbsp;хранятся.</p>
+          </form>
+
+          <!-- Шаг 2: окно платёжки. ЗАГЛУШКА: когда подключим платёжку, этот блок не показывается (см. js/pay.js, PAY_URL) -->
+          <section class="co__pay" data-co-pay hidden aria-labelledby="co-pay-t">
+            <p class="co__demo"><b>Демо.</b> Здесь будет окно платёжной системы. Деньги не&nbsp;списываются.</p>
+            <h2 class="co__h" id="co-pay-t" tabindex="-1">Оплата</h2>
+            <fieldset class="co__methods">
+              <legend class="sr-only">Способ оплаты</legend>
+              <label class="co__method"><input type="radio" name="method" value="sbp" checked><span><b>СБП</b><small>по&nbsp;QR-коду или в&nbsp;приложении банка</small></span></label>
+              <label class="co__method"><input type="radio" name="method" value="card"><span><b>Банковская карта</b><small>откроется защищённая страница банка</small></span></label>
+            </fieldset>
+            <p class="co__mail">Чек придёт на <b data-co-email></b></p>
+            <button class="btn btn--red btn--block" type="button" data-co-fake>оплатить&nbsp;<span data-co-price2></span></button>
+            <button class="co__link" type="button" data-co-edit>← изменить почту</button>
+          </section>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="pg-foot">
+  <div class="pg-wrap">
+    <div class="pg-foot__top">
+      <a class="pg-foot__logo" href="index.html" aria-label="Ника Дупина, на главную"><img src="assets/logo-name.svg" width="316" height="63" alt="Ника Дупина"></a>
+      <nav class="pg-foot__nav" aria-label="Документы и разделы">
+        <a href="index.html">на главную</a>
+        <a href="legal/offer.html">оферта</a>
+        <a href="legal/privacy.html">политика обработки персональных данных</a>
+        <a href="legal/consent.html">согласие на обработку персональных данных</a>
+        <a href="legal/requisites.html">реквизиты</a>
+        <button type="button" data-cookie-open>настройки cookie</button>
+      </nav>
+    </div>
+    <p class="pg-foot__name">Дупина&nbsp;Ника Николаевна, самозанятая, ИНН&nbsp;270396986640</p>
+  </div>
+</footer>
+<script src="js/catalog.js"></script>
+<script src="js/pay.js" defer></script>
+<script src="js/pages.js"></script>
+<script src="js/checkout.js" defer></script>
+<script src="js/typo.js" defer></script>
+<script src="js/cookie.js" defer></script>
+</body>
+</html>

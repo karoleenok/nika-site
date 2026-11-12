@@ -149,30 +149,7 @@
     a.rel = 'noopener noreferrer';
   });
 
-  /* ---------- Кнопки покупки ----------
-     Пока оплаты нет, кнопка открывает WhatsApp с названием услуги. Когда подключим платёжку,
-     в PAY_URL указывается ссылка на оплату по ключу data-buy, и кнопка пойдёт туда. */
-  const PAY_URL = {};   // например: 'train-1m': 'https://…'
-  const BUY_NAMES = {
-    'train-24h': 'Тренировки онлайн, 24 часа',
-    'train-1m': 'Тренировки онлайн, 1 месяц',
-    'train-2m': 'Тренировки онлайн, 2 месяца',
-    'train-4m': 'Тренировки онлайн, 4 месяца',
-    'package': 'Фигура под ключ',
-    'food-consult': 'Индивидуальная консультация по питанию',
-    'food-labs': 'Рекомендации по составлению рациона исходя из анализов',
-    'food-support': 'Персональное сопровождение по питанию'
-  };
-  $$('[data-buy]').forEach(a => {
-    const id = a.dataset.buy;
-    if (PAY_URL[id]) { a.href = PAY_URL[id]; a.rel = 'noopener'; return; }
-    if (!phone) return;
-    const card = a.closest('.product');
-    const name = (BUY_NAMES[id] || (card && $('.product__title', card) ? $('.product__title', card).textContent : '')).replace(/\s+/g, ' ').trim();
-    const ask = /^(food-|package)/.test(id) ? 'Подскажите, на какую дату есть ближайшая запись?' : 'Подскажите, как оформить покупку?';
-    a.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent('Здравствуйте! Пишу вам с сайта, меня интересует «' + name + '». ' + ask);
-    a.target = '_blank'; a.rel = 'noopener noreferrer';
-  });
+  /* Кнопки покупки живут в js/pay.js (режимы: checkout / whatsapp). */
 
   /* ---------- Формы теста (без бэкенда): одна в финале, одна во вкладке «питание» ---------- */
   $$('[data-test-form]').forEach(form => {
