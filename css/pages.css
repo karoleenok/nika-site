@@ -288,3 +288,12 @@
 @media (hover: hover) { .doc-card:hover { background: #ececec; } .doc-card:hover .doc-card__go svg { transform: translateX(4px); } }
 .docs__q { margin-top: var(--sp-7); max-width: 760px; }
 @media (max-width: 767px) { .docs__q { margin-top: var(--sp-6); } }
+
+/* Реквизиты */
+.req { display: grid; max-width: 760px; margin: 0; }
+.req__row { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); padding: var(--sp-4) 0; border-bottom: 1px solid rgba(14,14,14,.12); }
+.req__row:first-child { border-top: 1px solid rgba(14,14,14,.12); }
+.req dt { color: var(--c-muted); font-size: var(--fs-small); line-height: var(--lh-small); }
+.req dd { margin: 0; font-size: var(--fs-body); line-height: var(--lh-text); overflow-wrap: anywhere; }
+.req__note { max-width: 760px; margin-top: var(--sp-4); color: var(--c-muted); font-size: var(--fs-tiny); line-height: var(--lh-small); }
+@media (min-width: 768px) { .req__row { grid-template-columns: 200px minmax(0, 1fr); gap: var(--sp-5); align-items: baseline; } }
