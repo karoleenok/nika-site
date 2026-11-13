@@ -1,18 +1,13 @@
-/* Вход в кабинет: почта → код из письма (или ссылка из письма, или пароль, если клиент его задал).
-   ДЕМО: настоящую отправку письма, проверку кода, ссылки и пароля делает сервер.
-   Здесь только поведение формы. Лимит попыток, срок жизни кода и ссылки обязаны быть на сервере. */
+/* Вход: почта → код из письма (или ссылка из письма, или пароль, если клиент его задал).
+   Проверку кода, ссылки, пароля, лимиты и сроки делает сервер. body[data-kind="admin"] — вход в админку. */
 (() => {
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);
-  const KEY = document.body.dataset.sessionKey || 'nika_lk_session';
+  const API = window.NikaApi;
+  const KIND = document.body.dataset.kind === 'admin' ? 'admin' : 'user';
   const GO = document.body.dataset.redirect || 'index.html';
-  const DAYS = Number(document.body.dataset.sessionDays) || 30;   // «запомнить меня»: сколько дней живёт сессия на устройстве
-  const PW_KEY = 'nika_lk_pw';                                    // ДЕМО: SHA-256 пароля; на сервере — хеш argon2id/bcrypt
-  const S = window.NikaSession;
+  const DAYS = Number(document.body.dataset.sessionDays) || 30;
 
-  if (S.active(KEY)) { location.replace(GO); return; }
-
-  const demo = !!(window.LK_DATA && window.LK_DATA.demo);
   const phone = (document.body.dataset.waPhone || '').replace(/\D/g, '');
   const wa = $('[data-wa]');
   if (wa && phone) { wa.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(wa.dataset.wa); wa.target = '_blank'; wa.rel = 'noopener noreferrer'; }
@@ -23,13 +18,21 @@
   const email = $('[data-email]'), code = $('[data-code]'), pass = $('[data-pass]');
   const sentTo = $('[data-sent-to]'), resend = $('[data-resend]');
   const errEmail = $('[data-err="email"]'), errCode = $('[data-err="code"]'), errPass = $('[data-err="pass"]'), errLink = $('[data-err="link"]');
-  let attempts = 0, lockedUntil = 0, timer = 0;
+  let timer = 0, linkToken = '';
+
+  /* Ссылка из письма: токен сразу убираем из адресной строки и истории, держим только в памяти */
+  const urlToken = new URLSearchParams(location.search).get('t');
+  if (urlToken !== null) history.replaceState(null, '', location.pathname);
+
+  /* Уже вошёл — сразу в кабинет */
+  if (urlToken === null) API.get(KIND === 'admin' ? '/api/admin/me' : '/api/me').then(r => { if (r.ok) location.replace(GO); });
 
   const setErr = (input, box, msg) => {
     if (!box) return;
     box.textContent = msg || '';
     if (input) { if (msg) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid'); }
   };
+  const busy = (form, on) => { const b = form && form.querySelector('[type="submit"]'); if (b) { b.disabled = on; b.setAttribute('aria-busy', String(on)); } };
   const validEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
   const takeEmail = () => {
     const v = email.value.trim();
@@ -49,18 +52,32 @@
     tick(); timer = setInterval(tick, 1000);
   };
 
-  /* Отправить письмо с кодом и ссылкой и показать шаг ввода кода (ДЕМО: письмо не уходит) */
-  const sendCode = v => {
+  /* Запросить письмо с кодом и ссылкой. Ответ сервера одинаковый, есть почта в базе или нет. */
+  const sendCode = async (v, form) => {
+    busy(form, true);
+    const r = await API.post('/api/auth/code', { email: v, kind: KIND });
+    busy(form, false);
+    if (!r.ok) {
+      show('email');
+      setErr(email, errEmail, r.data.error);
+      return false;
+    }
     sentTo.textContent = v;
     show('code');
-    $('[data-demo-hint]').hidden = !demo;
-    code.value = ''; attempts = 0;
+    setErr(code, errCode, '');
+    code.value = '';
     startTimer(); code.focus();
+    return true;
   };
 
-  steps.email.addEventListener('submit', e => { e.preventDefault(); const v = takeEmail(); if (v) sendCode(v); });
+  steps.email.addEventListener('submit', e => { e.preventDefault(); setErr(null, errLink, ''); const v = takeEmail(); if (v) sendCode(v, steps.email); });
 
-  resend.addEventListener('click', () => { if (!resend.disabled) { startTimer(); code.focus(); } });
+  resend.addEventListener('click', async () => {
+    if (resend.disabled) return;
+    const r = await API.post('/api/auth/code', { email: sentTo.textContent, kind: KIND });
+    if (r.ok) { startTimer(); setErr(code, errCode, ''); } else setErr(code, errCode, r.data.error);
+    code.focus();
+  });
   $('[data-change]').addEventListener('click', () => {
     clearInterval(timer);
     setErr(code, errCode, ''); show('email'); email.focus();
@@ -72,36 +89,27 @@
     if (code.value.length === 6) (steps.code.requestSubmit ? steps.code.requestSubmit() : steps.code.dispatchEvent(new Event('submit', { cancelable: true })));
   });
 
-  steps.code.addEventListener('submit', e => {
+  let checking = false;
+  steps.code.addEventListener('submit', async e => {
     e.preventDefault();
-    const now = Date.now();
-    if (now < lockedUntil) { setErr(code, errCode, 'Слишком много попыток. Подожди минуту и запроси новый код.'); return; }
+    if (checking) return;
     if (code.value.length !== 6) { setErr(code, errCode, 'Введи шесть цифр из письма.'); code.focus(); return; }
-    if (code.value === '123456') {              // ДЕМО: настоящую проверку делает сервер
-      S.start(KEY, DAYS, $('[data-remember]').checked);
-      location.replace(GO);
-      return;
-    }
-    attempts += 1;
-    if (attempts >= 5) { lockedUntil = now + 60000; setErr(code, errCode, 'Слишком много попыток. Подожди минуту и запроси новый код.'); }
-    else setErr(code, errCode, 'Неверный код. Осталось попыток: ' + (5 - attempts) + '.');
+    checking = true; busy(steps.code, true);
+    const r = await API.post('/api/auth/verify', { email: sentTo.textContent, code: code.value, kind: KIND, remember: $('[data-remember]').checked });
+    checking = false; busy(steps.code, false);
+    if (r.ok) { location.replace(GO); return; }
+    setErr(code, errCode, r.data.error);
     code.select();
   });
 
   /* ---------- Вход по паролю (необязательный, задаётся в профиле кабинета) ---------- */
   if (steps.password) {
-    const sha = async s => {
-      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    };
-    let passAttempts = 0, passLock = 0;
-
     $('[data-to-pass]').addEventListener('click', () => {
       const v = takeEmail(); if (!v) return;
       $('[data-pass-to]').textContent = v; pass.value = ''; setErr(pass, errPass, '');
       show('password'); pass.focus();
     });
-    $('[data-to-code]').addEventListener('click', () => { const v = takeEmail() || email.value.trim(); if (validEmail(v)) sendCode(v); else { show('email'); email.focus(); } });
+    $('[data-to-code]').addEventListener('click', () => { const v = email.value.trim(); if (validEmail(v)) sendCode(v); else { show('email'); email.focus(); } });
     $('[data-forgot]').addEventListener('click', () => sendCode(email.value.trim()));
 
     const eye = $('[data-eye]');
@@ -115,36 +123,31 @@
 
     steps.password.addEventListener('submit', async e => {
       e.preventDefault();
-      const now = Date.now();
-      if (now < passLock) { setErr(pass, errPass, 'Слишком много попыток. Подожди минуту или войди по коду.'); return; }
       if (!pass.value) { setErr(pass, errPass, 'Введи пароль.'); pass.focus(); return; }
-      let ok = false;
-      try { const saved = localStorage.getItem(PW_KEY); ok = !!saved && saved === await sha(pass.value); } catch (_) {}
-      if (ok) { S.start(KEY, DAYS, $('[data-remember-pass]').checked); location.replace(GO); return; }
-      passAttempts += 1;
-      if (passAttempts >= 5) { passLock = now + 60000; setErr(pass, errPass, 'Слишком много попыток. Подожди минуту или войди по коду.'); }
-      else setErr(pass, errPass, 'Неверная почта или пароль. Можно войти по коду.');   // одно и то же сообщение, чтобы не выдавать, есть ли такая почта
+      busy(steps.password, true);
+      const r = await API.post('/api/auth/password', { email: email.value.trim(), password: pass.value, remember: $('[data-remember-pass]').checked });
+      busy(steps.password, false);
+      if (r.ok) { location.replace(GO); return; }
+      setErr(pass, errPass, r.data.error);
       pass.select();
     });
   }
 
-  /* ---------- Ссылка из письма: login.html?t=<одноразовый токен> ---------- */
-  if (steps.link) {
-    const token = new URLSearchParams(location.search).get('t');
-    if (token !== null) {
-      history.replaceState(null, '', location.pathname);             // токен не должен остаться в адресной строке и истории
-      show('none');
-      if (demo && token === 'demo') {                                // ДЕМО: настоящий токен проверяет сервер
-        show('link');
-      } else {
-        show('email');
-        setErr(null, errLink, 'Ссылка устарела или уже использована. Получи новый код.');
-      }
-    }
-    steps.link.addEventListener('submit', e => {
+  /* ---------- Ссылка из письма: login.html?t=<одноразовый токен> ----------
+     Открытие ссылки ничего не тратит (антивирусы почтовиков открывают ссылки сами).
+     Вход только по кнопке «войти в кабинет» — POST-запросом. */
+  if (steps.link && urlToken !== null) {
+    linkToken = urlToken;
+    show('none');
+    const linkBad = msg => { linkToken = ''; show('email'); setErr(null, errLink, msg || 'Ссылка устарела или уже использована. Получи новый код.'); };
+    API.post('/api/auth/link', { t: linkToken, check: true }).then(r => { if (r.ok) { show('link'); steps.link.querySelector('[type="submit"]').focus(); } else linkBad(r.data.error); });
+    steps.link.addEventListener('submit', async e => {
       e.preventDefault();
-      S.start(KEY, DAYS, $('[data-remember-link]').checked);        // на сервере: POST с токеном, ответ с HttpOnly-кукой
-      location.replace(GO);
+      busy(steps.link, true);
+      const r = await API.post('/api/auth/link', { t: linkToken, remember: $('[data-remember-link]').checked });
+      busy(steps.link, false);
+      if (r.ok) { linkToken = ''; location.replace(GO); return; }
+      linkBad(r.data.error);
     });
   }
 })();

@@ -4,14 +4,16 @@
   'use strict';
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const KEY = 'nika_lk_session', DONE = 'nika_lk_done', LAST = 'nika_lk_last';
+  const DONE = 'nika_lk_done', LAST = 'nika_lk_last';
   const rd = k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch (_) { return null; } };
   const wr = (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} };
 
-  /* ДЕМО-вход: настоящая сессия будет HttpOnly-cookie от сервера */
-  if (!window.NikaSession || !window.NikaSession.active(KEY)) { location.replace('login.html'); return; }
+  /* Вход проверяет сервер (HttpOnly-кука). Без сессии — на экран входа. */
+  window.NikaApi.gate('user').then(me => { if (me) start(me); });
+  function start(me) {
   const D = window.LK_DATA;
   if (!D) return;
+  D.client = Object.assign({}, D.client, { name: me.name || D.client.name, email: me.email });
 
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const icon = (id, cls) => {
@@ -170,14 +172,13 @@
      ДЕМО: в браузере лежит только SHA-256. На сервере: хеш argon2id или bcrypt, лимит попыток, смена пароля
      только после ввода текущего или свежего кода из письма, после смены закрыть сессии на других устройствах. */
   (() => {
-    const PW_KEY = 'nika_lk_pw';
     const box = $('[data-pw]'); if (!box) return;
     const form = $('[data-pw-form]', box), actions = $('[data-pw-actions]', box), conf = $('[data-pw-confirm]', box);
     const chip = $('[data-pw-chip]', box), lead = $('[data-pw-lead]', box), msg = $('[data-pw-msg]', box), err = $('[data-pw-err]', box);
     const openBtn = $('[data-pw-open]', box), rmBtn = $('[data-pw-remove]', box);
     const p1 = $('[data-pw1]', box), p2 = $('[data-pw2]', box), eye = $('[data-pw-eye]', box);
-    const has = () => { try { return !!localStorage.getItem(PW_KEY); } catch (_) { return false; } };
-    const sha = async s => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))).map(b => b.toString(16).padStart(2, '0')).join('');
+    let hasPw = !!me.hasPassword;
+    const has = () => hasPw;
     const COMMON = ['12345678', '123456789', '1234567890', 'qwertyui', 'qwerty123', 'password', 'password1', '11111111', '00000000', 'йцукенгш', 'qazwsxedc', '987654321'];
     const check = pw => {
       if (pw.length < 8) return 'Пароль короче 8 символов.';
@@ -209,19 +210,23 @@
       const bad = check(p1.value) || (p1.value !== p2.value ? 'Пароли не совпадают.' : '');
       p1.removeAttribute('aria-invalid'); p2.removeAttribute('aria-invalid');
       if (bad) { err.textContent = bad; (p1.value !== p2.value && !check(p1.value) ? p2 : p1).setAttribute('aria-invalid', 'true'); (p1.value !== p2.value && !check(p1.value) ? p2 : p1).focus(); return; }
-      try { localStorage.setItem(PW_KEY, await sha(p1.value)); } catch (_) { err.textContent = 'Не получилось сохранить пароль в этом браузере.'; return; }
-      reset(); showForm(false); draw(); msg.textContent = 'Пароль сохранён. В следующий раз можно войти по паролю.'; openBtn.focus();
+      const r = await window.NikaApi.put('/api/me/password', { password: p1.value });
+      if (!r.ok) { err.textContent = r.data.error; p1.setAttribute('aria-invalid', 'true'); p1.focus(); return; }
+      hasPw = true;
+      reset(); showForm(false); draw(); msg.textContent = 'Пароль сохранён. На других устройствах выполнен выход.'; openBtn.focus();
     });
     rmBtn.addEventListener('click', () => { actions.hidden = true; conf.hidden = false; msg.textContent = ''; $('[data-pw-no]', box).focus(); });
     $('[data-pw-no]', box).addEventListener('click', () => { conf.hidden = true; actions.hidden = false; rmBtn.focus(); });
-    $('[data-pw-yes]', box).addEventListener('click', () => {
-      try { localStorage.removeItem(PW_KEY); } catch (_) {}
-      conf.hidden = true; actions.hidden = false; draw(); msg.textContent = 'Пароль убран. Вход по коду или ссылке из письма.'; openBtn.focus();
+    $('[data-pw-yes]', box).addEventListener('click', async () => {
+      const r = await window.NikaApi.del('/api/me/password');
+      if (!r.ok) { conf.hidden = true; actions.hidden = false; msg.textContent = r.data.error; return; }
+      hasPw = false;
+      conf.hidden = true; actions.hidden = false; draw(); msg.textContent = 'Пароль убран. Вход по коду или ссылке из письма. На других устройствах выполнен выход.'; openBtn.focus();
     });
     draw();
   })();
 
-  $('[data-logout]').addEventListener('click', () => { window.NikaSession.end(KEY); location.replace('login.html'); });
+  $('[data-logout]').addEventListener('click', () => window.NikaApi.logout('user'));
 
   /* ---------- Роутер ---------- */
   const views = $$('[data-view]');
@@ -245,4 +250,5 @@
   };
   window.addEventListener('hashchange', route);
   route();
+}
 })();

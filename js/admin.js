@@ -7,11 +7,13 @@
   'use strict';
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const KEY = 'nika_admin_session', CONTENT = 'nika_demo_content';
+  const CONTENT = 'nika_demo_content';
   const rd = k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch (_) { return null; } };
   const wr = (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} };
 
-  if (!window.NikaSession || !window.NikaSession.active(KEY)) { location.replace('login.html'); return; }   // ДЕМО: настоящая сессия — HttpOnly-кука + 2FA
+  /* Вход и роль проверяет сервер (HttpOnly-кука). Без сессии — на экран входа. */
+  window.NikaApi.gate('admin').then(who => { if (who) start(who); });
+  function start(who) {
   const L = window.LK_DATA, A = window.ADMIN_DATA;
   if (!L || !A) return;
 
@@ -486,7 +488,7 @@
 
   /* ---------- Журнал, выход, сброс демо ---------- */
   const drawLog = () => { const ul = $('[data-log]'); ul.textContent = ''; log.forEach(x => ul.appendChild(histItem(x, true))); };
-  $$('[data-logout]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); window.NikaSession.end(KEY); location.replace('login.html'); }));
+  $$('[data-logout]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); window.NikaApi.logout('admin'); }));
   $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Контент вернётся к исходному. Настоящих данных здесь нет.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); localStorage.removeItem(TGK); } catch (_) {} location.hash = '#/'; location.reload(); }));
 
   /* ---------- Роутер ---------- */
@@ -518,4 +520,5 @@
   };
   window.addEventListener('hashchange', route);
   route();
+}
 })();

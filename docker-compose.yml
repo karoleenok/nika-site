@@ -38,7 +38,7 @@ services:
     ports: ["127.0.0.1:1025:1025", "127.0.0.1:8025:8025"]
 
   app:
-    image: node:22-alpine
+    image: node:22-slim
     working_dir: /app/server
     command: sh -c "npm ci --omit=dev --no-audit --no-fund && node scripts/setup.js && node src/server.js"
     env_file: .env

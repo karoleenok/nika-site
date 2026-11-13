@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="../css/pages.css">
   <link rel="stylesheet" href="../css/lk.css">
 </head>
-<body class="lk lk--auth" data-session-key="nika_admin_session" data-session-days="14" data-redirect="index.html">
+<body class="lk lk--auth" data-kind="admin" data-session-days="14" data-redirect="index.html">
 <a class="skip-link" href="#main">К содержимому</a>
 <main id="main" class="auth">
   <div class="auth__in">
@@ -56,15 +56,12 @@
           <button class="linkbtn" type="button" data-resend disabled>отправить ещё раз</button>
           <button class="linkbtn" type="button" data-change>другая почта</button>
         </div>
-        <!-- ДЕМО: убрать вместе с js/lk-data.js, когда появится настоящая отправка кода -->
-        <p class="demo-hint" data-demo-hint hidden>Демо: подойдёт код 123456</p>
       </form>
     </div>
 
   </div>
 </main>
-<script src="../js/session.js"></script>
-<script src="../js/lk-data.js"></script>
+<script src="../js/api.js"></script>
 <script src="../js/lk-auth.js"></script>
 </body>
 </html>

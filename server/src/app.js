@@ -3,14 +3,29 @@ import fastifyStatic from '@fastify/static';
 import { HeadBucketCommand } from '@aws-sdk/client-s3';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import fastifyCookie from '@fastify/cookie';
+import authRoutes from './auth/routes.js';
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
-export function buildApp({ config, pool, s3, serveStatic = !config.prod }) {
+export async function buildApp({ config, pool, s3, mailer, serveStatic = !config.prod }) {
   const app = Fastify({
     logger: config.prod ? { level: 'info', redact: ['req.headers.cookie', 'req.headers.authorization'] } : false,
     trustProxy: config.prod ? '127.0.0.1' : false,
     bodyLimit: 64 * 1024,
+  });
+
+  // Принимаем только JSON: обычная форма с чужого сайта не сможет отправить запрос
+  app.removeContentTypeParser('text/plain');
+  await app.register(fastifyCookie);
+
+  // Защита от подделки запросов (CSRF): изменения принимаем только со своего сайта
+  const origin = new URL(config.publicUrl).origin;
+  app.addHook('onRequest', async (req, reply) => {
+    if (req.method === 'GET' || req.method === 'HEAD' || !req.url.startsWith('/api/')) return;
+    const o = req.headers.origin;
+    const sameSite = o ? o === origin : req.headers['sec-fetch-site'] === 'same-origin';
+    if (!sameSite) return reply.code(403).send({ error: 'Запрос отклонён' });
   });
 
   // Ошибки наружу без подробностей
@@ -29,6 +44,8 @@ export function buildApp({ config, pool, s3, serveStatic = !config.prod }) {
     reply.code(ok ? 200 : 503).header('cache-control', 'no-store');
     return { ok, ...checks };
   });
+
+  await authRoutes(app, { config, pool, mailer });
 
   app.all('/api/*', async (req, reply) => reply.code(404).send({ error: 'Не найдено' }));
 
