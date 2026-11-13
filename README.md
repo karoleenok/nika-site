@@ -116,3 +116,42 @@ Robokassa + «Робочеки СМЗ». Цена берётся только и
 
 ### Возвраты и сбои
 Админка → Ещё → Оплаты. «Оплата пришла» — если деньги видны в кабинете Robokassa, а уведомление не дошло. «Оформить возврат» — после возврата денег в кабинете Robokassa: закрывает доступ этого заказа (последующие продления сдвигаются назад) или убирает купленный материал. Заметка обязательна, всё пишется в журнал. Все уведомления Robokassa, включая отклонённые, лежат в таблице `payment_events` (без почты и данных карты).
+
+## Выкладка на боевой сервер (фаза 6)
+
+Подготовлено, но выключено: пока в настройках репозитория нет переменной `DEPLOY_ENABLED = true`, ничего не выкладывается.
+
+```
+GitHub (пуш в main) ──► Проверки: автотесты, уязвимости, скрипты, nginx
+                    └─► Выкладка: код по SSH-ключу → .env из секретов → remote-deploy.sh
+VPS: nginx (HTTPS, заголовки, CSP, лимит запросов) ──► статика /srv/nika/current/public
+                                                  └──► /api → приложение (Docker, 127.0.0.1:3000) → PostgreSQL (Docker, 127.0.0.1)
+Ночью: бэкап базы → шифрование → отдельный S3. По воскресеньям: пробное восстановление.
+```
+
+| Файл | Что делает |
+|---|---|
+| `.github/workflows/ci.yml` | тесты на каждый пуш, `npm audit`, проверка скриптов и конфига nginx |
+| `.github/workflows/deploy.yml` | выкладка на пуш в `main` или кнопкой Run workflow |
+| `deploy/cloud-init.yaml` | вставить при создании сервера, заменив домен, почту и публичный ключ |
+| `deploy/server/setup.sh` | первичная настройка сервера (запускает cloud-init) |
+| `deploy/server/remote-deploy.sh` | образ, миграции, заголовки, переключение, проверка `/api/health`, откат при сбое |
+| `deploy/server/backup.sh`, `restore-test.sh` | бэкап и пробное восстановление; при сбое письмо на `ALERT_EMAIL` |
+| `deploy/compose.prod.yml`, `deploy/Dockerfile` | база и приложение на сервере |
+| `deploy/nginx/nika.conf` | HTTPS, кэш, закрытые служебные файлы, лимит запросов к API |
+
+### Что настраивает сервер
+HTTPS Let's Encrypt с автопродлением; открыты только порты 22, 80, 443; вход по SSH только по ключу и только пользователю `deploy`, root закрыт; fail2ban; автообновления безопасности с перезагрузкой в 04:30 по Хабаровску; база и приложение слушают только 127.0.0.1; подкачка 2 ГБ; логи с ротацией.
+
+### Секреты и переменные GitHub
+Где: репозиторий → Settings → Environments → `production` (создать) → Environment secrets / Environment variables. Переменная `DEPLOY_ENABLED` — там же или в Settings → Secrets and variables → Actions → Variables.
+
+**Секреты (скрытые):** `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`, `SESSION_SECRET`, `DB_PASSWORD`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `SMTP_USER`, `SMTP_PASSWORD`, `ROBOKASSA_LOGIN`, `ROBOKASSA_PASSWORD1`, `ROBOKASSA_PASSWORD2`, `BACKUP_S3_ACCESS_KEY`, `BACKUP_S3_SECRET_KEY`, `BACKUP_PASSPHRASE`.
+
+**Переменные (видимые):** `DEPLOY_ENABLED`, `SSH_HOST`, `PUBLIC_URL`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `MAIL_FROM`, `MAIL_REPLY_TO`, `ADMIN_NOTIFY_EMAIL`, `ROBOKASSA_TEST`, `INITIAL_ADMINS`, `BACKUP_S3_ENDPOINT`, `BACKUP_S3_REGION`, `BACKUP_S3_BUCKET`, `ALERT_EMAIL`.
+
+### Первый запуск на бою
+Демо-данных нет. Один раз загружается каталог товаров (`server/seed/catalog.sql`) и админы из `INITIAL_ADMINS`. Без владельца (owner) сервер не стартует.
+
+### Мониторинг
+`https://<домен>/api/health` отвечает 200, если база и хранилище работают, иначе 503. Его подключают к внешнему сервису проверки доступности.

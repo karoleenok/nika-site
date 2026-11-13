@@ -1,0 +1,53 @@
+# Боевой сервер: база и приложение. nginx стоит на самом сервере (не в контейнере).
+# Запускает deploy/server/remote-deploy.sh, руками ничего делать не нужно.
+name: nika
+
+x-logs: &logs
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "5" }
+
+services:
+  db:
+    image: postgres:16.16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nika
+      POSTGRES_USER: nika
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?нужен DB_PASSWORD}
+    # Настройки под VPS на 2 ГБ памяти
+    command: >
+      postgres -c shared_buffers=256MB -c effective_cache_size=768MB -c work_mem=8MB
+      -c max_connections=40 -c log_min_duration_statement=1000
+    # Порт только для самого сервера: из интернета база недоступна (и файрвол его тоже не пускает)
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [db-data:/var/lib/postgresql/data]
+    shm_size: 256mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nika -d nika"]
+      interval: 5s
+      retries: 30
+    <<: *logs
+
+  app:
+    image: nika-app:${APP_TAG:?нужен APP_TAG}
+    restart: unless-stopped
+    # Сеть сервера: nginx приходит с 127.0.0.1, и сервер видит настоящий адрес посетителя
+    # (иначе все лимиты по IP считались бы одним адресом докера)
+    network_mode: host
+    env_file: ${ENV_FILE:?нужен ENV_FILE}
+    environment:
+      NODE_ENV: production
+      HOST: 127.0.0.1
+      PORT: "3000"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    depends_on:
+      db: { condition: service_healthy }
+    <<: *logs
+
+volumes:
+  db-data:

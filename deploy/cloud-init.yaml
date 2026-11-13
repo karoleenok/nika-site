@@ -1,0 +1,11 @@
+#cloud-config
+# Вставить в поле cloud-init при создании сервера в Timeweb Cloud (Ubuntu 24.04).
+# Заменить три значения в кавычках ниже. Больше на сервере ничего делать не нужно.
+runcmd:
+  - |
+    export DOMAIN="example.ru"
+    export LE_EMAIL="nika@example.ru"
+    export DEPLOY_PUBKEY="ssh-ed25519 AAAA... github-actions-nika"
+    apt-get update -q && apt-get install -y -q git
+    git clone --depth 1 -b main https://github.com/karoleenok/nika-site /opt/nika-setup
+    bash /opt/nika-setup/deploy/server/setup.sh > /var/log/nika-setup.log 2>&1

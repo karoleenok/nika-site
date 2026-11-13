@@ -1,0 +1,8 @@
+[Unit]
+Description=Сайт Ники: ночной бэкап базы в S3
+After=docker.service
+Requires=docker.service
+[Service]
+Type=oneshot
+User=deploy
+ExecStart=/srv/nika/current/deploy/server/backup.sh

@@ -1,0 +1,8 @@
+[Unit]
+Description=Сайт Ники: пробное восстановление последнего бэкапа
+After=docker.service
+Requires=docker.service
+[Service]
+Type=oneshot
+User=deploy
+ExecStart=/srv/nika/current/deploy/server/restore-test.sh

@@ -1,0 +1,116 @@
+# Выкладка на боевой VPS. Срабатывает на пуш в main (и вручную кнопкой Run workflow),
+# только если в настройках репозитория переменная DEPLOY_ENABLED = true. Пока её нет, ничего не выкладывается.
+# Порядок: тесты → копия кода на сервер по SSH-ключу → .env из секретов → remote-deploy.sh
+# (образ, миграции, заголовки, переключение, проверка здоровья, откат при сбое).
+name: Выкладка
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    if: vars.DEPLOY_ENABLED == 'true'
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: test
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SSH-ключ и отпечаток сервера
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          # Отпечаток сервера задан заранее: подменить сервер по дороге нельзя
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf 'Host nika\n  HostName %s\n  User deploy\n  IdentityFile ~/.ssh/id_ed25519\n  StrictHostKeyChecking yes\n' \
+            "${{ vars.SSH_HOST }}" > ~/.ssh/config
+
+      - name: Файл настроек из секретов
+        env:
+          PUBLIC_URL: ${{ vars.PUBLIC_URL }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+          S3_PUBLIC_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+          S3_REGION: ${{ vars.S3_REGION }}
+          S3_BUCKET: ${{ vars.S3_BUCKET }}
+          S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+          S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_SECURE: ${{ vars.SMTP_SECURE }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_FROM: ${{ vars.MAIL_FROM }}
+          MAIL_REPLY_TO: ${{ vars.MAIL_REPLY_TO }}
+          ADMIN_NOTIFY_EMAIL: ${{ vars.ADMIN_NOTIFY_EMAIL }}
+          ROBOKASSA_LOGIN: ${{ secrets.ROBOKASSA_LOGIN }}
+          ROBOKASSA_PASSWORD1: ${{ secrets.ROBOKASSA_PASSWORD1 }}
+          ROBOKASSA_PASSWORD2: ${{ secrets.ROBOKASSA_PASSWORD2 }}
+          ROBOKASSA_TEST: ${{ vars.ROBOKASSA_TEST }}
+          INITIAL_ADMINS: ${{ vars.INITIAL_ADMINS }}
+          BACKUP_S3_ENDPOINT: ${{ vars.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_REGION: ${{ vars.BACKUP_S3_REGION }}
+          BACKUP_S3_BUCKET: ${{ vars.BACKUP_S3_BUCKET }}
+          BACKUP_S3_ACCESS_KEY: ${{ secrets.BACKUP_S3_ACCESS_KEY }}
+          BACKUP_S3_SECRET_KEY: ${{ secrets.BACKUP_S3_SECRET_KEY }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          ALERT_EMAIL: ${{ vars.ALERT_EMAIL }}
+        run: |
+          umask 077
+          KEYS="PUBLIC_URL SESSION_SECRET DB_PASSWORD S3_ENDPOINT S3_PUBLIC_ENDPOINT S3_REGION S3_BUCKET S3_ACCESS_KEY S3_SECRET_KEY
+            SMTP_HOST SMTP_PORT SMTP_SECURE SMTP_USER SMTP_PASSWORD MAIL_FROM MAIL_REPLY_TO ADMIN_NOTIFY_EMAIL
+            ROBOKASSA_LOGIN ROBOKASSA_PASSWORD1 ROBOKASSA_PASSWORD2 ROBOKASSA_TEST INITIAL_ADMINS
+            BACKUP_S3_ENDPOINT BACKUP_S3_REGION BACKUP_S3_BUCKET BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY BACKUP_PASSPHRASE ALERT_EMAIL"
+          REQUIRED="PUBLIC_URL SESSION_SECRET DB_PASSWORD S3_ENDPOINT S3_REGION S3_BUCKET S3_ACCESS_KEY S3_SECRET_KEY
+            SMTP_HOST SMTP_PORT MAIL_FROM ROBOKASSA_LOGIN ROBOKASSA_PASSWORD1 ROBOKASSA_PASSWORD2 INITIAL_ADMINS
+            BACKUP_S3_ENDPOINT BACKUP_S3_REGION BACKUP_S3_BUCKET BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY BACKUP_PASSPHRASE ALERT_EMAIL"
+          for k in $REQUIRED; do [ -n "${!k}" ] || { echo "::error::Не задан $k (Settings → Secrets and variables → Actions)"; exit 1; }; done
+          : > prod.env
+          for k in $KEYS; do
+            v="${!k}"
+            case "$v" in *$'\n'*) echo "::error::$k: перенос строки в значении"; exit 1;; esac
+            printf '%s=%s\n' "$k" "$v" >> prod.env
+          done
+          printf 'NODE_ENV=production\nDATABASE_URL=postgres://nika:%s@127.0.0.1:5432/nika\n' "$DB_PASSWORD" >> prod.env
+
+      - name: Код на сервер
+        run: |
+          rsync -az --delete --exclude=.git --exclude=prod.env -e ssh ./ "nika:/srv/nika/releases/${GITHUB_SHA}/"
+          rsync -az -e ssh prod.env nika:/srv/nika/shared/.env.new
+          ssh nika 'chmod 600 /srv/nika/shared/.env.new && mv -f /srv/nika/shared/.env.new /srv/nika/shared/.env'
+          rm -f prod.env
+
+      - name: Выкладка, миграции, перезапуск
+        run: |
+          # shellcheck disable=SC2029  # sha подставляется здесь намеренно
+          ssh nika "bash /srv/nika/releases/${GITHUB_SHA}/deploy/server/remote-deploy.sh ${GITHUB_SHA}"
+
+      - name: Сайт отвечает снаружи
+        run: |
+          for _ in $(seq 1 10); do
+            curl -fsS --max-time 5 "${{ vars.PUBLIC_URL }}/api/health" && exit 0
+            sleep 3
+          done
+          echo "::error::${{ vars.PUBLIC_URL }}/api/health не отвечает"; exit 1
+
+      - name: Убрать ключ
+        if: always()
+        run: rm -rf ~/.ssh prod.env

@@ -1,0 +1,7 @@
+[Unit]
+Description=Сайт Ники: получить сертификат HTTPS
+After=network-online.target nginx.service
+Wants=network-online.target
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/nika-get-cert

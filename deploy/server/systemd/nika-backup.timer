@@ -1,0 +1,8 @@
+[Unit]
+Description=Сайт Ники: бэкап каждую ночь
+[Timer]
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=15min
+Persistent=true
+[Install]
+WantedBy=timers.target
