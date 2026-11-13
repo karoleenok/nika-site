@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/cookie.css">
+  <link rel="stylesheet" href="css/quiz-overlay.css">
   <link rel="stylesheet" href="css/mobile.css" media="(max-width: 767px)">
   <link rel="stylesheet" href="css/tablet.css" media="(min-width: 768px) and (max-width: 1023px)">
   <script src="js/boot.js"></script>
@@ -311,25 +312,10 @@
         </div>
         <div class="test__right">
           <img class="script-img script-img--test" src="assets/script/script-proven.svg" width="266" height="39" alt="" loading="lazy" decoding="async">
-          <form class="form" id="test-form-food" data-test-form novalidate autocomplete="on">
-            <label class="field"><span class="sr-only">Имя</span>
-              <input type="text" name="name" placeholder="имя" autocomplete="given-name" required maxlength="80">
-            </label>
-            <label class="field"><span class="sr-only">Номер телефона</span>
-              <input type="tel" name="phone" placeholder="номер телефона" autocomplete="tel" inputmode="tel" required maxlength="24">
-            </label>
-            <label class="hp" aria-hidden="true">Сайт<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-            <button class="btn btn--red btn--block" type="submit">начать тестирование</button>
-            <label class="consent">
-              <input type="checkbox" name="consent" required>
-              <span>Я&nbsp;даю <a href="legal/consent.html" target="_blank" rel="noopener">согласие на&nbsp;обработку персональных данных</a></span>
-            </label>
-            <label class="consent">
-              <input type="checkbox" name="agree" required>
-              <span>Я&nbsp;ознакомился(ась) с&nbsp;<a href="legal/privacy.html" target="_blank" rel="noopener">Политикой обработки персональных данных</a> и&nbsp;<a href="legal/offer.html" target="_blank" rel="noopener">Офертой</a></span>
-            </label>
-            <p class="form__msg" role="status" aria-live="polite"></p>
-          </form>
+          <div class="form test__cta">
+            <button class="btn btn--red btn--block" type="button" data-quiz-open>пройти тест</button>
+            <p class="form__note">Около 5&nbsp;минут. Ответы остаются в&nbsp;твоём браузере, пока сам не&nbsp;отправишь итог Нике.</p>
+          </div>
         </div>
       </div>
 
@@ -479,25 +465,10 @@
       </div>
       <div class="test__right">
         <img class="script-img script-img--test" src="assets/script/script-proven.svg" width="266" height="39" alt="" loading="lazy" decoding="async">
-        <form class="form" id="test-form" data-test-form novalidate autocomplete="on">
-          <label class="field"><span class="sr-only">Имя</span>
-            <input type="text" name="name" placeholder="имя" autocomplete="given-name" required maxlength="80">
-          </label>
-          <label class="field"><span class="sr-only">Номер телефона</span>
-            <input type="tel" name="phone" placeholder="номер телефона" autocomplete="tel" inputmode="tel" required maxlength="24">
-          </label>
-          <label class="hp" aria-hidden="true">Сайт<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-            <button class="btn btn--red btn--block" type="submit">начать тестирование</button>
-          <label class="consent">
-              <input type="checkbox" name="consent" required>
-              <span>Я&nbsp;даю <a href="legal/consent.html" target="_blank" rel="noopener">согласие на&nbsp;обработку персональных данных</a></span>
-            </label>
-            <label class="consent">
-              <input type="checkbox" name="agree" required>
-              <span>Я&nbsp;ознакомился(ась) с&nbsp;<a href="legal/privacy.html" target="_blank" rel="noopener">Политикой обработки персональных данных</a> и&nbsp;<a href="legal/offer.html" target="_blank" rel="noopener">Офертой</a></span>
-            </label>
-          <p class="form__msg" role="status" aria-live="polite"></p>
-        </form>
+        <div class="form test__cta">
+            <button class="btn btn--red btn--block" type="button" data-quiz-open>пройти тест</button>
+            <p class="form__note">Около 5&nbsp;минут. Ответы остаются в&nbsp;твоём браузере, пока сам не&nbsp;отправишь итог Нике.</p>
+          </div>
       </div>
     </div>
 
@@ -567,5 +538,7 @@
 <script src="js/pay.js" defer></script>
 <script src="js/typo.js" defer></script>
 <script src="js/cookie.js" defer></script>
+<script src="js/quiz-data.js" defer></script>
+<script src="js/quiz-overlay.js" defer></script>
 </body>
 </html>

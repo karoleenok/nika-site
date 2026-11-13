@@ -438,6 +438,7 @@
 .consent input:checked::after { content: ""; width: 7px; height: 4px; margin-top: -1px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg); }
 .consent input[aria-invalid="true"] { border-color: var(--c-red); }
 .consent a { text-decoration: underline; text-underline-offset: .15em; }
+.form__note { font-size: var(--fs-tiny); line-height: 1.25; color: var(--c-muted); }
 .form__msg:empty { display: none; }
 .form__msg { margin-top: calc(2 * var(--s)); font-size: var(--fs-tiny); color: var(--c-red); }
 .form__msg.is-ok { color: var(--c-ink); }
