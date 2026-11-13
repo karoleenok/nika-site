@@ -183,6 +183,14 @@ html.qo-lock, html.qo-lock body { overflow: hidden; }
 .qo__numin { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 .qo__numin input { width: 64px; height: 44px; padding: 0 8px; text-align: center; font-size: 16px; }
 
+/* Уточнения: вопрос и две кнопки «да» / «нет» */
+.qo__q { display: grid; gap: 12px; padding: 16px; border-radius: 14px; background: var(--c-paper); }
+.qo__q--num { grid-template-columns: 1fr auto; align-items: center; }
+.qo__seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.qo__segb { min-height: 48px; border-radius: var(--r-btn, 8px); background: var(--c-white); border: 1.5px solid var(--c-disabled); font-size: 16px; font-weight: 500; line-height: 1; transition: background-color var(--dur-1), color var(--dur-1), border-color var(--dur-1); }
+.qo__segb.is-on { background: var(--c-red); border-color: var(--c-red); color: var(--c-white); }
+@media (hover: hover) { .qo__segb:not(.is-on):hover { border-color: var(--c-muted); } }
+
 /* Итог */
 .qo__p { margin-top: 16px; font-size: 16px; line-height: 1.4; }
 .qo__top + .qo__p { margin-top: 24px; }

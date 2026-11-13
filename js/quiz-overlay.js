@@ -28,7 +28,7 @@
   const CHK = {};          // чек-лист: id пункта → true | число
   let consent = false;
   let idx = 0;             // 0 = вводный экран, 1..N = шаги, N+1 = чек-лист, N+2 = итог
-  const N = STEPS.length, I_CHECK = N + 1, I_RESULT = N + 2;
+  const N = STEPS.length, I_CHECK = N + 1, I_QS = N + 2, I_RESULT = N + 3;
 
   let root = null, panel, body, foot, titleEl, progBar, partEl, btnNext, btnBack, meta, opener = null, pushed = false, scrollY = 0;
 
@@ -128,13 +128,14 @@
     if (idx === 0) t = renderIntro(view);
     else if (idx <= N) t = renderStep(view, STEPS[idx - 1]);
     else if (idx === I_CHECK) t = renderCheck(view);
+    else if (idx === I_QS) t = renderQs(view);
     else t = renderResult(view);
     titleEl = t;
     if (t) { t.id = 'qo-title'; t.tabIndex = -1; }
     // Прогресс и подпись части
-    const total = N + 1;
+    const total = N + 2;
     progBar.style.width = (idx >= I_RESULT ? 100 : (idx / total) * 100) + '%';
-    partEl.textContent = idx === 0 ? 'тест' : idx <= N ? 'часть 1 · ' + idx + ' из ' + N : idx === I_CHECK ? 'часть 2' : 'результат';
+    partEl.textContent = idx === 0 ? 'тест' : idx <= N ? 'часть 1 · ' + idx + ' из ' + N : idx === I_CHECK ? 'часть 2 · 1 из 2' : idx === I_QS ? 'часть 2 · 2 из 2' : 'результат';
     body.scrollTop = 0;
     validate();
     if (dir !== 0 || idx === 0) { requestAnimationFrame(() => { if (t) t.focus({ preventScroll: true }); }); }
@@ -142,7 +143,6 @@
 
   const onNext = () => {
     if (btnNext.disabled) return;
-    if (idx === I_CHECK) { go(I_RESULT, 1); return; }
     go(idx + 1, 1);
   };
 
@@ -150,6 +150,7 @@
     let ok = true;
     if (idx === 0) ok = consent;
     else if (idx <= N) ok = stepValid(STEPS[idx - 1]);
+    else if (idx === I_QS) ok = qsDone();
     btnNext.disabled = !ok;
   };
 
@@ -385,7 +386,10 @@
   const visibleBlocks = () => BLOCKS.filter((b) => !b.sex || b.sex === sex());
   const visibleItems = (b) => b.items.filter((i) => !i.sex || i.sex === sex());
   const countOf = (b) => visibleItems(b).filter((i) => i.count && i.kind !== 'n' && CHK[i.id] === true).length;
-  const checkedTotal = () => visibleBlocks().reduce((n, b) => n + visibleItems(b).filter((i) => i.kind !== 'n' && CHK[i.id] === true).length, 0);
+  const checkedTotal = () => visibleBlocks().reduce((n, b) => n + visibleItems(b).filter((i) => i.kind === 's' && CHK[i.id] === true).length, 0);
+  const qItems = () => visibleBlocks().flatMap((b) => visibleItems(b).filter((i) => i.kind !== 's'));
+  const answeredQ = (i) => (i.kind === 'q' ? typeof CHK[i.id] === 'boolean' : typeof CHK[i.id] === 'number');
+  const qsDone = () => qItems().every(answeredQ);
 
   const renderCheck = (view) => {
     const { w, t } = heading(null, 'Что из этого про тебя?');
@@ -393,27 +397,57 @@
     view.appendChild(h('p', 'qo__hint', nb('Отметь всё, что подходит. Если сомневаешься, не отмечай.')));
     const upd = () => { meta.textContent = 'отмечено ' + checkedTotal(); };
     visibleBlocks().forEach((b) => {
+      const its = visibleItems(b).filter((i) => i.kind === 's');
+      if (!its.length) return;
       const sec = h('div', 'qo__sec'); sec.setAttribute('role', 'group');
-      visibleItems(b).forEach((i) => {
-        if (i.kind === 's') {
-          const lb = h('label', 'qo__chk'), inp = document.createElement('input'); inp.type = 'checkbox'; inp.checked = CHK[i.id] === true;
-          inp.addEventListener('change', () => { CHK[i.id] = inp.checked; upd(); });
-          lb.append(inp, h('span', 'qo__box'), h('span', 'qo__ct', nb(i.text))); sec.appendChild(lb);
-        } else if (i.kind === 'q') {
-          const lb = h('label', 'qo__sw'), inp = document.createElement('input'); inp.type = 'checkbox'; inp.setAttribute('role', 'switch'); inp.checked = CHK[i.id] === true;
-          inp.addEventListener('change', () => { CHK[i.id] = inp.checked; upd(); });
-          lb.append(h('span', 'qo__ct', nb(i.text)), inp, h('span', 'qo__tg')); sec.appendChild(lb);
+      its.forEach((i) => {
+        const lb = h('label', 'qo__chk'), inp = document.createElement('input'); inp.type = 'checkbox'; inp.checked = CHK[i.id] === true;
+        inp.addEventListener('change', () => { CHK[i.id] = inp.checked; upd(); });
+        lb.append(inp, h('span', 'qo__box'), h('span', 'qo__ct', nb(i.text))); sec.appendChild(lb);
+      });
+      view.appendChild(sec);
+    });
+    meta.hidden = false; upd();
+    btnNext.textContent = 'дальше';
+    return t;
+  };
+
+  /* Часть 2, экран 2: уточнения. Каждый вопрос обязателен: да или нет, число вводится вручную */
+  const renderQs = (view) => {
+    const { w, t } = heading(null, 'Несколько уточнений');
+    view.appendChild(w);
+    view.appendChild(h('p', 'qo__hint', nb('Ответь на каждый вопрос: «да» или «нет».')));
+    const upd = () => { const all = qItems(); meta.textContent = 'отвечено ' + all.filter(answeredQ).length + ' из ' + all.length; btnNext.disabled = !qsDone(); };
+    visibleBlocks().forEach((b) => {
+      const its = visibleItems(b).filter((i) => i.kind !== 's');
+      if (!its.length) return;
+      const sec = h('div', 'qo__sec');
+      its.forEach((i) => {
+        const row = h('div', 'qo__q');
+        row.appendChild(h('p', 'qo__ct', nb(i.text)));
+        if (i.kind === 'q') {
+          const g = h('div', 'qo__seg'); g.setAttribute('role', 'radiogroup'); g.setAttribute('aria-label', i.text);
+          [[true, 'да'], [false, 'нет']].forEach(([v, label]) => {
+            const bt = h('button', 'qo__segb', label); bt.type = 'button'; bt.setAttribute('role', 'radio');
+            const draw = () => { const on = CHK[i.id] === v; bt.classList.toggle('is-on', on); bt.setAttribute('aria-checked', on ? 'true' : 'false'); };
+            bt.addEventListener('click', () => { CHK[i.id] = v; g.querySelectorAll('button').forEach((x) => x.dispatchEvent(new Event('qo-draw'))); upd(); });
+            bt.addEventListener('qo-draw', draw); draw(); g.appendChild(bt);
+          });
+          row.appendChild(g);
         } else {
-          const lb = h('label', 'qo__num'), inp = document.createElement('input');
+          const box = h('div', 'qo__numin'), inp = document.createElement('input');
           inp.type = 'text'; inp.inputMode = 'numeric'; inp.maxLength = 2; inp.placeholder = '—';
+          inp.setAttribute('aria-label', i.text);
           inp.value = typeof CHK[i.id] === 'number' ? CHK[i.id] : '';
           inp.addEventListener('input', () => {
             inp.value = inp.value.replace(/\D/g, '');
             const n = parseInt(inp.value, 10);
             if (Number.isFinite(n) && n >= i.num.min && n <= i.num.max) CHK[i.id] = n; else delete CHK[i.id];
+            upd();
           });
-          lb.append(h('span', 'qo__ct', nb(i.text)), h('span', 'qo__numin', null)); lb.lastChild.append(inp, h('span', 'qo__unit', i.num.unit)); sec.appendChild(lb);
+          box.append(inp, h('span', 'qo__unit', i.num.unit)); row.appendChild(box); row.classList.add('qo__q--num');
         }
+        sec.appendChild(row);
       });
       view.appendChild(sec);
     });
