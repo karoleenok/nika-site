@@ -19,6 +19,11 @@ const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const text = (v, max) => String(v ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max);
 const round1 = (v) => Math.round(v * 10) / 10;
 
+// Род в формулировках, как на странице (gx в js/quiz-data.js): «сдавал(а)» → «сдавала» / «сдавал»
+const gx = (t, sex) => (sex !== 'f' && sex !== 'm' ? t : String(t)
+  .replace(/прошёл\(ла\)/g, sex === 'f' ? 'прошла' : 'прошёл')
+  .replace(/(\p{L})\((а|ла)\)/gu, (_, c, e) => c + (sex === 'f' ? e : '')));
+
 const visibleBlocks = (sex) => BLOCKS.filter((b) => !b.sex || b.sex === sex);
 const visibleItems = (b, sex) => b.items.filter((i) => !i.sex || i.sex === sex);
 
@@ -81,25 +86,25 @@ export function flaggedBlocks(ans) {
 
 // Ответы человеческими словами — для экрана Ники
 export function readable(ans) {
-  const out = [];
+  const out = [], sx = ans.a?.sex, g = (t) => gx(t, sx);
   for (const s of STEPS) {
     const v = ans.a?.[s.id];
     if (v == null) continue;
-    const label = (id) => { const o = s.options?.find((x) => x.id === id); return o ? (o.sub ? `${o.label} (${o.sub})` : o.label) : id; };
+    const label = (id) => { const o = s.options?.find((x) => x.id === id); return g(o ? (o.sub ? `${o.label} (${o.sub})` : o.label) : id); };
     let a;
     if (s.type === 'sex' || s.type === 'level') a = [label(v)];
     else if (s.type === 'wheel') a = [`${String(v).replace('.', ',')} ${s.unit}`];
     else if (s.type === 'chips') a = [...v.sel.map(label), ...(v.other ? [`другое: ${v.other}`] : [])];
     else a = [v.yes ? (v.text ? `да: ${v.text}` : 'да') : 'нет'];
-    out.push({ q: s.title.replace('{sex}', ''), a });
+    out.push({ q: g(s.title), a });
   }
   for (const b of visibleBlocks(ans.a?.sex)) {
     const items = visibleItems(b, ans.a.sex), n = countOf(b, ans);
     const a = [];
     for (const i of items) {
       const v = ans.c?.[i.id];
-      if (i.kind === 's') { if (v === true) a.push(i.text); }
-      else if (i.kind === 'q') a.push(`${i.text} ${v ? 'да' : 'нет'}`);
+      if (i.kind === 's') { if (v === true) a.push(g(i.text)); }
+      else if (i.kind === 'q') a.push(`${g(i.text)} ${v ? 'да' : 'нет'}`);
       else if (i.kind === 'n' && v != null) a.push(`${i.text} ${v} ${i.num?.unit ?? ''}`.trim());
     }
     out.push({ q: `${b.short}: отмечено ${n}, порог ${b.threshold}${n >= b.threshold ? ' (выделен)' : ''}`, a });

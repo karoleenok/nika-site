@@ -48,3 +48,12 @@ test('для Ники ответы читаются словами', () => {
   assert.equal(ANALYSES.liv, 'печень и желчный пузырь');
   assert.ok(block.a.length >= 4);
 });
+
+test('род в вопросах для Ники подставляется по полу', () => {
+  const f = readable(cleanAnswers(fullAnswers({ sex: 'f' })));
+  const m = readable(cleanAnswers(fullAnswers({ sex: 'm' })));
+  const pick = (r) => r.find((x) => x.q.includes('кровь')).q;
+  assert.ok(pick(f).includes('сдавала') && !pick(f).includes('(а)'));
+  assert.ok(pick(m).includes('сдавал ') && !pick(m).includes('(а)'));
+  assert.equal(f[0].q, 'Выбери пол');
+});

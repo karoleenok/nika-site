@@ -13,7 +13,9 @@
   const NB = ' ';
   // Предлоги и союзы до 3 букв не оставляем в конце строки (как js/typo.js на статичных текстах)
   const nb = (t) => String(t).replace(/(^|[\s(«])([А-Яа-яЁё]{1,3})\s+(?=\S)/g, '$1$2' + NB).replace(/\s+([—–])/g, NB + '$1');
-  const h = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  // Все тексты проходят через gx: род («сдавал(а)») подставляется по полу из первого вопроса
+  const T = (t) => D.gx(t, A.sex);
+  const h = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = T(text); return n; };
   const icon = (d, size = 20) => {
     const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('width', size); s.setAttribute('height', size);
@@ -27,6 +29,7 @@
   const A = {};            // ответы части 1: id шага → значение
   const CHK = {};          // чек-лист: id пункта → true | число
   let consent = false;
+  let qsMark = null;       // подсветить неотвеченные уточнения (ставит renderQs)
   let quizKey = null, who = { name: '', phone: '' };   // ключ анкеты из заявки и контакт из формы
   let saveState = 'idle', serverPromo = null;       // idle | sending | ok | fail | none
   let idx = 0;             // 0 = вводный экран, 1..N = шаги, N+1 = чек-лист, N+2 = итог
@@ -149,6 +152,7 @@
 
   const onNext = () => {
     if (btnNext.disabled) return;
+    if (idx === I_QS && !qsDone()) { if (qsMark) qsMark(); return; }   // не пускаем дальше, показываем красным, что осталось
     go(idx + 1, 1);
   };
 
@@ -156,7 +160,6 @@
     let ok = true;
     if (idx === 0) ok = consent;
     else if (idx <= N) ok = stepValid(STEPS[idx - 1]);
-    else if (idx === I_QS) ok = qsDone();
     btnNext.disabled = !ok;
   };
 
@@ -219,7 +222,7 @@
   };
 
   const sexStep = (view, s) => {
-    const g = h('div', 'qo__sex'); g.setAttribute('role', 'radiogroup'); g.setAttribute('aria-label', s.title);
+    const g = h('div', 'qo__sex'); g.setAttribute('role', 'radiogroup'); g.setAttribute('aria-label', T(s.title));
     s.options.forEach((o) => {
       const b = h('button', 'qo__card' + (A.sex === o.id ? ' is-on' : ''), o.label); b.type = 'button';
       b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', A.sex === o.id ? 'true' : 'false');
@@ -245,7 +248,7 @@
 
     const wrap = h('div', 'qo__wheelbox');
     const wheel = h('div', 'qo__wheel'); wheel.tabIndex = 0;
-    wheel.setAttribute('role', 'spinbutton'); wheel.setAttribute('aria-label', s.title);
+    wheel.setAttribute('role', 'spinbutton'); wheel.setAttribute('aria-label', T(s.title));
     wheel.setAttribute('aria-valuemin', s.min); wheel.setAttribute('aria-valuemax', s.max);
     const list = h('div', 'qo__wlist');
     const items = vals.map((v, i) => {
@@ -257,7 +260,7 @@
     const field = h('label', 'qo__manual');
     const inp = document.createElement('input');
     inp.type = 'text'; inp.inputMode = s.step < 1 ? 'decimal' : 'numeric'; inp.autocomplete = 'off'; inp.maxLength = 6;
-    inp.setAttribute('aria-label', s.title + ', ' + s.unit);
+    inp.setAttribute('aria-label', T(s.title) + ', ' + s.unit);
     field.append(inp, h('span', 'qo__unit', s.unit));
     wrap.appendChild(field);
     view.appendChild(wrap);
@@ -312,7 +315,7 @@
 
   const chipsStep = (view, s) => {
     const c = chipsState(s);
-    const box = h('div', 'qo__chips'); box.setAttribute('role', s.multi ? 'group' : 'radiogroup'); box.setAttribute('aria-label', s.title);
+    const box = h('div', 'qo__chips'); box.setAttribute('role', s.multi ? 'group' : 'radiogroup'); box.setAttribute('aria-label', T(s.title));
     const chips = [];
     const draw = () => chips.forEach(([b, id]) => {
       const on = id === '__other' ? c.otherOn : c.sel.includes(id);
@@ -348,7 +351,7 @@
   };
 
   const levelStep = (view, s) => {
-    const g = h('div', 'qo__levels'); g.setAttribute('role', 'radiogroup'); g.setAttribute('aria-label', s.title);
+    const g = h('div', 'qo__levels'); g.setAttribute('role', 'radiogroup'); g.setAttribute('aria-label', T(s.title));
     s.options.forEach((o, i) => {
       const b = h('button', 'qo__level' + (A[s.id] === o.id ? ' is-on' : '')); b.type = 'button';
       b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', A[s.id] === o.id ? 'true' : 'false');
@@ -368,11 +371,11 @@
 
   const ynStep = (view, s) => {
     const st = ynState(s);
-    const g = h('div', 'qo__yn'); g.setAttribute('role', 'radiogroup'); g.setAttribute('aria-label', s.title);
+    const g = h('div', 'qo__yn'); g.setAttribute('role', 'radiogroup'); g.setAttribute('aria-label', T(s.title));
     const ask = h('div', 'qo__ask'); ask.hidden = st.yes !== true;
     ask.appendChild(h('p', 'qo__asklabel', s.ask));
     const ta = document.createElement('textarea'); ta.rows = 3; ta.maxLength = 300; ta.value = st.text; ta.placeholder = 'можно коротко';
-    ta.setAttribute('aria-label', s.ask);
+    ta.setAttribute('aria-label', T(s.ask));
     ta.addEventListener('input', () => { st.text = ta.value; });
     ask.appendChild(ta);
     [['yes', true, 'да'], ['no', false, 'нет']].forEach(([id, v, label]) => {
@@ -423,16 +426,32 @@
     const { w, t } = heading(null, 'Несколько уточнений');
     view.appendChild(w);
     view.appendChild(h('p', 'qo__hint', nb('Ответь на каждый вопрос: «да» или «нет».')));
-    const upd = () => { const all = qItems(); meta.textContent = 'отвечено ' + all.filter(answeredQ).length + ' из ' + all.length; btnNext.disabled = !qsDone(); };
+    const rows = []; let showMiss = false;
+    const paint = () => {
+      const miss = rows.filter(([, i]) => !answeredQ(i));
+      rows.forEach(([row, i]) => { const bad = showMiss && !answeredQ(i); row.classList.toggle('is-missing', bad); if (bad) row.setAttribute('aria-invalid', 'true'); else row.removeAttribute('aria-invalid'); });
+      meta.classList.toggle('is-bad', showMiss && miss.length > 0);
+      return miss;
+    };
+    const upd = () => {
+      const all = qItems(), left = all.length - all.filter(answeredQ).length;
+      meta.textContent = showMiss && left ? 'не отвечено: ' + left + ' из ' + all.length + ' (отмечено красным)' : 'отвечено ' + (all.length - left) + ' из ' + all.length;
+      paint();
+    };
+    qsMark = () => {
+      showMiss = true; upd();
+      const first = rows.find(([, i]) => !answeredQ(i));
+      if (first) { first[0].scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' }); }
+    };
     visibleBlocks().forEach((b) => {
       const its = visibleItems(b).filter((i) => i.kind !== 's');
       if (!its.length) return;
       const sec = h('div', 'qo__sec');
       its.forEach((i) => {
-        const row = h('div', 'qo__q');
+        const row = h('div', 'qo__q'); rows.push([row, i]);
         row.appendChild(h('p', 'qo__ct', nb(i.text)));
         if (i.kind === 'q') {
-          const g = h('div', 'qo__seg'); g.setAttribute('role', 'radiogroup'); g.setAttribute('aria-label', i.text);
+          const g = h('div', 'qo__seg'); g.setAttribute('role', 'radiogroup'); g.setAttribute('aria-label', T(i.text));
           [[true, 'да'], [false, 'нет']].forEach(([v, label]) => {
             const bt = h('button', 'qo__segb', label); bt.type = 'button'; bt.setAttribute('role', 'radio');
             const draw = () => { const on = CHK[i.id] === v; bt.classList.toggle('is-on', on); bt.setAttribute('aria-checked', on ? 'true' : 'false'); };
@@ -443,7 +462,7 @@
         } else {
           const box = h('div', 'qo__numin'), inp = document.createElement('input');
           inp.type = 'text'; inp.inputMode = 'numeric'; inp.maxLength = 2; inp.placeholder = '—';
-          inp.setAttribute('aria-label', i.text);
+          inp.setAttribute('aria-label', T(i.text));
           inp.value = typeof CHK[i.id] === 'number' ? CHK[i.id] : '';
           inp.addEventListener('input', () => {
             inp.value = inp.value.replace(/\D/g, '');
@@ -491,7 +510,7 @@
       : 'Здравствуйте, Ника! Я прошёл(ла) тест на сайте. Хочу, чтобы вы разобрали мою ситуацию по анализам.';
     // Если ответы на сервер не попали, контакт передаём в самом сообщении
     const who2 = saveState !== 'ok' && saveState !== 'sending' && who.name ? ' Меня зовут ' + who.name + ', мой номер: ' + who.phone + '.' : '';
-    return 'https://wa.me/' + SETTINGS.waPhone + '?text=' + encodeURIComponent(text + who2);
+    return 'https://wa.me/' + SETTINGS.waPhone + '?text=' + encodeURIComponent(T(text + who2));
   };
 
   const renderResult = (view) => {

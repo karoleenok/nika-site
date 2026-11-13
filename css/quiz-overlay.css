@@ -185,6 +185,9 @@ html.qo-lock, html.qo-lock body { overflow: hidden; }
 
 /* Уточнения: вопрос и две кнопки «да» / «нет» */
 .qo__q { display: grid; gap: 12px; padding: 16px; border-radius: 14px; background: var(--c-paper); }
+.qo__q.is-missing { background: #fdecec; box-shadow: inset 0 0 0 2px var(--c-red); }
+.qo__q.is-missing .qo__ct { color: var(--c-red); }
+.qo__meta.is-bad { color: var(--c-red); font-weight: 600; }
 .qo__q--num { grid-template-columns: 1fr auto; align-items: center; }
 .qo__seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .qo__segb { min-height: 48px; border-radius: var(--r-btn, 8px); background: var(--c-white); border: 1.5px solid var(--c-disabled); font-size: 16px; font-weight: 500; line-height: 1; transition: background-color var(--dur-1), color var(--dur-1), border-color var(--dur-1); }

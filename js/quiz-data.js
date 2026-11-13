@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = 'overlay-2026-11-13-b';
+  const VERSION = 'overlay-2026-11-13-c';
 
   /* ---------- Настройки ---------- */
   const SETTINGS = {
@@ -33,7 +33,7 @@
   //        only: вариант «ничего» снимает остальные.
   // yn: при «да» открывается текстовое поле (ask).
   const STEPS = [
-    { id: 'sex', type: 'sex', title: 'Ты девушка или мужчина?',
+    { id: 'sex', type: 'sex', title: 'Выбери пол',
       hint: 'От этого зависит один из блоков вопросов про гормоны.',
       options: [{ id: 'f', label: 'женский' }, { id: 'm', label: 'мужской' }] },
 
@@ -113,6 +113,14 @@
     { id: 'surgeries', type: 'yn', title: 'Были ли операции?',
       ask: 'Какие и когда?', hint: 'Коротко, в свободной форме.' },
   ];
+  // Род в формулировках: «сдавал(а)» → «сдавала» или «сдавал» по выбранному полу.
+  // Пока пол не выбран, текст не трогаем. Пишите в данных форму с (а) / (ла): код подставит нужную.
+  const gx = (text, sex) => {
+    if (sex !== 'f' && sex !== 'm') return text;
+    return String(text)
+      .replace(/прошёл\(ла\)/g, sex === 'f' ? 'прошла' : 'прошёл')
+      .replace(/(\p{L})\((а|ла)\)/gu, (_, c, e) => c + (sex === 'f' ? e : ''));
+  };
   // Исправление рода в тексте: титул «активна/активен» подставляется по полу
   const activityTitle = (sex) => sex === 'm' ? STEPS.find((s) => s.id === 'activity').titleM : STEPS.find((s) => s.id === 'activity').title;
 
@@ -271,5 +279,5 @@
     disclaimer: 'Это рекомендации по обследованиям, а не диагноз. Диагноз и лечение назначает врач.',
   };
 
-  window.NikaQuizData = { VERSION, SETTINGS, STEPS, BLOCKS, TEXTS, activityTitle };
+  window.NikaQuizData = { VERSION, SETTINGS, STEPS, BLOCKS, TEXTS, activityTitle, gx };
 })();

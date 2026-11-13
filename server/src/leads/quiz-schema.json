@@ -1,10 +1,10 @@
 {
- "version": "overlay-2026-11-13-b",
+ "version": "overlay-2026-11-13-c",
  "steps": [
   {
    "id": "sex",
    "type": "sex",
-   "title": "Ты девушка или мужчина?",
+   "title": "Выбери пол",
    "options": [
     {
      "id": "f",
