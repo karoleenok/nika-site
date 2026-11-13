@@ -34,7 +34,7 @@ test('база: метки сроков и видео из сида', async () =
       FROM users u LEFT JOIN access_periods a ON a.user_id = u.id GROUP BY u.email`);
     const count = (l) => rows.filter((r) => r.label === l).length;
     assert.deepEqual([count('green'), count('yellow'), count('red')], [1, 3, 2]);
-    const v = await pool.query(`SELECT count(*)::int n, min(size_bytes)::int s FROM videos WHERE status='ready'`);
+    const v = await pool.query(`SELECT count(*)::int n, min(size_bytes)::int s FROM videos WHERE status='ready' AND s3_key LIKE 'video/demo-%'`);
     assert.equal(v.rows[0].n, 5);
     assert.ok(v.rows[0].s > 0, 'размер видео записан');
     // повторный запуск миграций и сида ничего не ломает и не дублирует
