@@ -346,6 +346,13 @@
 .stack--food .stack__img--a { left: 0; top: 4%; transform: rotate(-6deg); }
 .stack--food .stack__img--b { right: 0; top: 10%; transform: rotate(6deg); }
 .stack--food .stack__img--c { left: 31%; top: 14%; width: 38%; z-index: 1; transform: rotate(-1deg); }
+/* Скрины историй клиентов в карточке «Работа над формой»: вертикальные 9:16, четыре штуки внахлёст.
+   Углы скруглены в самих файлах (прозрачный альфа-канал), поэтому радиус CSS не нужен. */
+.stack--shots .stack__img { width: 27%; height: auto; aspect-ratio: 400 / 710; border-radius: 0; box-shadow: none; filter: drop-shadow(0 calc(6 * var(--s)) calc(12 * var(--s)) rgba(0,0,0,.22)); }
+.stack--shots .stack__img--a { left: 0; top: 10%; transform: rotate(-7deg); }
+.stack--shots .stack__img--b { left: 23%; top: 16%; transform: rotate(-2deg); z-index: 1; }
+.stack--shots .stack__img--c { left: 47%; top: 4%; transform: rotate(3deg); z-index: 2; }
+.stack--shots .stack__img--d { right: 0; top: 14%; transform: rotate(7deg); z-index: 1; }
 .stack--ph span { position: absolute; background: #e9e9e9; border-radius: calc(12 * var(--s)); box-shadow: 0 calc(8 * var(--s)) calc(20 * var(--s)) rgba(0,0,0,.12); }
 .stack--ph span:nth-child(1) { left: 0; top: 8%; width: 52%; height: 44%; transform: rotate(-4deg); }
 .stack--ph span:nth-child(2) { right: 0; top: 14%; width: 52%; height: 48%; transform: rotate(5deg); background: #ececec; }
