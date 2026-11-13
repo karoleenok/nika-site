@@ -693,7 +693,7 @@
       box.appendChild(el('p', 'lead__qt', x.q));
       const c = el('div', 'lead__q'); x.a.forEach(v => c.appendChild(el('span', '', v))); box.appendChild(c);
     });
-    const a = el('div', 'lead__a', 'Предварительно: ' + q.analyses.join(', ') + '.');
+    const a = el('div', 'lead__a', q.analyses.length ? 'Тест выделил блоки: ' + q.analyses.join(', ') + '.' : 'Тест не выделил отдельных блоков.');
     a.appendChild(el('small', '', 'Список составил тест, направление подтверждаешь ты. Согласие на данные о здоровье: ' + when(q.consentAt) + '.'));
     box.appendChild(a);
   };

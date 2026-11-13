@@ -1,11 +1,11 @@
-// Заявки с лендинга и анкета по витаминам.
+// Заявки с лендинга и анкета теста по анализам.
 // Заявку видят все роли админки. Ответы анкеты (данные о здоровье) — только owner, каждый просмотр в журнале.
 // Почту, телефон и ответы анкеты в лог сервера не пишем.
 import crypto from 'node:crypto';
 import { Limiter } from '../auth/limits.js';
 import { audit } from '../access.js';
 import { adminLeadMail } from '../mail.js';
-import { publicQuestions, cleanAnswers, analysesFor, readable, ANALYSES, VERSION, CONSENT_VERSION, HEALTH_CONSENT_VERSION } from './quiz.js';
+import { cleanAnswers, flaggedBlocks, readable, ANALYSES, VERSION, CONSENT_VERSION, HEALTH_CONSENT_VERSION } from './quiz.js';
 
 export const SERVICES = { test: 'тест по анализам', training: 'тренировки', food: 'питание', package: 'полный пакет', other: 'другое' };
 const QUIZ_KEY_HOURS = 24;
@@ -80,11 +80,6 @@ export default async function leadRoutes(app, { config, pool, mailer }) {
   });
 
   // ---------- Анкета ----------
-  app.get('/api/quiz', async (req, reply) => {
-    reply.header('cache-control', 'public, max-age=300');
-    return publicQuestions();
-  });
-
   app.post('/api/quiz', async (req, reply) => {
     noStore(reply);
     const b = req.body && typeof req.body === 'object' ? req.body : {};
@@ -95,7 +90,7 @@ export default async function leadRoutes(app, { config, pool, mailer }) {
     const answers = cleanAnswers(b.answers);
     if (!answers) return bad(reply, 400, 'Ответь на все вопросы.');
     const key = typeof b.key === 'string' && b.key.length <= 64 ? b.key : '';
-    const analyses = analysesFor(answers);
+    const blocks = flaggedBlocks(answers);   // какие блоки выделил тест; тексты итога собирает страница
     // Ключ одноразовый: после сохранения стираем, второй раз ту же заявку не заполнить
     const lead = key && (await pool.query(
       `UPDATE leads SET quiz_key_hash = NULL, quiz_key_until = NULL, is_new = true
@@ -105,9 +100,11 @@ export default async function leadRoutes(app, { config, pool, mailer }) {
       await pool.query(
         `INSERT INTO questionnaires (lead_id, answers, analyses, form_version, consent_at, consent_version)
          VALUES ($1, $2, $3, $4, now(), $5) ON CONFLICT DO NOTHING`,
-        [lead.id, answers, JSON.stringify(analyses), VERSION, HEALTH_CONSENT_VERSION]);
+        [lead.id, answers, JSON.stringify(blocks), VERSION, HEALTH_CONSENT_VERSION]);
     }
-    return { ok: true };
+    // Промокод отдаём только при настоящем ключе заявки и только если Ника его задала (QUIZ_PROMO_CODE в .env)
+    const { promoCode, promoPercent } = config.quiz;
+    return lead && promoCode && promoPercent ? { ok: true, promo: { code: promoCode, percent: promoPercent } } : { ok: true };
   });
 
   // ---------- Админка ----------

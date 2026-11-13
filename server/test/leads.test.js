@@ -2,7 +2,8 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, cookieOf, codeFrom } from './helpers.js';
 import { normPhone } from '../src/leads/routes.js';
-import { cleanAnswers, analysesFor, VERSION } from '../src/leads/quiz.js';
+import { cleanAnswers, VERSION } from '../src/leads/quiz.js';
+import { fullAnswers, schema } from './quiz-fixture.js';
 
 let t;
 before(async () => {
@@ -13,7 +14,7 @@ after(() => t.close());
 
 const lead = (extra = {}, ip = t.freshIp()) => t.api('POST', '/api/leads',
   { name: 'Кристина', phone: '8 (914) 123-45-67', service: 'test', consent: true, agree: true, ms: 9000, ...extra }, { ip });
-const ANS = { symptoms: ['tired', 'hair'], food: 'veg', sun: 'rare', last: 'long', note: 'почта a@b.ru' };
+const ANS = fullAnswers({ check: schema.blocks.find((b) => b.id === 'liv').items.filter((i) => i.kind === 's').slice(0, 4).map((i) => i.id) });
 const quiz = (key, extra = {}) => t.api('POST', '/api/quiz', { key, version: VERSION, healthConsent: true, answers: ANS, ...extra }, { ip: t.freshIp() });
 
 async function adminLogin(email) {
@@ -30,16 +31,10 @@ test('телефон приводится к +7…', () => {
   assert.equal(normPhone('12345'), null);
 });
 
-test('ответы анкеты: только известные вопросы и варианты', () => {
+test('ответы анкеты: полная проходит, чужие поля нет (подробности в quiz.test.js)', () => {
   assert.ok(cleanAnswers(ANS));
   assert.equal(cleanAnswers({ ...ANS, extra: 1 }), null);
-  assert.equal(cleanAnswers({ ...ANS, food: 'pizza' }), null);
-  assert.equal(cleanAnswers({ ...ANS, symptoms: [] }), null);
-  assert.equal(cleanAnswers({ ...ANS, symptoms: ['none', 'tired'] }), null);
-  assert.equal(cleanAnswers({ ...ANS, note: 'x'.repeat(900) }).note.length, 500);
-  const a = analysesFor(cleanAnswers(ANS));
-  assert.ok(a.includes('cbc') && a.includes('ferritin') && a.includes('vitd') && a.includes('zinc'));
-  assert.ok(!a.includes('glucose'));
+  assert.equal(cleanAnswers({ a: ANS.a, c: { ...ANS.c, nope_01: true } }), null);
 });
 
 test('заявка: без галочек и с плохим номером — отказ', async () => {
@@ -80,7 +75,9 @@ test('тест: заявка → анкета → видна только owner,
 
   assert.equal((await quiz(key, { healthConsent: false })).statusCode, 400);
   assert.equal((await quiz(key, { version: 'old' })).statusCode, 409);
-  assert.equal((await quiz(key)).statusCode, 200);
+  const saved = await quiz(key);
+  assert.equal(saved.statusCode, 200);
+  assert.equal(saved.json().promo, undefined);   // промокод в .env не задан
   // Ключ одноразовый: повтор отвечает так же, но второй анкеты нет
   assert.equal((await quiz(key)).statusCode, 200);
   assert.equal((await quiz('wrong-key')).statusCode, 200);
@@ -99,7 +96,8 @@ test('тест: заявка → анкета → видна только owner,
   assert.equal((await t.api('GET', `/api/admin/leads/${l.id}/quiz`, null, { cookie: tech })).statusCode, 403);
   const q = await t.api('GET', `/api/admin/leads/${l.id}/quiz`, null, { cookie: own });
   assert.equal(q.statusCode, 200);
-  assert.ok(q.json().analyses.includes('ферритин'));
+  assert.deepEqual(q.json().analyses, ['печень и желчный пузырь']);
+  assert.ok(q.json().answers.some((x) => x.q.startsWith('печень') && x.q.includes('выделен')));
   assert.equal((await t.pool.query(`SELECT count(*)::int n FROM audit_log WHERE action = 'lead.quiz_view'`)).rows[0].n, 1);
   // Без входа — 401
   assert.equal((await t.api('GET', '/api/admin/leads')).statusCode, 401);

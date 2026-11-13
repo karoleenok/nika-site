@@ -312,10 +312,16 @@
         </div>
         <div class="test__right">
           <img class="script-img script-img--test" src="assets/script/script-proven.svg" width="266" height="39" alt="" loading="lazy" decoding="async">
-          <div class="form test__cta">
-            <button class="btn btn--red btn--block" type="button" data-quiz-open>пройти тест</button>
-            <p class="form__note">Около 5&nbsp;минут. Ответы остаются в&nbsp;твоём браузере, пока сам не&nbsp;отправишь итог Нике.</p>
-          </div>
+          <form class="form test__cta" data-test-form novalidate>
+            <label class="field"><input type="text" name="name" placeholder="имя" autocomplete="given-name" maxlength="80" aria-label="Имя"></label>
+            <label class="field"><input type="tel" name="phone" placeholder="номер телефона" autocomplete="tel" inputmode="tel" maxlength="30" aria-label="Номер телефона"></label>
+            <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <button class="btn btn--red btn--block" type="submit">начать тестирование</button>
+            <label class="consent"><input type="checkbox" name="consent"><span>Я&nbsp;даю <a href="legal/consent.html" target="_blank" rel="noopener">согласие на&nbsp;обработку персональных данных</a></span></label>
+            <label class="consent"><input type="checkbox" name="agree"><span>Я&nbsp;ознакомился(ась) с&nbsp;<a href="legal/privacy.html" target="_blank" rel="noopener">Политикой обработки персональных данных</a> и&nbsp;<a href="legal/offer.html" target="_blank" rel="noopener">Офертой</a></span></label>
+            <p class="form__msg" role="status" aria-live="polite"></p>
+            <p class="form__note">Около 5&nbsp;минут. Ответы увидит только Ника.</p>
+          </form>
         </div>
       </div>
 
@@ -469,10 +475,16 @@
       </div>
       <div class="test__right">
         <img class="script-img script-img--test" src="assets/script/script-proven.svg" width="266" height="39" alt="" loading="lazy" decoding="async">
-        <div class="form test__cta">
-            <button class="btn btn--red btn--block" type="button" data-quiz-open>пройти тест</button>
-            <p class="form__note">Около 5&nbsp;минут. Ответы остаются в&nbsp;твоём браузере, пока сам не&nbsp;отправишь итог Нике.</p>
-          </div>
+        <form class="form test__cta" data-test-form novalidate>
+            <label class="field"><input type="text" name="name" placeholder="имя" autocomplete="given-name" maxlength="80" aria-label="Имя"></label>
+            <label class="field"><input type="tel" name="phone" placeholder="номер телефона" autocomplete="tel" inputmode="tel" maxlength="30" aria-label="Номер телефона"></label>
+            <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <button class="btn btn--red btn--block" type="submit">начать тестирование</button>
+            <label class="consent"><input type="checkbox" name="consent"><span>Я&nbsp;даю <a href="legal/consent.html" target="_blank" rel="noopener">согласие на&nbsp;обработку персональных данных</a></span></label>
+            <label class="consent"><input type="checkbox" name="agree"><span>Я&nbsp;ознакомился(ась) с&nbsp;<a href="legal/privacy.html" target="_blank" rel="noopener">Политикой обработки персональных данных</a> и&nbsp;<a href="legal/offer.html" target="_blank" rel="noopener">Офертой</a></span></label>
+            <p class="form__msg" role="status" aria-live="polite"></p>
+            <p class="form__note">Около 5&nbsp;минут. Ответы увидит только Ника.</p>
+          </form>
       </div>
     </div>
 

@@ -1,0 +1,1111 @@
+{
+ "version": "overlay-2026-11-13-b",
+ "steps": [
+  {
+   "id": "sex",
+   "type": "sex",
+   "title": "Ты девушка или мужчина?",
+   "options": [
+    {
+     "id": "f",
+     "label": "женский"
+    },
+    {
+     "id": "m",
+     "label": "мужской"
+    }
+   ]
+  },
+  {
+   "id": "height",
+   "type": "wheel",
+   "title": "Какой у тебя рост?",
+   "unit": "см",
+   "min": 120,
+   "max": 230,
+   "step": 1
+  },
+  {
+   "id": "weight",
+   "type": "wheel",
+   "title": "Сколько ты весишь?",
+   "unit": "кг",
+   "min": 30,
+   "max": 250,
+   "step": 0.5
+  },
+  {
+   "id": "weightChange",
+   "type": "chips",
+   "title": "Менялся ли вес за последние 3–6 месяцев?",
+   "other": true,
+   "options": [
+    {
+     "id": "same",
+     "label": "почти не менялся"
+    },
+    {
+     "id": "up",
+     "label": "вырос"
+    },
+    {
+     "id": "down",
+     "label": "снизился"
+    },
+    {
+     "id": "jump",
+     "label": "скачет вверх и вниз"
+    }
+   ]
+  },
+  {
+   "id": "age",
+   "type": "wheel",
+   "title": "Сколько тебе лет?",
+   "unit": "лет",
+   "min": 18,
+   "max": 90,
+   "step": 1
+  },
+  {
+   "id": "request",
+   "type": "chips",
+   "title": "С каким запросом ты хочешь пройти чек-ап?",
+   "multi": true,
+   "other": true,
+   "options": [
+    {
+     "id": "checkup",
+     "label": "общий чек-ап для профилактики"
+    },
+    {
+     "id": "symptoms",
+     "label": "есть жалобы на самочувствие"
+    },
+    {
+     "id": "weight",
+     "label": "хочу похудеть или набрать вес"
+    },
+    {
+     "id": "sport",
+     "label": "начинаю заниматься спортом"
+    },
+    {
+     "id": "after",
+     "label": "контроль после лечения"
+    }
+   ]
+  },
+  {
+   "id": "diseases",
+   "type": "chips",
+   "title": "Есть ли диагностированные заболевания?",
+   "multi": true,
+   "other": true,
+   "options": [
+    {
+     "id": "none",
+     "label": "нет",
+     "only": true
+    },
+    {
+     "id": "gi",
+     "label": "желудок, кишечник, печень"
+    },
+    {
+     "id": "thyroid",
+     "label": "щитовидная железа"
+    },
+    {
+     "id": "heart",
+     "label": "сердце и давление"
+    },
+    {
+     "id": "sugar",
+     "label": "сахар, инсулинорезистентность"
+    },
+    {
+     "id": "anemia",
+     "label": "анемия"
+    },
+    {
+     "id": "kidney",
+     "label": "почки и мочевыводящие пути"
+    }
+   ]
+  },
+  {
+   "id": "diet",
+   "type": "chips",
+   "title": "Как ты питаешься сейчас?",
+   "other": true,
+   "options": [
+    {
+     "id": "all",
+     "label": "ем всё"
+    },
+    {
+     "id": "lessmeat",
+     "label": "мясо и рыбу ем редко"
+    },
+    {
+     "id": "veg",
+     "label": "вегетарианство"
+    },
+    {
+     "id": "vegan",
+     "label": "веганство"
+    },
+    {
+     "id": "lowcarb",
+     "label": "мало углеводов или кето"
+    },
+    {
+     "id": "strict",
+     "label": "строгая диета, голодание"
+    }
+   ]
+  },
+  {
+   "id": "activity",
+   "type": "level",
+   "title": "Насколько ты активна в течение дня?",
+   "options": [
+    {
+     "id": "a1",
+     "label": "минимальный",
+     "sub": "сидячая работа, почти нет движения"
+    },
+    {
+     "id": "a2",
+     "label": "низкий",
+     "sub": "лёгкие тренировки 1–3 раза в неделю"
+    },
+    {
+     "id": "a3",
+     "label": "средний",
+     "sub": "тренировки 3–5 раз в неделю"
+    },
+    {
+     "id": "a4",
+     "label": "высокий",
+     "sub": "интенсивные тренировки 6–7 раз в неделю"
+    },
+    {
+     "id": "a5",
+     "label": "очень высокий",
+     "sub": "тяжёлый физический труд или две тренировки в день"
+    }
+   ]
+  },
+  {
+   "id": "lastBlood",
+   "type": "chips",
+   "title": "Когда ты последний раз сдавал(а) кровь?",
+   "options": [
+    {
+     "id": "m3",
+     "label": "меньше 3 месяцев назад"
+    },
+    {
+     "id": "m6",
+     "label": "3–6 месяцев назад"
+    },
+    {
+     "id": "m12",
+     "label": "6–12 месяцев назад"
+    },
+    {
+     "id": "y1",
+     "label": "больше года назад"
+    },
+    {
+     "id": "never",
+     "label": "не помню или не сдавал(а)"
+    }
+   ]
+  },
+  {
+   "id": "results",
+   "type": "yn",
+   "title": "Есть ли результаты обследований не старше 3 месяцев?",
+   "ask": "Какие именно?"
+  },
+  {
+   "id": "deficits",
+   "type": "yn",
+   "title": "Выявляли ли раньше какие-то дефициты?",
+   "ask": "Чего именно не хватало?"
+  },
+  {
+   "id": "surgeries",
+   "type": "yn",
+   "title": "Были ли операции?",
+   "ask": "Какие и когда?"
+  }
+ ],
+ "blocks": [
+  {
+   "id": "liv",
+   "short": "печень и желчный пузырь",
+   "threshold": 4,
+   "items": [
+    {
+     "id": "liv_01",
+     "kind": "s",
+     "text": "Постоянная тошнота, горечь во рту, рвота (в том числе после еды)",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_02",
+     "kind": "s",
+     "text": "Желтушность кожи, слизистых и склер глаз",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_03",
+     "kind": "s",
+     "text": "Регулярные нарушения стула: запор или понос",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_04",
+     "kind": "s",
+     "text": "Кожный зуд, который усиливается ночью",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_05",
+     "kind": "s",
+     "text": "Общее недомогание и слабость, состояние интоксикации",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_06",
+     "kind": "s",
+     "text": "Тёмная моча",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_07",
+     "kind": "s",
+     "text": "Бледный стул",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_08",
+     "kind": "s",
+     "text": "Частая сухость или горечь во рту",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_09",
+     "kind": "s",
+     "text": "Желтоватый налёт на языке",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_10",
+     "kind": "s",
+     "text": "Сосудистые звёздочки (лопнувшие капилляры на лице, ногах и руках)",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_11",
+     "kind": "s",
+     "text": "Метеоризм",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_12",
+     "kind": "s",
+     "text": "Непереносимость жирной и жареной пищи, тяжесть в желудке",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_13",
+     "kind": "s",
+     "text": "Усиленный аппетит",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_14",
+     "kind": "q",
+     "text": "Есть ли вздутие живота?",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_15",
+     "kind": "q",
+     "text": "Есть ли тяжесть после еды?",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_16",
+     "kind": "q",
+     "text": "Замечали ли непереносимость определённых продуктов?",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_17",
+     "kind": "q",
+     "text": "Диагностировали ли гастрит, язву, панкреатит, заболевания печени или желчного пузыря?",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_18",
+     "kind": "q",
+     "text": "Удалён ли желчный пузырь?",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_19",
+     "kind": "q",
+     "text": "Были ли операции на желудке или кишечнике?",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "liv_20",
+     "kind": "q",
+     "text": "Есть ли кровь в стуле?",
+     "sex": null,
+     "count": true,
+     "num": null
+    }
+   ]
+  },
+  {
+   "id": "kid",
+   "short": "почки",
+   "threshold": 4,
+   "items": [
+    {
+     "id": "kid_01",
+     "kind": "s",
+     "text": "Частое мочеиспускание, особенно ночью",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_02",
+     "kind": "s",
+     "text": "Увеличение или уменьшение количества мочи",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_03",
+     "kind": "s",
+     "text": "Боль и жжение при мочеиспускании",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_04",
+     "kind": "s",
+     "text": "Отёчность рук и ног, припухлость вокруг глаз по утрам",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_05",
+     "kind": "s",
+     "text": "Запах аммиака изо рта и от кожи",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_06",
+     "kind": "s",
+     "text": "Металлический привкус во рту",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_07",
+     "kind": "s",
+     "text": "Частая зябкость",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_08",
+     "kind": "s",
+     "text": "Повышенное давление",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_09",
+     "kind": "s",
+     "text": "Необъяснимая боль в спине",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_10",
+     "kind": "s",
+     "text": "Светлая прозрачная моча",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_11",
+     "kind": "s",
+     "text": "Тёмная насыщенная моча",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_12",
+     "kind": "s",
+     "text": "Мутная моча",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_13",
+     "kind": "s",
+     "text": "Высыпания и зуд кожи",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_14",
+     "kind": "s",
+     "text": "Одышка и затруднённое дыхание",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_15",
+     "kind": "s",
+     "text": "Апатия",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_16",
+     "kind": "q",
+     "text": "Замечали ли кровь в моче?",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_17",
+     "kind": "q",
+     "text": "Были ли инфекции мочевыводящих путей за последние 3 месяца?",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "kid_18",
+     "kind": "q",
+     "text": "Диагностировали ли камни в почках?",
+     "sex": null,
+     "count": true,
+     "num": null
+    }
+   ]
+  },
+  {
+   "id": "fe",
+   "short": "железо",
+   "threshold": 4,
+   "items": [
+    {
+     "id": "fe_01",
+     "kind": "s",
+     "text": "Сухость, дряблость, шелушение и трещины на коже",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_02",
+     "kind": "s",
+     "text": "Ломкость и слоистость ногтей, поперечная исчерченность, ногти плоские или «ложкообразные»",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_03",
+     "kind": "s",
+     "text": "Трещины в уголках рта",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_04",
+     "kind": "s",
+     "text": "Ломкость и выпадение волос: теряют блеск, истончаются, секутся, редеют, рано седеют",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_05",
+     "kind": "s",
+     "text": "Извращение вкуса: тяга к мелу, глине, углю, земле",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_06",
+     "kind": "s",
+     "text": "Изменение обоняния: тянет на запахи бензина, ацетона, лаков, красок, выхлопных газов",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_07",
+     "kind": "s",
+     "text": "Недержание мочи при кашле и смехе, непреодолимые позывы, ночное недержание",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_08",
+     "kind": "s",
+     "text": "Повышенная утомляемость, сильная усталость",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_09",
+     "kind": "s",
+     "text": "Головокружение, потемнение в глазах, обмороки",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_10",
+     "kind": "s",
+     "text": "Одышка на малых дистанциях, быстрая утомляемость при нагрузках",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_11",
+     "kind": "s",
+     "text": "Регулярное донорство",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_12",
+     "kind": "s",
+     "text": "Обильная менструация",
+     "sex": "f",
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_13",
+     "kind": "s",
+     "text": "Открытые ранения, травмы, кровопотеря или операции за последние 6 месяцев",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_14",
+     "kind": "s",
+     "text": "Беременность или кормление грудью за последние 6 месяцев",
+     "sex": "f",
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_15",
+     "kind": "s",
+     "text": "Желание поесть сладкого",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_16",
+     "kind": "s",
+     "text": "Частая сонливость, желание поспать днём",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fe_17",
+     "kind": "q",
+     "text": "Принимали ли препараты железа за последние 6 месяцев?",
+     "sex": null,
+     "count": false,
+     "num": null
+    }
+   ]
+  },
+  {
+   "id": "thy",
+   "short": "щитовидная железа",
+   "threshold": 4,
+   "items": [
+    {
+     "id": "thy_01",
+     "kind": "s",
+     "text": "Увеличение веса или невозможность похудеть",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_02",
+     "kind": "s",
+     "text": "Перепады настроения, беспричинное беспокойство, депрессия",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_03",
+     "kind": "s",
+     "text": "Гормональный дисбаланс: ПМС, нерегулярный цикл, бесплодие, низкое влечение",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_04",
+     "kind": "s",
+     "text": "Мышечная боль без связи с нагрузками и травмами, боль в суставах, воспаление сухожилий",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_05",
+     "kind": "s",
+     "text": "Холодные руки и ноги при нормальной температуре",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_06",
+     "kind": "s",
+     "text": "Беспричинный озноб или жар",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_07",
+     "kind": "s",
+     "text": "Низкая температура тела",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_08",
+     "kind": "s",
+     "text": "Непереносимость тепла, беспричинное ощущение жара",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_09",
+     "kind": "s",
+     "text": "Сухая или растрескавшаяся кожа, ломкие ногти, сильное выпадение волос",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_10",
+     "kind": "s",
+     "text": "Запоры даже при нормальном питании",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_11",
+     "kind": "s",
+     "text": "Плохая концентрация внимания или плохая память",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_12",
+     "kind": "s",
+     "text": "Опухоль на шее, храп или хриплый голос",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_13",
+     "kind": "s",
+     "text": "Учащённое сердцебиение (пульс выше 100 в покое)",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_14",
+     "kind": "s",
+     "text": "Нарушение ритма сердца",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_15",
+     "kind": "s",
+     "text": "Бессонница",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_16",
+     "kind": "s",
+     "text": "Дрожание рук",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_17",
+     "kind": "s",
+     "text": "Усиленное потоотделение",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "thy_18",
+     "kind": "q",
+     "text": "Есть ли диагностированные заболевания щитовидной железы?",
+     "sex": null,
+     "count": true,
+     "num": null
+    }
+   ]
+  },
+  {
+   "id": "fem",
+   "short": "половые гормоны",
+   "threshold": 4,
+   "repro": true,
+   "sex": "f",
+   "items": [
+    {
+     "id": "fem_01",
+     "kind": "s",
+     "text": "Увеличение или потеря веса без очевидной причины",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_02",
+     "kind": "s",
+     "text": "Нарушение цикла: нерегулярный, слишком частый или редкий, обильный или скудный",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_03",
+     "kind": "s",
+     "text": "Отсутствие менструаций 6 месяцев и более",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_04",
+     "kind": "s",
+     "text": "Бесплодие, выкидыши",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_05",
+     "kind": "s",
+     "text": "Низкое либидо",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_06",
+     "kind": "s",
+     "text": "Шелушение кожи и ломкость волос",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_07",
+     "kind": "s",
+     "text": "Акне",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_08",
+     "kind": "s",
+     "text": "Локальное потемнение кожи, наросты",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_09",
+     "kind": "s",
+     "text": "Фиолетовые или ярко-розовые растяжки",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_10",
+     "kind": "s",
+     "text": "Сухость во влагалище, боль при половом акте",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_11",
+     "kind": "s",
+     "text": "Раздражительность, эмоциональность, тревожность или депрессия",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_12",
+     "kind": "s",
+     "text": "Выделения из сосков",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_13",
+     "kind": "n",
+     "text": "В каком возрасте начались менструации?",
+     "sex": null,
+     "count": false,
+     "num": {
+      "min": 8,
+      "max": 20,
+      "unit": "лет"
+     }
+    },
+    {
+     "id": "fem_14",
+     "kind": "q",
+     "text": "Регулярный ли цикл?",
+     "sex": null,
+     "count": false,
+     "num": null
+    },
+    {
+     "id": "fem_15",
+     "kind": "n",
+     "text": "Сколько дней длится менструация?",
+     "sex": null,
+     "count": false,
+     "num": {
+      "min": 1,
+      "max": 15,
+      "unit": "дн."
+     }
+    },
+    {
+     "id": "fem_16",
+     "kind": "q",
+     "text": "Обильные ли менструации?",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_17",
+     "kind": "q",
+     "text": "Есть ли выраженные боли?",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "fem_18",
+     "kind": "q",
+     "text": "Принимаете ли гормональные контрацептивы?",
+     "sex": null,
+     "count": false,
+     "num": null
+    },
+    {
+     "id": "fem_19",
+     "kind": "q",
+     "text": "Были ли беременности и роды?",
+     "sex": null,
+     "count": false,
+     "num": null
+    },
+    {
+     "id": "fem_20",
+     "kind": "q",
+     "text": "Есть ли приливы, ночная потливость или другие признаки менопаузы?",
+     "sex": null,
+     "count": true,
+     "num": null
+    }
+   ]
+  },
+  {
+   "id": "male",
+   "short": "половые гормоны",
+   "threshold": 4,
+   "repro": true,
+   "sex": "m",
+   "items": [
+    {
+     "id": "male_01",
+     "kind": "q",
+     "text": "Снижение либидо",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "male_02",
+     "kind": "q",
+     "text": "Проблемы с эрекцией",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "male_03",
+     "kind": "q",
+     "text": "Снижение мышечной массы и силы",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "male_04",
+     "kind": "q",
+     "text": "Постоянная усталость",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "male_05",
+     "kind": "q",
+     "text": "Увеличение груди",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "male_06",
+     "kind": "q",
+     "text": "Проблемы с зачатием",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "male_07",
+     "kind": "q",
+     "text": "Заболевания предстательной железы",
+     "sex": null,
+     "count": true,
+     "num": null
+    },
+    {
+     "id": "male_08",
+     "kind": "q",
+     "text": "Приём тестостерона или анаболических стероидов",
+     "sex": null,
+     "count": true,
+     "num": null
+    }
+   ]
+  }
+ ]
+}

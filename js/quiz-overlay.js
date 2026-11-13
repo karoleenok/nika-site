@@ -27,6 +27,8 @@
   const A = {};            // ответы части 1: id шага → значение
   const CHK = {};          // чек-лист: id пункта → true | число
   let consent = false;
+  let quizKey = null, who = { name: '', phone: '' };   // ключ анкеты из заявки и контакт из формы
+  let saveState = 'idle', serverPromo = null;       // idle | sending | ok | fail | none
   let idx = 0;             // 0 = вводный экран, 1..N = шаги, N+1 = чек-лист, N+2 = итог
   const N = STEPS.length, I_CHECK = N + 1, I_QS = N + 2, I_RESULT = N + 3;
 
@@ -107,11 +109,15 @@
   const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); requestClose(); } };
   window.addEventListener('popstate', () => { pushed = false; hide(); });
 
-  document.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-quiz-open]');
-    if (!t) return;
-    e.preventDefault(); open(t);
-  });
+  // Окно открывает форма на главной (js/main.js) после того, как заявка принята
+  window.NikaQuiz = {
+    open: (from, ctx) => {
+      quizKey = (ctx && ctx.key) || null;
+      who = { name: (ctx && ctx.name) || '', phone: (ctx && ctx.phone) || '' };
+      saveState = 'idle'; serverPromo = null;
+      open(from);
+    },
+  };
 
   /* ---------- Навигация по экранам ---------- */
   const go = (to, dir) => {
@@ -169,7 +175,7 @@
     const ul = h('ul', 'qo__facts');
     ['Сначала короткие вопросы про тебя, потом чек-лист по самочувствию.',
      'В конце получишь рекомендацию и промокод на анализы.',
-     'Ответы остаются в браузере и никуда не уходят, пока ты сам не отправишь итог Нике.'].forEach((s) => ul.appendChild(h('li', null, nb(s))));
+     'Ответы увидит только Ника. Хранятся до года, удалить их можно по твоей просьбе.'].forEach((s) => ul.appendChild(h('li', null, nb(s))));
     view.appendChild(ul);
     const lb = h('label', 'qo__consent'), inp = document.createElement('input');
     inp.type = 'checkbox'; inp.checked = consent;
@@ -459,12 +465,33 @@
   /* ---------- Итог ---------- */
   const flagged = () => visibleBlocks().filter((b) => countOf(b) >= b.threshold);
 
+  // Отправка ответов на сервер. Ключ из заявки одноразовый, поэтому одна попытка на заявку
+  const save = async (done) => {
+    if (saveState !== 'idle') return;
+    if (!quizKey) { saveState = 'none'; return; }
+    saveState = 'sending';
+    const keep = new Set(visibleBlocks().flatMap((b) => visibleItems(b).map((i) => i.id)));   // пункты другого пола не шлём
+    const c = {}; Object.keys(CHK).forEach((k) => { if (keep.has(k)) c[k] = CHK[k]; });
+    try {
+      const r = await fetch('/api/quiz', {
+        method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: quizKey, version: D.VERSION, healthConsent: true, answers: { a: A, c } }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) { saveState = 'ok'; if (j.promo && j.promo.code) serverPromo = j.promo; } else saveState = 'fail';
+    } catch (_) { saveState = 'fail'; }
+    quizKey = null;
+    if (done) done();
+  };
+
   const waLink = (fl) => {
     const names = fl.filter((b) => !b.repro).map((b) => b.short);   // про половые гормоны в сообщение не пишем
     const text = names.length
       ? 'Здравствуйте, Ника! Я прошёл(ла) тест на сайте. По результатам выделились блоки: ' + names.join(', ') + '. Хочу, чтобы вы разобрали мою ситуацию по анализам.'
       : 'Здравствуйте, Ника! Я прошёл(ла) тест на сайте. Хочу, чтобы вы разобрали мою ситуацию по анализам.';
-    return 'https://wa.me/' + SETTINGS.waPhone + '?text=' + encodeURIComponent(text);
+    // Если ответы на сервер не попали, контакт передаём в самом сообщении
+    const who2 = saveState !== 'ok' && saveState !== 'sending' && who.name ? ' Меня зовут ' + who.name + ', мой номер: ' + who.phone + '.' : '';
+    return 'https://wa.me/' + SETTINGS.waPhone + '?text=' + encodeURIComponent(text + who2);
   };
 
   const renderResult = (view) => {
@@ -473,6 +500,7 @@
     view.appendChild(w);
     view.appendChild(h('p', 'qo__p', TEXTS.head));
     const fl = flagged();
+    const note = h('p', 'qo__fine'); note.hidden = true;
     if (fl.length) {
       const list = h('div', 'qo__blocks');
       fl.forEach((b) => { const c = h('div', 'qo__blk'); c.append(h('p', 'qo__bl', b.short), h('p', null, TEXTS.blocks[b.id])); list.appendChild(c); });
@@ -480,24 +508,28 @@
     } else view.appendChild(h('p', 'qo__p', TEXTS.none));
     view.appendChild(h('p', 'qo__p', TEXTS.conclusion));
 
-    // Промокод
-    const P = SETTINGS.promo, preview = /[?&]promo-preview\b/.test(location.search);
+    // Промокод: с сервера (после сохранения анкеты); в публичном JS его нет. ?promo-preview показывает макет
     const promo = h('div', 'qo__promo');
-    if (P.ready || preview) {
-      promo.append(h('p', 'qo__bl', 'промокод'), h('p', 'qo__code', P.code),
-        h('p', 'qo__pt', nb('Скидка ' + P.percent + '% на анализы у партнёра. Условия расскажет Ника.')));
-      const cp = h('button', 'btn btn--white qo__copy', 'скопировать'); cp.type = 'button';
-      cp.addEventListener('click', async () => { try { await navigator.clipboard.writeText(P.code); cp.textContent = 'скопировано'; setTimeout(() => { cp.textContent = 'скопировать'; }, 1800); } catch (_) {} });
-      promo.appendChild(cp);
-    } else {
-      promo.append(h('p', 'qo__bl', 'скидка на анализы'), h('p', 'qo__pt', nb('Промокод пришлёт Ника, когда ты напишешь ей в WhatsApp.')));
-    }
+    const paintPromo = () => {
+      const P = serverPromo || (/[?&]promo-preview\b/.test(location.search) ? SETTINGS.promo : null);
+      promo.textContent = '';
+      if (P) {
+        promo.append(h('p', 'qo__bl', 'промокод'), h('p', 'qo__code', P.code),
+          h('p', 'qo__pt', nb('Скидка ' + P.percent + '% на анализы у партнёра. Условия расскажет Ника.')));
+        const cp = h('button', 'btn btn--white qo__copy', 'скопировать'); cp.type = 'button';
+        cp.addEventListener('click', async () => { try { await navigator.clipboard.writeText(P.code); cp.textContent = 'скопировано'; setTimeout(() => { cp.textContent = 'скопировать'; }, 1800); } catch (_) {} });
+        promo.appendChild(cp);
+      } else {
+        promo.append(h('p', 'qo__bl', 'скидка на анализы'), h('p', 'qo__pt', nb('Промокод пришлёт Ника, когда ты напишешь ей в WhatsApp.')));
+      }
+    };
+    paintPromo();
     view.appendChild(promo);
 
     // Действия
     const acts = h('div', 'qo__acts');
     const wa = h('a', 'btn btn--red btn--block', 'отправить результаты Нике'); wa.href = waLink(fl); wa.target = '_blank'; wa.rel = 'noopener';
-    acts.append(wa, h('p', 'qo__fine', nb('Откроется WhatsApp с готовым сообщением. Ты увидишь текст до отправки.')));
+    acts.append(wa, h('p', 'qo__fine', nb('Откроется WhatsApp с готовым сообщением. Ты увидишь текст до отправки.')), note);
     const real = SETTINGS.app.links.filter((l) => l.href && l.href !== '#');
     if (real.length) {
       real.forEach((l) => { const a = h('a', 'btn btn--ink btn--block', 'скачать приложение · ' + l.label); a.href = l.href; a.target = '_blank'; a.rel = 'noopener'; acts.appendChild(a); });
@@ -506,9 +538,18 @@
     }
     view.appendChild(acts);
     view.appendChild(h('p', 'qo__fine', nb(TEXTS.disclaimer)));
+    const after = () => {
+      if (!view.isConnected) return;
+      paintPromo(); wa.href = waLink(fl);
+      note.hidden = saveState === 'ok' || saveState === 'sending';
+      if (!note.hidden) note.textContent = nb('Ответы не сохранились на сайте, Ника их не увидит. Отправь итог ей в WhatsApp, контакт добавим в сообщение.');
+    };
+    save(after).then(after);
     const again = h('button', 'qo__again', 'пройти заново'); again.type = 'button';
     again.addEventListener('click', () => {
-      Object.keys(A).forEach((k) => delete A[k]); Object.keys(CHK).forEach((k) => delete CHK[k]); go(1, -1);
+      Object.keys(A).forEach((k) => delete A[k]); Object.keys(CHK).forEach((k) => delete CHK[k]);
+      saveState = 'idle'; quizKey = null; serverPromo = null;   // ключ одноразовый: повторное прохождение на сервер не уходит
+      go(1, -1);
     });
     view.appendChild(again);
     return t;

@@ -152,18 +152,19 @@
   /* Кнопки покупки живут в js/pay.js (режимы: checkout / whatsapp). */
 
   /* ---------- Формы теста: одна в финале, одна во вкладке «питание» ----------
-     Заявка уходит на сервер (POST /api/leads), он отдаёт одноразовый ключ анкеты, дальше test.html.
-     Если сервера нет (сайт на GitHub Pages) или он не ответил, данные не теряем: передаём Нике через WhatsApp. */
+     Заявка уходит на сервер (POST /api/leads), он отдаёт одноразовый ключ анкеты. Дальше открывается окно теста
+     (js/quiz-overlay.js), в конце оно отправляет ответы с этим ключом.
+     Если сервера нет (сайт на GitHub Pages) или он не ответил, окно всё равно открывается: тест работает, но без сохранения.
+     Контакт при этом не теряем: он уйдёт Нике в WhatsApp вместе с итогом (имя и номер передаём в окно). */
   $$('[data-test-form]').forEach(form => {
     const msg = $('.form__msg', form), btn = $('button[type="submit"]', form), btnText = btn.textContent;
     const shownAt = Date.now();
     const setMsg = (t, ok) => { msg.textContent = t; msg.classList.toggle('is-ok', !!ok); };
     const phoneOk = v => { const d = v.replace(/\D/g, ''); return d.length >= 10 && d.length <= 15; };
-    const viaWhatsApp = (name, tel) => {
-      if (!phone) { setMsg('Не получилось отправить. Напиши Нике в WhatsApp.'); return; }
-      const text = 'Здравствуйте! Пишу вам с сайта, меня зовут ' + name + '. Хочу пройти тест и получить рекомендации. Мой номер: ' + tel;
-      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
-      form.reset(); setMsg('Открываем WhatsApp. Отправь сообщение, и Ника ответит.', true);
+    const start = (key, name, tel) => {
+      form.reset(); setMsg('');
+      if (window.NikaQuiz) window.NikaQuiz.open(btn, { key, name, phone: tel });
+      else setMsg('Тест не загрузился. Обнови страницу или напиши Нике в WhatsApp.');
     };
 
     form.addEventListener('submit', async (e) => {
@@ -192,11 +193,11 @@
         data = await r.json().catch(() => ({}));
       } catch (_) { r = null; }
       btn.disabled = false; btn.textContent = btnText;
-      // Сервера нет вовсе (404 на статичном хостинге, нет связи) — запасной путь через WhatsApp
-      if (!r || r.status === 404 || r.status === 405) { viaWhatsApp(name.value.trim(), tel.value.trim()); return; }
+      const n = name.value.trim(), t = tel.value.trim();
+      // Сервера нет вовсе (404 на статичном хостинге, нет связи): тест открываем без сохранения
+      if (!r || r.status === 404 || r.status === 405) { start(null, n, t); return; }
       if (!r.ok) { setMsg(data.error || 'Не получилось отправить. Попробуй ещё раз или напиши в WhatsApp.'); return; }
-      try { sessionStorage.setItem('nika_quiz_key', data.quizKey); } catch (_) {}
-      location.assign('test.html');
+      start(data.quizKey || null, n, t);
     });
   });
 

@@ -33,6 +33,11 @@ export function loadConfig(env = process.env) {
       replyTo: env.MAIL_REPLY_TO || '',
       adminNotify: env.ADMIN_NOTIFY_EMAIL || '',
     }),
+    // Промокод на анализы: отдаётся только тому, чья анкета сохранена по настоящему ключу заявки. Не в публичном JS.
+    quiz: Object.freeze({
+      promoCode: (env.QUIZ_PROMO_CODE || '').trim().slice(0, 40),
+      promoPercent: Math.min(99, Math.max(0, Math.round(Number(env.QUIZ_PROMO_PERCENT) || 0))),
+    }),
     robokassa: Object.freeze({
       login: env.ROBOKASSA_LOGIN || '',
       password1: env.ROBOKASSA_PASSWORD1 || '',
