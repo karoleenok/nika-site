@@ -1,9 +1,7 @@
 /* ДЕМО-ДАННЫЕ личного кабинета. Всё вымышленное (почта example.com — зарезервированный адрес).
-   Когда появится бэкенд, этот файл заменяется ответом API с теми же полями. */
+   Срок доступа, клиент и оплаты уже с сервера. Здесь остаются видео и материалы (фаза 3). */
 window.LK_DATA = {
   demo: true,
-  client: { name: 'Анна', email: 'anna@example.com' },
-  plan: { name: '2 месяца', weeks: 8, span: 56 }, // доступ считается неделями (1 месяц = 4 недели); span = weeks × 7, дней (для демо-дат)
   /* Группы повторяют папки на Диске Ники: грудь/руки, ноги, плиометрика, пресс, разминка, спина */
   groups: [
     { id: 'chest',   name: 'Грудь/руки' },
@@ -32,10 +30,6 @@ window.LK_DATA = {
   extras: [
     { id: 'guide-emotions', kind: 'гайд',        title: 'Как перестать заедать эмоции?',                   cover: '../assets/img/cover-guide.webp', owned: true,  href: '../guide-zaedanie.html',  price: '899 ₽' },
     { id: 'video-alcohol',  kind: 'видео-разбор', title: 'Как не отказывать себе в алкоголе при похудении?', cover: '../assets/img/cover-video.webp', owned: false, href: '../video-alkogol.html', price: '899 ₽' }
-  ],
-  payments: [
-    { date: '2026-11-01', title: 'Тариф «2 месяца»', sum: '17 999 ₽' },
-    { date: '2026-11-01', title: 'Гайд «Как перестать заедать эмоции?»', sum: '899 ₽' }
   ]
 };
 

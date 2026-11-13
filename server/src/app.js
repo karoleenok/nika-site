@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fastifyCookie from '@fastify/cookie';
 import authRoutes from './auth/routes.js';
+import adminRoutes from './admin/routes.js';
+import lkRoutes from './lk/routes.js';
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -46,6 +48,8 @@ export async function buildApp({ config, pool, s3, mailer, serveStatic = !config
   });
 
   await authRoutes(app, { config, pool, mailer });
+  await adminRoutes(app, { pool });
+  await lkRoutes(app, { pool });
 
   app.all('/api/*', async (req, reply) => reply.code(404).send({ error: 'Не найдено' }));
 

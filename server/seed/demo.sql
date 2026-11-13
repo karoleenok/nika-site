@@ -39,6 +39,13 @@ JOIN users u ON u.email = d.email JOIN tariffs t ON t.slug = d.slug;
 UPDATE access_periods SET closed_at = now(), close_note = 'Демо: доступ закрыт вручную'
 WHERE user_id = (SELECT id FROM users WHERE email = 'viktoria@example.com');
 
+-- Оплаты для блока «Новые покупки» и вкладки «Оплаты» в карточке
+INSERT INTO orders (user_id, email, tariff_id, item_name, amount_kop, status, paid_at)
+SELECT u.id, u.email, t.id, 'Тариф «' || t.name || '»', t.price_kop, 'paid', now() - d.ago
+FROM (VALUES ('maria@example.com','train-1m', interval '2 hours'), ('olga@example.com','package', interval '1 day'),
+             ('anna@example.com','train-2m', interval '40 days')) AS d(email, slug, ago)
+JOIN users u ON u.email = d.email JOIN tariffs t ON t.slug = d.slug;
+
 INSERT INTO purchases (user_id, tariff_id)
 SELECT u.id, t.id FROM users u, tariffs t WHERE u.email = 'anna@example.com' AND t.slug = 'guide-emotions';
 

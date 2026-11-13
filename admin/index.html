@@ -63,7 +63,7 @@
 
   <main id="main" class="lk-main">
     <noscript><p class="lk-card">Для админки нужен включённый JavaScript.</p></noscript>
-    <p class="demo-bar" data-demo-bar hidden>Демо-данные: сроки считаются от сегодняшнего дня, изменения не сохраняются после обновления страницы.</p>
+    <p class="demo-bar" data-demo-bar hidden>Заявки, видео и материалы пока демо: сохраняются только в этом браузере. Клиенты, доступы, цены и журнал настоящие.</p>
 
     <!-- ===== Сегодня ===== -->
     <section data-view="today" hidden aria-labelledby="h-today">
@@ -88,10 +88,13 @@
       <form class="search" role="search" data-cl-form>
         <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
         <label class="sr-only" for="cq">Найти клиента</label>
-        <input id="cq" class="search__input" type="search" placeholder="Найти клиента по имени" autocomplete="off" enterkeyhint="search" data-cl-q>
+        <input id="cq" class="search__input" type="search" placeholder="Найти по имени или почте" autocomplete="off" enterkeyhint="search" data-cl-q>
       </form>
       <div class="chips lk-chips" data-cl-chips role="group" aria-label="Статус доступа"></div>
-      <p class="lk-count" data-cl-count aria-live="polite"></p>
+      <div class="pane-h pane-h--cl">
+        <p class="lk-count" data-cl-count aria-live="polite"></p>
+        <button class="btn btn--line-dark btn--sm" type="button" data-cl-add>+ клиент</button>
+      </div>
       <ul class="rows" data-cl-list></ul>
       <div class="empty" data-cl-empty hidden>
         <p class="empty__t">Никого не нашла</p>
@@ -124,7 +127,7 @@
         <button class="btn btn--line-dark btn--block adm-gap" type="button" data-c-wa>написать в WhatsApp</button>
       </div>
 
-      <div class="lk-block">
+      <div class="lk-block" hidden><!-- фаза 3: когда видео будут на сервере -->
         <h2 class="lk-h2">Тренировки</h2>
         <div class="lk-card prog">
           <p class="prog__t" data-c-prog-t></p>
@@ -133,7 +136,7 @@
         </div>
       </div>
 
-      <div class="lk-block">
+      <div class="lk-block" hidden><!-- фаза 3: когда материалы будут на сервере -->
         <h2 class="lk-h2">Материалы клиента</h2>
         <p class="lk-p adm-sub">Включи переключатель, чтобы открыть материал клиенту без покупки.</p>
         <ul class="sw-list" data-c-mats></ul>
@@ -152,7 +155,6 @@
           <label class="field"><span class="field__label">Имя</span><input class="field__input" type="text" name="name" autocomplete="off"></label>
           <label class="field"><span class="field__label">Почта (для входа в кабинет)</span><input class="field__input" type="email" name="email" autocomplete="off" inputmode="email"></label>
           <label class="field"><span class="field__label">Телефон для WhatsApp</span><input class="field__input" type="tel" name="phone" autocomplete="off" inputmode="tel" placeholder="+7 ..."></label>
-          <label class="field"><span class="field__label">Тариф</span><select class="field__input" name="plan" data-c-plan-sel></select></label>
           <span class="field__err" role="alert" data-c-err></span>
           <button class="btn btn--red btn--block" type="submit">сохранить</button>
         </form>
@@ -295,8 +297,8 @@
     <section data-view="more" hidden aria-labelledby="h-more">
       <h1 class="display lk-h1" id="h-more" tabindex="-1">Ещё</h1>
       <ul class="menu">
-        <li><a href="#/prices"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg><span class="menu__t"><b>Тарифы и цены</b><small>изменить без разработчика</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
-        <li><a href="#/log"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span class="menu__t"><b>Журнал действий</b><small>кто и когда менял доступы</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
+        <li data-role="owner tech"><a href="#/prices"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg><span class="menu__t"><b>Тарифы и цены</b><small>изменить без разработчика</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
+        <li data-role="owner tech"><a href="#/log"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span class="menu__t"><b>Журнал действий</b><small>кто и когда менял доступы</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
       </ul>
       <div class="stack"><button class="btn btn--line-dark" type="button" data-reset-demo>сбросить демо-данные</button><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
     </section>
@@ -305,7 +307,7 @@
     <section data-view="prices" hidden aria-labelledby="h-prices">
       <a class="back" href="#/more"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>ещё</a>
       <h1 class="display lk-h1" id="h-prices" tabindex="-1">Тарифы и цены</h1>
-      <p class="lk-p adm-gap">Цены на сайте обновятся после сохранения. Старую цену можно оставить пустой: тогда она не покажется.</p>
+      <p class="lk-p adm-gap">Цены сохраняются сразу. На главной странице сайта они обновятся, когда подключим её к серверу (Каролина скажет). Старую цену можно оставить пустой: тогда она не покажется.</p>
       <form class="tariffs" data-prices novalidate></form>
     </section>
 
@@ -323,11 +325,16 @@
   <form class="sheet__in" data-form="extend" method="dialog" novalidate>
     <h2 class="sheet__t" id="dx-t" data-dx-title>Продлить доступ</h2>
     <p class="sheet__p" data-dx-who></p>
+    <label class="field" data-dx-tariff-box>
+      <span class="field__label">Тариф</span>
+      <select class="field__input" data-dx-tariff></select>
+    </label>
     <div class="pills pills--grid" data-dx-opts role="radiogroup" aria-label="На сколько"></div>
     <p class="sheet__new" data-dx-new aria-live="polite"></p>
     <label class="field">
       <span class="field__label">Почему (по желанию)</span>
       <input class="field__input" type="text" maxlength="120" placeholder="Например: оплата переводом" data-dx-note>
+      <span class="field__err" role="alert" data-dx-err></span>
     </label>
     <div class="sheet__act">
       <button class="btn btn--line-dark" type="button" data-close>отмена</button>
@@ -343,6 +350,36 @@
     <div class="sheet__act">
       <button class="btn btn--line-dark" type="button" data-close>отмена</button>
       <button class="btn btn--red" type="submit" data-dc-ok>да</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" data-dlg="close" aria-labelledby="dcl-t">
+  <form class="sheet__in" data-form="close" method="dialog" novalidate>
+    <h2 class="sheet__t" id="dcl-t">Закрыть доступ?</h2>
+    <p class="sheet__p" data-dcl-text></p>
+    <label class="field">
+      <span class="field__label">Почему (по желанию)</span>
+      <input class="field__input" type="text" maxlength="120" placeholder="Например: возврат денег" data-dcl-note>
+      <span class="field__err" role="alert" data-dcl-err></span>
+    </label>
+    <div class="sheet__act">
+      <button class="btn btn--line-dark" type="button" data-close>отмена</button>
+      <button class="btn btn--red" type="submit">закрыть</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" data-dlg="newclient" aria-labelledby="dn-t">
+  <form class="sheet__in" data-form="newclient" method="dialog" novalidate>
+    <h2 class="sheet__t" id="dn-t">Новый клиент</h2>
+    <p class="sheet__p">Клиент войдёт в кабинет по этой почте: код придёт ему на письмо. Доступ откроешь в карточке.</p>
+    <label class="field"><span class="field__label">Имя</span><input class="field__input" type="text" name="name" maxlength="100" autocomplete="off"></label>
+    <label class="field"><span class="field__label">Почта</span><input class="field__input" type="email" name="email" autocomplete="off" inputmode="email" autocapitalize="none"></label>
+    <label class="field"><span class="field__label">Телефон для WhatsApp (по желанию)</span><input class="field__input" type="tel" name="phone" autocomplete="off" inputmode="tel" placeholder="+7 ..."><span class="field__err" role="alert" data-dn-err></span></label>
+    <div class="sheet__act">
+      <button class="btn btn--line-dark" type="button" data-close>отмена</button>
+      <button class="btn btn--red" type="submit">добавить</button>
     </div>
   </form>
 </dialog>

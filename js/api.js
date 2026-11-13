@@ -22,6 +22,7 @@
     post: (url, body) => call('POST', url, body || {}),
     put: (url, body) => call('PUT', url, body || {}),
     del: url => call('DELETE', url),
+    request: (method, url, body) => call(method, url, body),
     /* Пускает на страницу только с действующей сессией, иначе на экран входа */
     async gate(kind) {
       document.documentElement.style.visibility = 'hidden';

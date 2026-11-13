@@ -175,6 +175,8 @@ body:has(dialog[open]) { overflow: hidden; }
 .seg__i[aria-selected="true"] { background: var(--c-ink); color: var(--c-white); }
 .pane-h { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); margin-bottom: var(--sp-2); }
 .pane-h .lk-p { margin: 0; }
+.pane-h--cl { margin: var(--sp-4) 0 var(--sp-3); }
+.pane-h--cl .lk-count { margin: 0; }
 .pane-h .btn { flex: none; }
 .hint { margin-bottom: var(--sp-4); padding: var(--sp-3) var(--sp-4); background: var(--c-white); border-radius: var(--r-card); color: var(--c-muted); font-size: var(--fs-small); line-height: 1.4; }
 [data-pane][hidden] { display: none; }

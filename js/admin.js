@@ -1,7 +1,7 @@
 /* Админка Ники. Экраны по hash: #/ #/clients #/client/ID #/content #/content/materials
    #/video/ID|new #/material/ID|new #/leads #/more #/prices #/log.
-   ДЕМО: клиенты, заявки и цены живут в памяти и сбрасываются при обновлении страницы.
-   Контент (группы, видео, материалы) пишется в localStorage и сразу виден в кабинете клиента.
+   Клиенты, доступы, цены и журнал приходят с сервера (js/api.js), роль проверяет сервер.
+   ДЕМО пока: заявки (фаза 5) и контент (группы, видео, материалы, фаза 3): они в localStorage и видны в кабинете клиента.
    Всё из данных вставляется через textContent. */
 (() => {
   'use strict';
@@ -13,7 +13,7 @@
 
   /* Вход и роль проверяет сервер (HttpOnly-кука). Без сессии — на экран входа. */
   window.NikaApi.gate('admin').then(who => { if (who) start(who); });
-  function start(who) {
+  async function start(who) {
   const L = window.LK_DATA, A = window.ADMIN_DATA;
   if (!L || !A) return;
 
@@ -57,28 +57,66 @@
     else raw.videos.splice(raw.videos.indexOf(list[pos]), 0, v);
   };
 
-  /* ---------- Клиенты (демо) ---------- */
-  /* Доступ считается неделями, а не календарными месяцами: 1 месяц = 4 недели, 2 = 8, 4 = 16. Срок = недели × 7 дней. */
-  const WEEKS = { '24 часа': 0, '1 месяц': 4, '2 месяца': 8, '4 месяца': 16, 'Фигура под ключ': 8 };
-  const planDays = name => (name === '24 часа' ? 1 : (WEEKS[name] || 4) * 7);
-  const clients = A.clients.map((c, i) => ({
-    ...c, until: addDays(today, c.days), reminded: false, closed: false, email: '', phone: '',
-    watched: [0, 5, 7, 3, 9, 4, 12, 8, 6, 10, 2, 1][i] || 0, mats: {}
-  }));
-  clients.forEach((c, i) => raw.extras.forEach((x, k) => { c.mats[x.id] = (i + k) % 3 === 0; }));
-  const log = A.log.map(x => ({ ...x }));
+  /* ---------- Данные с сервера ---------- */
+  /* Клиенты, доступы, цены и журнал живут на сервере. Заявки, видео и материалы пока демо (фазы 3 и 5). */
+  const api = window.NikaApi;
+  const ROLE = who.role;
+  const canMoney = ROLE === 'owner' || ROLE === 'tech';
+  $$('[data-role]').forEach(n => { n.hidden = !n.dataset.role.split(' ').includes(ROLE); });
+  { const m = $('.menu'); if (m && $$('li', m).every(li => li.hidden)) m.remove(); }   // у Дианы в «Ещё» нет пунктов меню: пустую рамку не показываем
+  const money = rub => Number(rub).toLocaleString('ru-RU') + ' ₽';
+  const when = iso => {
+    const d = new Date(iso), t = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const diff = Math.round((today - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+    return diff === 0 ? 'сегодня, ' + t : diff === 1 ? 'вчера, ' + t : fmt(d) + (d.getFullYear() !== today.getFullYear() ? ' ' + d.getFullYear() : '');
+  };
+  let clients = [], purchases = [], accessTariffs = [], priceList = [], logList = [];
   const leads = A.leads.map(x => ({ ...x }));
-  const tariffs = A.tariffs.map(t => ({ ...t }));
-  const left = c => Math.round((c.until - today) / 864e5);
-  const stateOf = c => { const d = left(c); return d <= 0 ? 'bad' : d <= 7 ? 'warn' : 'ok'; };
+  const toClient = v => ({ ...v, plan: v.plan ? v.plan.name : '', weeks: v.plan ? v.plan.weeks : 0, until: v.endsAt ? new Date(v.endsAt) : null });
+  /* ok / warn — зелёный и жёлтый; bad и none (доступа не было) — красный */
+  const stateOf = c => (c.state === 'none' ? 'bad' : c.state);
   const STAT = { ok: 'активен', warn: 'заканчивается', bad: 'закончился' };
-  const byId = id => clients.find(c => c.id === id);
-  const addLog = (cid, text, note) => log.unshift({ cid, when: 'сейчас', who: 'Ника', text, note: note || '' });
-  const sorted = () => clients.slice().sort((a, b) => left(a) - left(b));
-  const statText = c => { const d = left(c); return d <= 0 ? (c.closed ? 'закрыт вручную' : 'закончился ' + (d === 0 ? 'сегодня' : dayWord(-d) + ' назад')) : 'до ' + fmt(c.until) + ' · ' + dayWord(d); };
+  const byId = id => clients.find(c => c.id === String(id));
+  const agoText = n => (n === 0 ? 'сегодня' : dayWord(n) + ' назад');
+  const statText = c => {
+    if (c.state === 'none') return 'доступа пока нет';
+    if (c.state === 'bad') return c.closed ? 'закрыт ' + agoText(c.daysAgo || 0) : 'закончился ' + agoText(c.daysAgo || 0);
+    return 'до ' + fmt(c.until) + ' · ' + dayWord(c.daysLeft);
+  };
+  const shortStat = c => (c.state === 'none' ? 'нет доступа' : c.state === 'bad' ? (c.closed ? 'закрыт' : 'закончился') : dayWord(c.daysLeft));
+  /* Сначала те, кому ещё не открыли доступ, потом закончившиеся (давнишние раньше), потом по близости конца */
+  const rank = c => (c.state === 'none' ? -1e6 : c.state === 'bad' ? -(c.daysAgo || 0) - 1 : c.daysLeft);
+  const sorted = () => clients.slice().sort((a, b) => rank(a) - rank(b));
+
+  /* Ошибки сети и просроченный вход: понятная реакция, а не тишина */
+  const fail = r => {
+    if (r.status === 401) { location.replace('login.html'); return; }
+    toast(r.data.error || 'Что-то пошло не так. Попробуй ещё раз.');
+  };
+  const loadClients = async () => { const r = await api.get('/api/admin/clients'); if (!r.ok) { fail(r); return false; } clients = r.data.clients.map(toClient); return true; };
+  const loadPurchases = async () => { const r = await api.get('/api/admin/purchases'); if (r.ok) purchases = r.data.purchases; };
+  const loadAccessTariffs = async () => { const r = await api.get('/api/tariffs'); if (r.ok) accessTariffs = r.data.tariffs.filter(t => t.kind === 'access'); };
+  const loadPrices = async () => { if (!canMoney) return; const r = await api.get('/api/admin/tariffs'); if (r.ok) priceList = r.data.tariffs; else fail(r); };
+  const loadLog = async () => { if (!canMoney) return; const r = await api.get('/api/admin/log'); if (r.ok) logList = r.data.log; else fail(r); };
+
+  /* Текст записи журнала без «она/он»: действие в страдательной форме, кто сделал — отдельной строкой */
+  const logText = x => {
+    const m = x.meta || {}, e = m.endsAt ? new Date(m.endsAt) : null;
+    switch (x.action) {
+      case 'client.create': return 'Клиент добавлен';
+      case 'client.update': return 'Изменены данные клиента';
+      case 'client.note': return 'Изменена заметка о клиенте';
+      case 'client.remind': return 'Отправлено напоминание о продлении';
+      case 'access.open': return 'Доступ открыт' + (e ? ' до ' + fmt(e) : '');
+      case 'access.extend': return 'Доступ продлён' + (e ? ' до ' + fmt(e) : '');
+      case 'access.undo': return 'Отменено последнее продление';
+      case 'access.close': return 'Доступ закрыт';
+      case 'tariff.price': return 'Цена «' + (m.name || '') + '»: ' + money(m.from) + ' → ' + money(m.to);
+      default: return 'Действие: ' + x.action;
+    }
+  };
 
   if (L.demo) $('[data-demo-bar]').hidden = false;
-  $('[data-demo-bar]').textContent = 'Демо: клиенты, заявки и цены сбрасываются при обновлении. Контент (видео, группы, материалы) сохраняется и сразу виден в кабинете клиента.';
 
   /* ---------- Тост с отменой ---------- */
   const toastEl = $('[data-toast]'), toastT = $('[data-toast-t]'), toastB = $('[data-toast-b]');
@@ -102,13 +140,20 @@
   const confirmDlg = (title, text, ok, fn) => { $('[data-dc-title]').textContent = title; $('[data-dc-text]').textContent = text; $('[data-dc-ok]').textContent = ok; confirmFn = fn; openDlg('confirm'); };
   $('[data-form="confirm"]').addEventListener('submit', e => { e.preventDefault(); dlg('confirm').close(); const f = confirmFn; confirmFn = null; if (f) f(); });
 
-  /* ---------- Связь с клиентом (в демо телефона нет, показываем текст) ---------- */
+  /* ---------- Связь с клиентом ---------- */
+  const waDigits = p => { const d = String(p || '').replace(/\D/g, ''); return d.length === 11 && d[0] === '8' ? '7' + d.slice(1) : d; };
   const contact = (c, text) => {
-    if (c.phone) { window.open('https://wa.me/' + c.phone.replace(/\D/g, '') + '?text=' + encodeURIComponent(text), '_blank', 'noopener'); return; }
-    toast('Демо: откроется WhatsApp с текстом «' + text + '»');
+    if (!waDigits(c.phone)) { toast('Телефона нет. Добавь его в «Данные клиента».'); return false; }
+    window.open('https://wa.me/' + waDigits(c.phone) + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+    return true;
   };
-  const remindText = c => 'Привет, ' + first(c.name) + '! ' + (left(c) <= 0 ? 'Твой доступ к тренировкам закончился ' + fmt(c.until) + '.' : 'Твой доступ к тренировкам заканчивается ' + fmt(c.until) + '.') + ' Продлить можно здесь: ' + A.siteUrl + '#services. Если нужна помощь, напиши.';
-  const remind = c => { contact(c, remindText(c)); c.reminded = true; addLog(c.id, 'Написала ' + c.name + ' о продлении'); };
+  const remindText = c => 'Привет, ' + first(c.name) + '! ' + (c.state === 'bad' ? 'Твой доступ к тренировкам закончился ' + fmt(c.until) + '.' : 'Твой доступ к тренировкам заканчивается ' + fmt(c.until) + '.') + ' Продлить можно здесь: ' + A.siteUrl + '#services. Если нужна помощь, напиши.';
+  const remind = async c => {
+    if (!contact(c, remindText(c))) return;
+    const r = await api.post('/api/admin/clients/' + c.id + '/remind');
+    if (!r.ok) { fail(r); return; }
+    c.reminded = true;
+  };
 
   /* ---------- Перетаскивание (указатель и клавиатура) ---------- */
   const sortable = (ul, onDone) => {
@@ -147,29 +192,30 @@
   };
   const drawToday = () => {
     $('[data-date]').textContent = today.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
-    const act = clients.filter(c => left(c) > 0).length, warn = clients.filter(c => stateOf(c) === 'warn').length, bad = clients.filter(c => stateOf(c) === 'bad').length, nl = leads.filter(l => l.isNew).length;
+    const act = clients.filter(c => c.state === 'ok' || c.state === 'warn').length, warn = clients.filter(c => c.state === 'warn').length, bad = clients.filter(c => c.state === 'bad').length, nl = leads.filter(l => l.isNew).length;
     const k = $('[data-kpis]'); k.textContent = '';
-    k.appendChild(kpiLink('#/clients', act, 'с доступом', '', 'all'));
+    k.appendChild(kpiLink('#/clients', act, 'с доступом', '', 'ok'));
     k.appendChild(kpiLink('#/clients', warn, 'скоро закончится', warn ? 'warn' : '', 'warn'));
     k.appendChild(kpiLink('#/clients', bad, 'закончился', bad ? 'bad' : '', 'bad'));
     k.appendChild(kpiLink('#/leads', nl, nl === 1 ? 'новая заявка' : 'новых заявок', '', null));
-    const todo = clients.filter(c => stateOf(c) !== 'ok').sort((a, b) => left(a) - left(b));
+    const todo = clients.filter(c => c.state === 'warn' || c.state === 'bad').sort((a, b) => rank(a) - rank(b));
     const box = $('[data-todo]'); box.textContent = '';
     todo.forEach(c => {
       const st = stateOf(c), li = el('li', 'row row--todo');
       li.appendChild(el('span', 'ava ava--' + st, c.name[0]));
       const b = el('a', 'row__b'); b.href = '#/client/' + c.id;
-      b.appendChild(el('span', 'row__n', c.name)); b.appendChild(el('span', 'row__s', c.plan + ' · ' + statText(c)));
+      b.appendChild(el('span', 'row__n', c.name)); b.appendChild(el('span', 'row__s', (c.plan ? c.plan + ' · ' : '') + statText(c)));
       li.appendChild(b);
-      const act = el('div', 'row__act');
-      const d = el('span', c.reminded ? 'done' : ''); if (c.reminded) { d.appendChild(icon('i-check')); d.appendChild(document.createTextNode('написала')); } act.appendChild(d);
+      const actBox = el('div', 'row__act');
+      const d = el('span', c.reminded ? 'done' : ''); if (c.reminded) { d.appendChild(icon('i-check')); d.appendChild(document.createTextNode('написала')); } actBox.appendChild(d);
       const bt = el('button', 'btn ' + (c.reminded ? 'btn--line-dark' : 'btn--red'), c.reminded ? 'написать ещё раз' : 'написать в WhatsApp'); bt.type = 'button';
-      bt.addEventListener('click', () => { remind(c); drawToday(); });
-      act.appendChild(bt); li.appendChild(act); box.appendChild(li);
+      bt.addEventListener('click', async () => { await remind(c); drawToday(); });
+      actBox.appendChild(bt); li.appendChild(actBox); box.appendChild(li);
     });
     $('[data-todo-empty]').hidden = todo.length > 0;
     const pl = $('[data-purchases]'); pl.textContent = '';
-    A.purchases.forEach(p => { const li = el('li'); li.appendChild(el('span', '', p.client + ' · ' + p.title)); li.appendChild(el('span', 'pay__s', p.sum)); li.appendChild(el('span', 'pay__d', p.ago)); pl.appendChild(li); });
+    purchases.forEach(p => { const li = el('li'); li.appendChild(el('span', '', p.client + ' · ' + p.title)); li.appendChild(el('span', 'pay__s', money(p.sumKop / 100))); li.appendChild(el('span', 'pay__d', when(p.at))); pl.appendChild(li); });
+    if (!purchases.length) pl.appendChild(el('li', 'hist__e', 'Покупок пока нет.'));
   };
 
   /* ---------- Клиенты ---------- */
@@ -179,105 +225,149 @@
     const chips = $('[data-cl-chips]'); chips.textContent = '';
     FIL.forEach(([id, name]) => { const b = el('button', 'chip', name); b.type = 'button'; b.setAttribute('aria-pressed', String(cf.f === id)); b.addEventListener('click', () => { cf.f = id; drawClients(); }); chips.appendChild(b); });
     const q = cf.q.trim().toLowerCase();
-    const list = sorted().filter(c => (cf.f === 'all' || stateOf(c) === cf.f) && (!q || c.name.toLowerCase().includes(q)));
+    const list = sorted().filter(c => (cf.f === 'all' || stateOf(c) === cf.f) && (!q || (c.name + ' ' + c.email).toLowerCase().includes(q)));
     const ul = $('[data-cl-list]'); ul.textContent = '';
     list.forEach(c => {
-      const st = stateOf(c), li = el('li'); const a = el('a', 'row'); a.href = '#/client/' + c.id; const d = left(c);
+      const st = stateOf(c), li = el('li'); const a = el('a', 'row'); a.href = '#/client/' + c.id;
       a.appendChild(el('span', 'ava ava--' + st, c.name[0]));
       const b = el('span', 'row__b'); b.appendChild(el('span', 'row__n', c.name));
-      b.appendChild(el('span', 'row__s', c.plan + ' · ' + (st === 'bad' ? (d === 0 ? 'закончился сегодня' : dayWord(-d) + ' назад') : 'до ' + fmt(c.until)))); a.appendChild(b);
-      const r = el('span', 'row__r'); r.appendChild(el('span', 'stat stat--' + st, st === 'bad' ? (c.closed ? 'закрыт' : 'закончился') : dayWord(d))); a.appendChild(r);
+      b.appendChild(el('span', 'row__s', (c.plan ? c.plan + ' · ' : '') + (c.state === 'ok' || c.state === 'warn' ? 'до ' + fmt(c.until) : statText(c)))); a.appendChild(b);
+      const r = el('span', 'row__r'); r.appendChild(el('span', 'stat stat--' + st, shortStat(c))); a.appendChild(r);
       li.appendChild(a); ul.appendChild(li);
     });
     $('[data-cl-count]').textContent = list.length ? list.length + ' ' + plural(list.length, 'клиент', 'клиента', 'клиентов') : '';
+    const none = !clients.length;
+    $('[data-cl-empty] .empty__t').textContent = none ? 'Клиентов пока нет' : 'Никого не нашла';
+    $('[data-cl-empty] .empty__p').textContent = none ? 'Нажми «+ клиент», чтобы добавить первого.' : 'Попробуй другое имя или сбрось фильтр.';
+    $('[data-cl-reset]').hidden = none;
     $('[data-cl-empty]').hidden = list.length > 0; ul.hidden = !list.length;
   };
   $('[data-cl-q]').addEventListener('input', e => { cf.q = e.target.value; drawClients(); });
   $('[data-cl-form]').addEventListener('submit', e => e.preventDefault());
   $('[data-cl-reset]').addEventListener('click', () => { cf.f = 'all'; cf.q = ''; $('[data-cl-q]').value = ''; drawClients(); });
 
+  /* Новый клиент */
+  const fnc = $('[data-form="newclient"]');
+  $('[data-cl-add]').addEventListener('click', () => { fnc.reset(); $('[data-dn-err]').textContent = ''; openDlg('newclient'); fnc.elements.name.focus(); });
+  fnc.addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.currentTarget, err = $('[data-dn-err]'); err.textContent = '';
+    const body = { name: f.elements.name.value.trim(), email: f.elements.email.value.trim(), phone: f.elements.phone.value.trim() };
+    if (!body.name) { err.textContent = 'Напиши имя.'; f.elements.name.focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(body.email)) { err.textContent = 'Проверь почту: похоже, опечатка.'; f.elements.email.focus(); return; }
+    const btn = f.querySelector('[type="submit"]'); btn.disabled = true;
+    const r = await api.post('/api/admin/clients', body); btn.disabled = false;
+    if (!r.ok) { if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
+    dlg('newclient').close(); await loadClients(); toast('Клиент добавлен'); location.hash = '#/client/' + r.data.id;
+  });
+
   /* ---------- Карточка клиента ---------- */
   let cur = null;
-  const planSel = $('[data-c-plan-sel]'); tariffs.filter(t => t.access !== false).forEach(t => { const o = el('option', '', t.name); o.value = t.name; planSel.appendChild(o); });
-  const histItem = (x, who) => { const li = el('li'); li.appendChild(el('span', '', x.text)); if (x.note) li.appendChild(el('span', 'hist__n', 'Заметка: ' + x.note)); li.appendChild(el('span', 'hist__w', x.when + (who ? ' · ' + x.who : ''))); return li; };
+  const histItem = (x, showWho) => { const li = el('li'); li.appendChild(el('span', '', x.text)); if (x.note) li.appendChild(el('span', 'hist__n', 'Заметка: ' + x.note)); li.appendChild(el('span', 'hist__w', x.when + (showWho && x.who ? ' · ' + x.who : ''))); return li; };
+  const fillDetail = d => {
+    const pay = $('[data-c-pay]'); pay.textContent = '';
+    d.payments.forEach(p => { const li = el('li'); li.appendChild(el('span', '', p.title + (p.status === 'refunded' ? ' (возврат)' : ''))); li.appendChild(el('span', 'pay__s', money(p.sumKop / 100))); li.appendChild(el('span', 'pay__d', when(p.at))); pay.appendChild(li); });
+    if (!d.payments.length) pay.appendChild(el('li', 'hist__e', 'Оплат пока нет.'));
+    const h = $('[data-c-hist]'); h.textContent = '';
+    d.history.forEach(x => h.appendChild(histItem({ text: logText(x), note: x.note, when: when(x.at), who: x.who }, true)));
+    if (!d.history.length) h.appendChild(el('li', 'hist__e', 'Пока ничего не менялось.'));
+  };
   const drawClient = id => {
     const c = byId(id); if (!c) { location.replace('#/clients'); return false; }
     cur = c; const st = stateOf(c);
     const ava = $('[data-c-ava]'); ava.className = 'ava ava--lg ava--' + st; ava.textContent = c.name[0];
-    $('#h-client').textContent = c.name; $('[data-c-plan]').textContent = 'Тариф «' + c.plan + '»';
+    $('#h-client').textContent = c.name;
+    $('[data-c-plan]').textContent = c.plan ? 'Тариф «' + c.plan + '»' + (c.weeks ? ' · ' + c.weeks + ' ' + plural(c.weeks, 'неделя', 'недели', 'недель') : '') : 'Тариф не выбран';
     $('[data-c-acc]').classList.toggle('acc--bad', st === 'bad');
-    $('[data-c-kicker]').textContent = st === 'bad' ? (c.closed ? 'доступ закрыт' : 'доступ закончился') : 'доступ открыт до';
-    $('[data-c-date]').textContent = fmt(c.until);
-    const sub = $('[data-c-sub]'); sub.textContent = ''; sub.appendChild(el('span', 'stat stat--' + st, STAT[st])); sub.appendChild(el('span', '', statText(c).replace(/^до [^·]+· /, '')));
-    $('[data-c-extend]').textContent = st === 'bad' ? 'открыть снова' : 'продлить';
+    $('[data-c-kicker]').textContent = c.state === 'none' ? 'доступа пока нет' : st === 'bad' ? (c.closed ? 'доступ закрыт' : 'доступ закончился') : 'доступ открыт до';
+    $('[data-c-date]').textContent = c.state === 'none' ? '—' : fmt(c.until);
+    const sub = $('[data-c-sub]'); sub.textContent = ''; sub.appendChild(el('span', 'stat stat--' + st, c.state === 'none' ? 'нет доступа' : STAT[st]));
+    sub.appendChild(el('span', '', c.state === 'none' ? 'нажми «открыть доступ»' : st === 'bad' ? (c.closed ? 'закрыт ' : 'закончился ') + agoText(c.daysAgo || 0) : 'осталось ' + dayWord(c.daysLeft)));
+    $('[data-c-extend]').textContent = st === 'bad' ? 'открыть доступ' : 'продлить';
     $('[data-c-close]').hidden = st === 'bad';
     $('[data-c-remind]').textContent = c.reminded ? 'написать ещё раз о продлении' : 'напомнить о продлении';
-    $('[data-c-remind]').hidden = st === 'ok';
+    $('[data-c-remind]').hidden = c.state !== 'warn' && c.state !== 'bad';
     $('[data-c-note]').value = c.note || '';
-    /* Тренировки: сколько видео смотрит клиент */
-    const total = raw.videos.filter(v => v.on !== false).length, w = Math.min(c.watched, total);
-    $('[data-c-prog-t]').textContent = 'Просмотрено ' + w + ' из ' + total;
-    const pb = $('[data-c-prog]'); pb.setAttribute('aria-label', 'Просмотрено ' + w + ' из ' + total); pb.style.setProperty('--p', total ? Math.round(w / total * 100) : 0);
-    /* Материалы клиента */
-    const ml = $('[data-c-mats]'); ml.textContent = '';
-    raw.extras.forEach(x => {
-      const li = el('li'); const l = el('label', 'sw-row'); const t = el('span', 'sw-row__t'); t.appendChild(el('b', '', x.title)); t.appendChild(el('small', '', x.kind + (c.mats[x.id] ? ' · открыт' : ' · закрыт')));
-      const i = el('input', 'sw'); i.type = 'checkbox'; i.setAttribute('role', 'switch'); i.checked = !!c.mats[x.id];
-      i.addEventListener('change', () => { c.mats[x.id] = i.checked; addLog(c.id, (i.checked ? 'Открыла' : 'Закрыла') + ' материал «' + x.title + '» для ' + c.name); drawClient(c.id); toast(i.checked ? 'Материал открыт клиенту' : 'Материал закрыт'); });
-      l.appendChild(t); l.appendChild(i); li.appendChild(l); ml.appendChild(li);
-    });
-    if (!raw.extras.length) ml.appendChild(el('li', 'empty-line', 'Материалов пока нет. Добавь их в разделе «Контент».'));
-    /* Данные, оплаты, история */
-    const f = $('[data-c-form]'); f.elements.name.value = c.name; f.elements.email.value = c.email; f.elements.phone.value = c.phone; planSel.value = c.plan; $('[data-c-err]').textContent = '';
-    const price = (tariffs.find(t => t.name === c.plan) || {}).price || 0, pay = $('[data-c-pay]'); pay.textContent = '';
-    const pli = el('li'); pli.appendChild(el('span', '', 'Тариф «' + c.plan + '»')); pli.appendChild(el('span', 'pay__s', price.toLocaleString('ru-RU') + ' ₽')); pli.appendChild(el('span', 'pay__d', fmt(addDays(c.until, -planDays(c.plan))))); pay.appendChild(pli);
-    const h = $('[data-c-hist]'); h.textContent = ''; const mine = log.filter(x => x.cid === c.id);
-    if (!mine.length) h.appendChild(el('li', 'hist__e', 'Пока ничего не менялось.'));
-    mine.forEach(x => h.appendChild(histItem(x, false)));
+    const f = $('[data-c-form]'); f.elements.name.value = c.name; f.elements.email.value = c.email; f.elements.phone.value = c.phone; $('[data-c-err]').textContent = '';
+    $('[data-c-pay]').textContent = ''; $('[data-c-hist]').textContent = '';
+    const mine = c.id;
+    api.get('/api/admin/clients/' + mine).then(r => { if (r.ok && cur && cur.id === mine) fillDetail(r.data); else if (!r.ok) fail(r); });
     return true;
   };
-  $('[data-c-note]').addEventListener('change', e => { if (cur) { cur.note = e.target.value.trim(); toast('Заметка сохранена'); } });
-  $('[data-c-remind]').addEventListener('click', () => { if (cur) { remind(cur); drawClient(cur.id); } });
+  const reloadClient = async () => { await loadClients(); if (cur && byId(cur.id) && location.hash.startsWith('#/client/')) drawClient(cur.id); };
+
+  $('[data-c-note]').addEventListener('change', async e => {
+    if (!cur) return; const c = cur, v = e.target.value.trim();
+    if (v === (c.note || '')) return;
+    const r = await api.request('PATCH', '/api/admin/clients/' + c.id, { note: v });
+    if (!r.ok) { fail(r); return; } c.note = v; toast('Заметка сохранена');
+  });
+  $('[data-c-remind]').addEventListener('click', async () => { if (cur) { await remind(cur); if (location.hash.startsWith('#/client/')) drawClient(cur.id); } });
   $('[data-c-wa]').addEventListener('click', () => { if (cur) contact(cur, 'Привет, ' + first(cur.name) + '!'); });
-  $('[data-c-form]').addEventListener('submit', e => {
-    e.preventDefault(); const f = e.currentTarget, nm = f.elements.name.value.trim(), em = f.elements.email.value.trim();
-    if (!nm) { $('[data-c-err]').textContent = 'Напиши имя.'; f.elements.name.focus(); return; }
-    if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) { $('[data-c-err]').textContent = 'Проверь почту: похоже, опечатка.'; f.elements.email.focus(); return; }
-    const planChanged = planSel.value !== cur.plan;
-    cur.name = nm; cur.email = em; cur.phone = f.elements.phone.value.trim(); cur.plan = planSel.value;
-    addLog(cur.id, 'Изменила данные клиента ' + cur.name + (planChanged ? ', тариф «' + cur.plan + '»' : '')); drawClient(cur.id); toast('Данные сохранены');
+  $('[data-c-form]').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.currentTarget, err = $('[data-c-err]'); err.textContent = '';
+    const body = { name: f.elements.name.value.trim(), email: f.elements.email.value.trim(), phone: f.elements.phone.value.trim() };
+    if (!body.name) { err.textContent = 'Напиши имя.'; f.elements.name.focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(body.email)) { err.textContent = 'Проверь почту: похоже, опечатка.'; f.elements.email.focus(); return; }
+    const btn = f.querySelector('[type="submit"]'); btn.disabled = true;
+    const r = await api.request('PATCH', '/api/admin/clients/' + cur.id, body); btn.disabled = false;
+    if (!r.ok) { if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
+    await reloadClient(); toast('Данные сохранены');
   });
 
-  /* Продлить / открыть */
-  const OPTS = [['+1 неделя', 1], ['+2 недели', 2], ['+4 недели', 4], ['+8 недель', 8], ['+16 недель', 16]];   // [подпись, недель]
-  const fx = $('[data-form="extend"]'), optBox = $('[data-dx-opts]'), newLine = $('[data-dx-new]');
-  const base = c => (c.until > today ? c.until : today);
-  const pick = () => { const r = $('input:checked', optBox); return OPTS[Number(r ? r.value : 2)]; };
-  const newDate = () => addDays(base(cur), pick()[1] * 7);
+  /* Продлить / открыть. Недели считаются по 7 дней от текущей даты окончания (или от сегодня, если доступ закончился). */
+  const OPTS = [['24 часа', 1], ['+1 неделя', 7], ['+2 недели', 14], ['+4 недели', 28], ['+8 недель', 56], ['+16 недель', 112]];   // [подпись, дней]
+  const DEF_OPT = 3;
+  const fx = $('[data-form="extend"]'), optBox = $('[data-dx-opts]'), newLine = $('[data-dx-new]'), tSel = $('[data-dx-tariff]'), dxErr = $('[data-dx-err]');
+  const base = c => (c.until && (c.state === 'ok' || c.state === 'warn') ? c.until : new Date());
+  const pick = () => { const r = $('input:checked', optBox); return OPTS[Number(r ? r.value : DEF_OPT)]; };
+  const newDate = () => addDays(base(cur), pick()[1]);
   const drawNew = () => { newLine.textContent = 'Доступ будет открыт до ' + fmt(newDate()); };
+  const setOpt = i => { $$('input', optBox)[i].checked = true; drawNew(); };
   OPTS.forEach((o, i) => {
-    const l = el('label', 'pill'); const r = el('input'); r.type = 'radio'; r.name = 'span'; r.value = String(i); if (i === 2) r.checked = true;
+    const l = el('label', 'pill'); const r = el('input'); r.type = 'radio'; r.name = 'span'; r.value = String(i); if (i === DEF_OPT) r.checked = true;
     r.addEventListener('change', drawNew); l.appendChild(r); l.appendChild(el('span', '', o[0])); optBox.appendChild(l);
   });
+  /* Выбрали тариф — срок подставляется по нему (месяц = 4 недели, «24 часа» = 1 день); при желании меняется руками */
+  tSel.addEventListener('change', () => { const t = accessTariffs.find(x => x.id === tSel.value); const i = t ? OPTS.findIndex(o => o[1] === t.days) : -1; setOpt(i > -1 ? i : DEF_OPT); });
   $('[data-c-extend]').addEventListener('click', () => {
     if (!cur) return; const bad = stateOf(cur) === 'bad';
     $('[data-dx-title]').textContent = bad ? 'Открыть доступ' : 'Продлить доступ';
     $('[data-dx-ok]').textContent = bad ? 'открыть' : 'продлить';
-    $('[data-dx-who]').textContent = cur.name + ', тариф «' + cur.plan + '»' + (WEEKS[cur.plan] ? ' (' + WEEKS[cur.plan] + ' ' + plural(WEEKS[cur.plan], 'неделя', 'недели', 'недель') + ')' : '');
-    $('[data-dx-note]').value = ''; $$('input', optBox)[2].checked = true; drawNew(); openDlg('extend');
+    $('[data-dx-who]').textContent = cur.name + (cur.plan ? ', сейчас тариф «' + cur.plan + '»' : '');
+    tSel.textContent = '';
+    if (!cur.tariffId) { const o = el('option', '', 'Выбери тариф'); o.value = ''; tSel.appendChild(o); }
+    accessTariffs.forEach(t => { const o = el('option', '', t.name + (t.weeks ? ' · ' + t.weeks + ' ' + plural(t.weeks, 'неделя', 'недели', 'недель') : '')); o.value = t.id; tSel.appendChild(o); });
+    tSel.value = cur.tariffId || ''; if (tSel.value !== (cur.tariffId || '')) tSel.value = '';
+    dxErr.textContent = ''; $('[data-dx-note]').value = '';
+    setOpt(DEF_OPT); openDlg('extend');
   });
-  fx.addEventListener('submit', e => {
-    e.preventDefault(); const c = cur, prev = { until: c.until, closed: c.closed }, nd = newDate(), note = $('[data-dx-note]').value.trim();
-    addLog(c.id, (prev.until > today ? 'Продлила' : 'Открыла') + ' доступ ' + c.name + ' до ' + fmt(nd), note);
-    c.until = nd; c.closed = false; dlg('extend').close(); drawClient(c.id);
-    toast('Доступ до ' + fmt(nd), 'отменить', () => { c.until = prev.until; c.closed = prev.closed; log.shift(); if (cur === c && location.hash.startsWith('#/client/')) drawClient(c.id); toast('Отменено'); });
-  });
-  $('[data-c-close]').addEventListener('click', () => {
-    const c = cur; if (!c) return;
-    confirmDlg('Закрыть доступ?', c.name + ' перестанет открывать видео. Данные и история останутся, открыть доступ можно в любой момент.', 'закрыть', () => {
-      const prev = { until: c.until, closed: c.closed }; c.until = addDays(today, -1); c.closed = true; addLog(c.id, 'Закрыла доступ ' + c.name); drawClient(c.id);
-      toast('Доступ закрыт', 'отменить', () => { c.until = prev.until; c.closed = prev.closed; log.shift(); if (cur === c && location.hash.startsWith('#/client/')) drawClient(c.id); toast('Отменено'); });
+  fx.addEventListener('submit', async e => {
+    e.preventDefault(); const c = cur; dxErr.textContent = '';
+    if (!tSel.value) { dxErr.textContent = 'Выбери тариф.'; tSel.focus(); return; }
+    const btn = $('[data-dx-ok]'); btn.disabled = true;
+    const r = await api.post('/api/admin/clients/' + c.id + '/access', { days: pick()[1], tariffId: tSel.value, note: $('[data-dx-note]').value.trim() });
+    btn.disabled = false;
+    if (!r.ok) { if (r.status === 401) return fail(r); dxErr.textContent = r.data.error; return; }
+    dlg('extend').close(); await reloadClient();
+    const pid = r.data.periodId;
+    toast('Доступ до ' + fmt(new Date(r.data.endsAt)), 'отменить', async () => {
+      const u = await api.post('/api/admin/clients/' + c.id + '/access/undo', { periodId: pid });
+      if (!u.ok) { fail(u); return; }
+      await reloadClient(); toast('Отменено');
     });
+  });
+  const fcl = $('[data-form="close"]');
+  $('[data-c-close]').addEventListener('click', () => {
+    if (!cur) return;
+    $('[data-dcl-text]').textContent = cur.name + ' перестанет открывать видео. Данные и история останутся, открыть доступ можно в любой момент: срок тогда считается заново от этого дня.';
+    $('[data-dcl-note]').value = ''; $('[data-dcl-err]').textContent = ''; openDlg('close');
+  });
+  fcl.addEventListener('submit', async e => {
+    e.preventDefault(); const c = cur, btn = fcl.querySelector('[type="submit"]'); btn.disabled = true;
+    const r = await api.post('/api/admin/clients/' + c.id + '/access/close', { note: $('[data-dcl-note]').value.trim() });
+    btn.disabled = false;
+    if (!r.ok) { if (r.status === 401) return fail(r); $('[data-dcl-err]').textContent = r.data.error; return; }
+    dlg('close').close(); await reloadClient(); toast('Доступ закрыт');
   });
 
   /* ---------- Контент: тренировки (группы и видео) ---------- */
@@ -466,7 +556,7 @@
   /* ---------- Цены ---------- */
   const drawPrices = () => {
     const f = $('[data-prices]'); f.textContent = '';
-    tariffs.forEach(t => {
+    priceList.forEach(t => {
       const box = el('div', 'tcard'); if (t.group) box.appendChild(el('p', 'tcard__g', t.group)); box.appendChild(el('p', 'tcard__n', t.name));
       const g = el('div', 'tcard__f');
       const fld = (lab, val, name) => { const l = el('label', 'field'); l.appendChild(el('span', 'field__label', lab)); const i = el('input', 'field__input'); i.type = 'text'; i.inputMode = 'numeric'; i.value = val || ''; i.name = name; i.autocomplete = 'off'; l.appendChild(i); return [l, i]; };
@@ -475,27 +565,36 @@
       const err = el('p', 'field__err'); err.setAttribute('role', 'alert'); box.appendChild(err);
       const act = el('div', 'tcard__act'); const sv = el('button', 'btn btn--red', 'сохранить'); sv.type = 'submit'; act.appendChild(sv); box.appendChild(act);
       box.addEventListener('submit', e => e.preventDefault());
-      sv.addEventListener('click', e => {
+      sv.addEventListener('click', async e => {
         e.preventDefault(); const p = num(i1.value), o = i2.value.trim() ? num(i2.value) : 0;
         i1.removeAttribute('aria-invalid'); i2.removeAttribute('aria-invalid'); err.textContent = '';
         if (!p) { err.textContent = 'Укажи цену цифрами.'; i1.setAttribute('aria-invalid', 'true'); i1.focus(); return; }
         if (o && o <= p) { err.textContent = 'Старая цена должна быть выше новой, иначе скидки нет.'; i2.setAttribute('aria-invalid', 'true'); i2.focus(); return; }
-        t.price = p; t.old = o; i1.value = p; i2.value = o || ''; addLog(null, 'Изменила цену «' + t.name + '»: ' + p.toLocaleString('ru-RU') + ' ₽'); toast('Цена «' + t.name + '» сохранена');
+        sv.disabled = true; const r = await api.request('PATCH', '/api/admin/tariffs/' + t.id, { price: p, old: o }); sv.disabled = false;
+        if (!r.ok) { if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
+        t.price = p; t.old = o; i1.value = p; i2.value = o || ''; toast('Цена «' + t.name + '» сохранена');
       });
       f.appendChild(box);
     });
+    if (!priceList.length) f.appendChild(el('p', 'empty-line', 'Тарифов пока нет.'));
   };
 
   /* ---------- Журнал, выход, сброс демо ---------- */
-  const drawLog = () => { const ul = $('[data-log]'); ul.textContent = ''; log.forEach(x => ul.appendChild(histItem(x, true))); };
+  const drawLog = () => {
+    const ul = $('[data-log]'); ul.textContent = '';
+    logList.forEach(x => ul.appendChild(histItem({ text: logText(x) + (x.client ? ' · ' + x.client : ''), note: x.note, when: when(x.at), who: x.who }, true)));
+    if (!logList.length) ul.appendChild(el('li', 'hist__e', 'Пока ничего не менялось.'));
+  };
   $$('[data-logout]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); window.NikaApi.logout('admin'); }));
-  $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Контент вернётся к исходному. Настоящих данных здесь нет.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); localStorage.removeItem(TGK); } catch (_) {} location.hash = '#/'; location.reload(); }));
+  $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Вернутся демо-видео, группы и материалы, заявки тоже. Клиенты, доступы и цены не затрагиваются.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); } catch (_) {} location.hash = '#/'; location.reload(); }));
 
   /* ---------- Роутер ---------- */
   const views = $$('[data-view]');
   const NAV = { today: 'today', clients: 'clients', client: 'clients', content: 'content', video: 'content', material: 'content', leads: 'leads', more: 'more', prices: 'more', log: 'more' };
   const TITLES = { today: 'Сегодня', clients: 'Клиенты', client: 'Клиент', content: 'Контент', video: 'Видео', material: 'Материал', leads: 'Заявки', more: 'Ещё', prices: 'Тарифы и цены', log: 'Журнал' };
-  let firstRun = true;
+  let firstRun = true, routeName = '';
+  const DRAW = { today: drawToday, clients: drawClients, leads: drawLeads, prices: drawPrices, log: drawLog };
+  const FRESH = { today: () => Promise.all([loadClients(), loadPurchases()]), clients: loadClients, prices: loadPrices, log: loadLog };
   const route = () => {
     const full = location.hash.replace(/^#\/?/, ''), qi = full.indexOf('?'), path = qi > -1 ? full.slice(0, qi) : full, qs = new URLSearchParams(qi > -1 ? full.slice(qi + 1) : '');
     const parts = path.split('/');
@@ -509,7 +608,11 @@
       $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
       if (tab === 'videos') drawVideos(); else drawMaterials();
     }
-    ({ today: drawToday, clients: drawClients, leads: drawLeads, prices: drawPrices, log: drawLog }[name] || (() => {}))();
+    if ((name === 'prices' || name === 'log') && !canMoney) { location.replace('#/more'); return; }
+    routeName = name;
+    (DRAW[name] || (() => {}))();
+    /* Сначала рисуем то, что уже загружено, потом тихо обновляем с сервера */
+    if (FRESH[name]) FRESH[name]().then(() => { if (routeName === name) DRAW[name](); });
     updateDot();
     views.forEach(v => { v.hidden = v.dataset.view !== name; });
     $$('[data-nav]').forEach(a => { if (a.dataset.nav === NAV[name]) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
@@ -519,6 +622,7 @@
     firstRun = false;
   };
   window.addEventListener('hashchange', route);
+  await Promise.all([loadClients(), loadPurchases(), loadAccessTariffs(), loadPrices()]);
   route();
 }
 })();

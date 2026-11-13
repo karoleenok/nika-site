@@ -1,5 +1,6 @@
 /* Личный кабинет клиента. Экраны переключаются по hash: #/ #/video #/video/v01 #/extra #/profile.
-   Данные берутся из window.LK_DATA (демо). Всё, что приходит из данных, вставляется через textContent. */
+   Срок доступа и оплаты приходят с сервера (/api/me/access). Видео и материалы пока демо (window.LK_DATA).
+   Всё, что приходит из данных, вставляется через textContent. */
 (() => {
   'use strict';
   const $  = (s, r = document) => r.querySelector(s);
@@ -10,10 +11,13 @@
 
   /* Вход проверяет сервер (HttpOnly-кука). Без сессии — на экран входа. */
   window.NikaApi.gate('user').then(me => { if (me) start(me); });
-  function start(me) {
+  async function start(me) {
   const D = window.LK_DATA;
   if (!D) return;
-  D.client = Object.assign({}, D.client, { name: me.name || D.client.name, email: me.email });
+  D.client = { name: me.name, email: me.email };
+  const ar = await window.NikaApi.get('/api/me/access');
+  if (ar.status === 401) { location.replace('login.html'); return; }
+  const AC = ar.ok ? ar.data : null;   // null: сервер не ответил, показываем честное сообщение вместо выдуманного срока
 
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const icon = (id, cls) => {
@@ -24,7 +28,7 @@
   };
   const plural = (n, a, b, c) => { const m = Math.abs(n) % 100, k = m % 10; return m > 10 && m < 20 ? c : k === 1 ? a : k > 1 && k < 5 ? b : c; };
   const fmt = d => d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-  const fmtFull = iso => new Date(iso + 'T00:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  const fmtFull = iso => new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 
   /* ---------- WhatsApp ---------- */
   const phone = (document.body.dataset.waPhone || '').replace(/\D/g, '');
@@ -32,34 +36,39 @@
   $$('[data-wa]').forEach(a => waLink(a, a.dataset.wa));
 
   /* ---------- Срок доступа ---------- */
-  const demoState = new URLSearchParams(location.search).get('demo');
-  const days = { active: 34, soon: 3, expired: -3 }[demoState] ?? 34;
-  const end = new Date(); end.setHours(0, 0, 0, 0); end.setDate(end.getDate() + days);
-  const span = D.plan.span;
-  const state = days <= 0 ? 'bad' : days <= 7 ? 'warn' : 'ok';
-  const locked = state === 'bad';
+  /* state с сервера: ok, warn, bad (закончился или закрыт), none (доступа ещё не было) */
+  const sv = AC ? AC.state : 'none';
+  const end = AC && AC.endsAt ? new Date(AC.endsAt) : null;
+  const active = sv === 'ok' || sv === 'warn';
+  const days = active ? AC.daysLeft : 0;
+  const span = AC ? Math.max(1, AC.spanDays) : 1;
+  const state = sv === 'none' ? 'bad' : sv;
+  const locked = !active;
   const STAT = { ok: 'активен', warn: 'заканчивается', bad: 'закончился' };
-  const chip = (cls) => { const c = el('span', 'stat stat--' + state, STAT[state]); if (cls) c.classList.add(cls); return c; };
+  const label = sv === 'none' ? 'нет доступа' : (sv === 'bad' && AC.closed) ? 'закрыт' : STAT[state];
+  const planLine = AC && AC.plan ? 'Тариф «' + AC.plan.name + '»' + (AC.plan.weeks ? ' · ' + AC.plan.weeks + ' ' + plural(AC.plan.weeks, 'неделя', 'недели', 'недель') : '') : '';
+  const chip = (cls) => { const c = el('span', 'stat stat--' + state, label); if (cls) c.classList.add(cls); return c; };
 
-  if (D.demo) $('[data-demo-bar]').hidden = false;
-  $$('[data-name]').forEach(n => { n.textContent = D.client.name; });
+  if (D.demo) $('[data-demo-bar]').hidden = false;   // тренировки и материалы пока демо
+  $$('[data-name]').forEach(n => { n.textContent = (D.client.name || '').split(' ')[0]; });   // в приветствии только имя, без фамилии
 
   const acc = $('[data-acc]');
   acc.classList.toggle('acc--bad', locked);
-  $('[data-acc-kicker]').textContent = locked ? 'доступ закончился' : 'доступ открыт до';
-  $('[data-acc-date]').textContent = fmt(end);
+  $('[data-acc-kicker]').textContent = !AC ? 'не удалось узнать срок' : sv === 'none' ? 'доступа пока нет' : locked ? (AC.closed ? 'доступ закрыт' : 'доступ закончился') : 'доступ открыт до';
+  $('[data-acc-date]').textContent = end && sv !== 'none' ? fmt(end) : '—';
+  $('[data-acc-date]').hidden = !end || sv === 'none';
   const sub = $('[data-acc-sub]'); sub.textContent = '';
   sub.appendChild(chip());
-  sub.appendChild(el('span', '', locked ? Math.abs(days) + ' ' + plural(Math.abs(days), 'день', 'дня', 'дней') + ' назад' : 'осталось ' + days + ' ' + plural(days, 'день', 'дня', 'дней')));
-  $('[data-acc-plan]').textContent = 'Тариф «' + D.plan.name + '»' + (D.plan.weeks ? ' · ' + D.plan.weeks + ' ' + plural(D.plan.weeks, 'неделя', 'недели', 'недель') : '');
+  sub.appendChild(el('span', '', !AC ? 'обнови страницу' : sv === 'none' ? 'выбери тариф, чтобы открыть тренировки' : locked ? (AC.daysAgo ? AC.daysAgo + ' ' + plural(AC.daysAgo, 'день', 'дня', 'дней') + ' назад' : 'сегодня') : 'осталось ' + days + ' ' + plural(days, 'день', 'дня', 'дней')));
+  $('[data-acc-plan]').textContent = planLine;
   const bar = $('[data-acc-bar]');
   const pct = Math.max(0, Math.min(100, Math.round(days / span * 100)));
-  bar.setAttribute('aria-label', locked ? 'Доступ закончился' : 'Осталось ' + pct + '% срока тарифа');
-  $('[data-acc-renew]').textContent = locked ? 'продлить доступ' : 'продлить заранее';
+  bar.setAttribute('aria-label', locked ? 'Доступа нет' : 'Осталось ' + pct + '% срока тарифа');
+  $('[data-acc-renew]').textContent = sv === 'none' ? 'выбрать тариф' : locked ? 'продлить доступ' : 'продлить заранее';
   requestAnimationFrame(() => requestAnimationFrame(() => bar.style.setProperty('--p', pct)));
 
   const topChip = $('[data-stat-chip]');
-  topChip.className = 'stat stat--' + state; topChip.textContent = STAT[state];
+  topChip.className = 'stat stat--' + state; topChip.textContent = label;
 
   /* ---------- Просмотрено / продолжить ---------- */
   const doneSet = () => { try { return new Set(JSON.parse(rd(DONE) || '[]')); } catch (_) { return new Set(); } };
@@ -165,9 +174,11 @@
   /* ---------- Профиль ---------- */
   $('[data-p-name]').textContent = D.client.name;
   $('[data-p-email]').textContent = D.client.email;
-  $('[data-p-plan]').textContent = '«' + D.plan.name + '», ' + (locked ? 'закончился ' : 'до ') + fmt(end);
+  $('[data-p-plan]').textContent = !AC ? 'не удалось загрузить' : sv === 'none' ? 'пока нет' : '«' + (AC.plan ? AC.plan.name : '') + '», ' + (locked ? (AC.closed ? 'закрыт ' : 'закончился ') : 'до ') + fmt(end);
   const pay = $('[data-pay]');
-  D.payments.forEach(p => { const li = el('li'); li.appendChild(el('span', '', p.title)); li.appendChild(el('span', 'pay__s', p.sum)); li.appendChild(el('span', 'pay__d', fmtFull(p.date))); pay.appendChild(li); });
+  const pays = AC ? AC.payments : [];
+  pays.forEach(p => { const li = el('li'); li.appendChild(el('span', '', p.title)); li.appendChild(el('span', 'pay__s', (p.sumKop / 100).toLocaleString('ru-RU') + ' ₽')); li.appendChild(el('span', 'pay__d', fmtFull(p.at))); pay.appendChild(li); });
+  if (!pays.length) { const li = el('li', 'pay__e', 'Оплат пока нет.'); pay.appendChild(li); }
   /* ---------- Пароль для входа (необязательный) ----------
      ДЕМО: в браузере лежит только SHA-256. На сервере: хеш argon2id или bcrypt, лимит попыток, смена пароля
      только после ввода текущего или свежего кода из письма, после смены закрыть сессии на других устройствах. */

@@ -20,5 +20,5 @@ export async function seed(pool, s3, log = console.log) {
       await c.query('UPDATE videos SET size_bytes = $1 WHERE s3_key = $2', [body.length, key]);
     }
   });
-  log('демо-данные загружены: 3 админа, 6 клиентов, 11 товаров, 5 видео, 2 заявки');
+  log('демо-данные загружены: 3 админа, 6 клиентов, 11 товаров, 3 оплаты, 5 видео, 2 заявки');
 }
