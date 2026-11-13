@@ -8,6 +8,7 @@ import authRoutes from './auth/routes.js';
 import adminRoutes from './admin/routes.js';
 import lkRoutes from './lk/routes.js';
 import videoRoutes from './videos/routes.js';
+import payRoutes from './pay/routes.js';
 import { cspHeader } from './csp.js';
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -27,6 +28,8 @@ export async function buildApp({ config, pool, s3, mailer, serveStatic = !config
   const origin = new URL(config.publicUrl).origin;
   app.addHook('onRequest', async (req, reply) => {
     if (req.method === 'GET' || req.method === 'HEAD' || !req.url.startsWith('/api/')) return;
+    // Уведомление об оплате шлёт сервер Robokassa, а не браузер: его проверяем по подписи, а не по Origin
+    if (req.url === '/api/pay/result' || req.url.startsWith('/api/pay/result?')) return;
     const o = req.headers.origin;
     const sameSite = o ? o === origin : req.headers['sec-fetch-site'] === 'same-origin';
     if (!sameSite) return reply.code(403).send({ error: 'Запрос отклонён' });
@@ -53,6 +56,7 @@ export async function buildApp({ config, pool, s3, mailer, serveStatic = !config
   await adminRoutes(app, { pool });
   await lkRoutes(app, { pool });
   await videoRoutes(app, { pool, s3 });
+  await payRoutes(app, { config, pool, mailer });
 
   app.all('/api/*', async (req, reply) => reply.code(404).send({ error: 'Не найдено' }));
 

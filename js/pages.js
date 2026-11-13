@@ -74,22 +74,73 @@
     const qs = new URLSearchParams(location.search);
     const key = qs.get('t');
     const v = V[key] ? Object.assign({}, V[key]) : null;
-    /* После оплаты: заказ берём из каталога по ?item=id, почту из sessionStorage (её туда положил checkout) */
-    if (key === 'pay') {
-      const C = window.NDCatalog || {}, id = qs.get('item');
-      const it = Object.prototype.hasOwnProperty.call(C, id || '') ? C[id] : null;
-      let mail = '';
-      try { const o = JSON.parse(sessionStorage.getItem('nd_order') || 'null'); if (o && o.id === id) mail = o.email; } catch (_) {}
+    /* После оплаты. Доступ открывает сервер по уведомлению Robokassa, страница только спрашивает статус заказа.
+       Заказ (номер и ключ) положил в sessionStorage checkout. Если человек платил в приложении банка и вернулся
+       в другом браузере, ключа нет: показываем нейтральный текст, письмо всё равно придёт. */
+    let order = null;
+    try { order = JSON.parse(sessionStorage.getItem('nd_order') || 'null'); } catch (_) {}
+    const C = window.NDCatalog || {};
+    const itemOf = o => (o && Object.prototype.hasOwnProperty.call(C, o.id) ? C[o.id] : null);
+    const mark = $('.ty__mark');
+    const PAY_STATES = {
+      check: { title: 'Проверяем<br>оплату', lead: 'Обычно это занимает несколько секунд. Не закрывай страницу.', steps: [], note: '' },
+      wait: { title: 'Оплата<br>обрабатывается', lead: 'Банк ещё не подтвердил платёж. Как только подтвердит, на почту придёт письмо, а доступ откроется сам.',
+        steps: ['Проверь почту через 10–15 минут.', 'Если письма нет, а деньги списались, напиши Нике в WhatsApp: она проверит и откроет доступ вручную.'], note: '' },
+      fail: { title: 'Оплата<br>не прошла', lead: 'Деньги не списались. Можно попробовать ещё раз, например другой картой или через СБП.',
+        steps: ['Нажми «попробовать снова».', 'Если не получается, напиши Нике в WhatsApp: она поможет.'], note: '' }
+    };
+    const paidView = (it, mail) => {
+      const p = Object.assign({}, V.pay);
       if (it) {
-        v.lead = 'Спасибо. Заказ «' + it.title + '» оплачен.' + (mail ? ' Чек придёт на ' + mail + '.' : ' Чек придёт на указанную при оплате почту.');
-        v.steps = it.after === 'lk'
-          ? ['Проверь почту: там чек и ссылка для входа.', 'Войди в личный кабинет, доступ уже открыт.', 'Если что-то не открылось, напиши Нике в WhatsApp.']
+        p.lead = 'Спасибо. Заказ «' + it.title.replace(/(\d) /g, '$1\u00a0') + '» оплачен. ' + (mail ? 'Подтверждение и вход придут на ' + mail + ', чек — отдельным письмом от налоговой.' : 'Подтверждение придёт на почту, чек — отдельным письмом от налоговой.');
+        p.steps = it.after === 'lk'
+          ? ['Проверь почту: там подтверждение и ссылка на кабинет.', 'Войди в личный кабинет по почте, доступ уже открыт.', 'Если что-то не открылось, напиши Нике в WhatsApp.']
           : ['Ника получила заказ и напишет тебе в течение рабочего дня.', 'Вы договоритесь о дате и формате.', 'Если не дождёшься сообщения, напиши Нике в WhatsApp сам(а).'];
-        v.needAccount = it.after === 'lk';
-        document.title = 'Оплата прошла — Ника Дупина';
+        p.needAccount = it.after === 'lk';
       }
+      return p;
+    };
+    const retry = $('[data-ty-retry]');
+    const drawPay = (state, it) => {
+      const p = state === 'paid' ? paidView(it, order && order.email) : Object.assign({ needAccount: false }, PAY_STATES[state]);
+      $('[data-ty-title]').innerHTML = p.title;
+      $('[data-ty-lead]').textContent = p.lead;
+      const ol = $('[data-ty-steps]'); ol.textContent = '';
+      p.steps.forEach(t => { const li = document.createElement('li'); li.textContent = t; ol.appendChild(li); });
+      ol.closest('section').hidden = !p.steps.length;
+      if (mark) { mark.hidden = state !== 'paid'; }
+      ty.dataset.ty = 'pay'; ty.dataset.payState = state;
+      $('[data-ty-account]').hidden = !(state === 'paid' && p.needAccount !== false);
+      const canRetry = state === 'fail' && !!it;
+      if (retry) { retry.hidden = !canRetry; if (it) retry.href = 'checkout.html?item=' + encodeURIComponent(order.id); }
+      const home = $('[data-ty-home]');   // красная кнопка одна: при ошибке главное действие — повторить оплату
+      const toLk = state === 'paid' && p.needAccount !== false && !!it;   // после оплаты главное действие — войти в кабинет
+      const acc = $('[data-ty-account]');
+      if (home) { home.classList.toggle('btn--red', !canRetry && !toLk); home.classList.toggle('btn--white', canRetry || toLk); }
+      if (acc) { acc.classList.toggle('btn--red', toLk); acc.classList.toggle('btn--white', !toLk); }
+      document.title = p.title.replace('<br>', ' ') + ' — Ника Дупина';
+    };
+    const isPay = key === 'pay' || key === 'fail';
+    if (key === 'fail') drawPay('fail', itemOf(order));
+    else if (key === 'pay' && (!order || !order.orderId)) drawPay('paid', null);
+    else if (key === 'pay') {
+      const it = itemOf(order);
+      drawPay('check', it);
+      const started = Date.now();
+      const poll = async () => {
+        let st = '';
+        try {
+          const r = await fetch('/api/pay/status/' + encodeURIComponent(order.orderId) + '?k=' + encodeURIComponent(order.key), { cache: 'no-store', credentials: 'same-origin' });
+          if (r.ok) st = (await r.json()).status;
+        } catch (_) {}
+        if (st === 'paid') { drawPay('paid', it); try { sessionStorage.removeItem('nd_order'); } catch (_) {} return; }
+        if (st === 'failed' || st === 'refunded') { drawPay('fail', it); return; }
+        if (Date.now() - started > 60e3) { drawPay('wait', it); return; }
+        setTimeout(poll, Date.now() - started < 10e3 ? 1500 : 4000);   // сначала часто, потом реже
+      };
+      poll();
     }
-    if (v) {
+    if (v && !isPay) {
       $('[data-ty-title]').innerHTML = v.title;
       $('[data-ty-lead]').textContent = v.lead;
       const ol = $('[data-ty-steps]'); ol.textContent = '';
@@ -100,7 +151,7 @@
     }
     // кнопка в кабинет нужна только после оплаты
     const lk = $('[data-ty-account]');
-    if (lk) lk.hidden = !(ty.dataset.ty === 'pay' && (!v || v.needAccount !== false));
+    if (lk && !isPay) lk.hidden = !(ty.dataset.ty === 'pay' && (!v || v.needAccount !== false));
   }
 
   /* ---------- Кейсы: лента, «до | после», ракурс, «читать полностью» ---------- */

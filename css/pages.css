@@ -357,3 +357,6 @@
 .tick li::before { content: ""; position: absolute; left: 0; top: .28em; width: 16px; height: 9px; border-left: 2.5px solid var(--c-red); border-bottom: 2.5px solid var(--c-red); transform: rotate(-45deg) scale(.9); transform-origin: center; }
 .todo--sm { margin-top: var(--sp-5); font-size: var(--fs-tiny); padding: var(--sp-4); }
 .co [hidden], .co__empty[hidden] { display: none !important; }
+
+/* hidden сильнее display у кнопок и значков: иначе скрытые действия на «спасибо» видны */
+.pg-hero__actions > [hidden], .ty__mark[hidden] { display: none !important; }

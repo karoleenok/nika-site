@@ -11,7 +11,10 @@ test('без обязательных переменных сервер не с�
 test('на бою требуются https и длинный секрет', () => {
   assert.throws(() => loadConfig({ ...base, NODE_ENV: 'production' }), /SESSION_SECRET/);
   assert.throws(() => loadConfig({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(64) }), /https/);
-  assert.equal(loadConfig({ ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(64), PUBLIC_URL: 'https://a.ru/' }).publicUrl, 'https://a.ru');
+  const prod = { ...base, NODE_ENV: 'production', SESSION_SECRET: 'x'.repeat(64), PUBLIC_URL: 'https://a.ru/' };
+  assert.throws(() => loadConfig(prod), /Robokassa/);
+  const rk = { ROBOKASSA_LOGIN: 'l', ROBOKASSA_PASSWORD1: 'p1', ROBOKASSA_PASSWORD2: 'p2' };
+  assert.equal(loadConfig({ ...prod, ...rk }).publicUrl, 'https://a.ru');
 });
 test('Robokassa по умолчанию в тестовом режиме', () => {
   assert.equal(loadConfig(base).robokassa.test, true);

@@ -98,6 +98,9 @@
       case 'access.extend': return 'Доступ продлён' + (e ? ' до ' + fmt(e) : '');
       case 'access.undo': return 'Отменено последнее продление';
       case 'access.close': return 'Доступ закрыт';
+      case 'order.paid': return 'Оплата «' + (m.title || '') + '», ' + money((m.sumKop || 0) / 100) + (m.test ? ' (тест)' : '');
+      case 'order.manual': return 'Оплата «' + (m.title || '') + '» отмечена вручную';
+      case 'order.refund': return 'Возврат «' + (m.title || '') + '», ' + money((m.sumKop || 0) / 100);
       case 'tariff.price': return 'Цена «' + (m.name || '') + '»: ' + money(m.from) + ' → ' + money(m.to);
       default: return 'Действие: ' + x.action;
     }
@@ -718,6 +721,57 @@
     if (!priceList.length) f.appendChild(el('p', 'empty-line', 'Тарифов пока нет.'));
   };
 
+  /* ---------- Оплаты ---------- */
+  let orders = [], ordFilter = 'done', ordCur = null, ordMode = '';
+  const loadOrders = async () => { if (!canMoney) return; const r = await api.get('/api/admin/orders'); if (r.ok) orders = r.data.orders; else fail(r); };
+  const ORD_ST = { paid: ['оплачен', 'ok'], manual: ['отмечен вручную', 'ok'], new: ['ждёт оплаты', 'warn'], failed: ['не прошёл', ''], refunded: ['возврат', ''] };
+  const drawOrders = () => {
+    const ul = $('[data-orders]'); ul.textContent = '';
+    const list = orders.filter(o => ordFilter === 'done' ? (o.status === 'paid' || o.status === 'manual') : ordFilter === 'new' ? (o.status === 'new' || o.status === 'failed') : o.status === 'refunded');
+    list.forEach(o => {
+      const li = el('li', 'ord__i'), st = ORD_ST[o.status] || [o.status, ''];
+      li.appendChild(el('span', 'ord__t', o.title)); li.appendChild(el('span', 'ord__s', money(o.sumKop / 100)));
+      const m = el('span', 'ord__m');
+      if (o.clientId) { const a = el('a', '', o.email); a.href = '#/client/' + o.clientId; m.appendChild(a); } else m.appendChild(document.createTextNode(o.email));
+      m.appendChild(document.createTextNode(' · №' + o.id + ' · ' + when(o.at) + (o.test ? ' · тест' : '')));
+      li.appendChild(m);
+      li.appendChild(el('span', 'ord__st' + (st[1] ? ' ord__st--' + st[1] : ''), st[0]));
+      if (o.note) li.appendChild(el('span', 'ord__n', 'Заметка: ' + o.note + (o.who ? ' · ' + o.who : '')));
+      const act = el('div', 'ord__act');
+      const btn = (t, mode) => { const b = el('button', 'btn btn--line-dark', t); b.type = 'button'; b.addEventListener('click', () => ordOpen(o, mode)); act.appendChild(b); };
+      if (o.status === 'new' || o.status === 'failed') btn('оплата пришла', 'confirm');
+      if (o.status === 'paid' || o.status === 'manual') btn('оформить возврат', 'refund');
+      if (act.children.length) li.appendChild(act);
+      ul.appendChild(li);
+    });
+    if (!list.length) ul.appendChild(el('li', 'empty-line', ordFilter === 'new' ? 'Неоплаченных заказов за 2 недели нет.' : ordFilter === 'refunded' ? 'Возвратов не было.' : 'Оплат пока нет.'));
+  };
+  $$('[data-pay-filter] [data-f]').forEach(b => b.addEventListener('click', () => {
+    ordFilter = b.dataset.f; $$('[data-pay-filter] [data-f]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); drawOrders();
+  }));
+  const ordOpen = (o, mode) => {
+    ordCur = o; ordMode = mode;
+    const sum = money(o.sumKop / 100), name = /«/.test(o.title) ? o.title : '«' + o.title + '»';
+    $('[data-do-title]').textContent = mode === 'confirm' ? 'Оплата пришла?' : 'Оформить возврат?';
+    $('[data-do-text]').textContent = mode === 'confirm'
+      ? 'Отмечай, только если видишь оплату ' + sum + ' от ' + o.email + ' в кабинете Robokassa. Покупателю откроется «' + o.title + '» и придёт письмо.'
+      : 'Сначала верни ' + sum + ' в кабинете Robokassa и проверь, что чек в «Мой налог» аннулирован. Здесь закроется «' + o.title + '» у ' + o.email + '.';
+    $('[data-do-ok]').textContent = mode === 'confirm' ? 'отметить оплату' : 'отметить возврат';
+    const n = $('[data-do-note]'); n.value = ''; n.placeholder = mode === 'confirm' ? 'Например: есть в Robokassa' : 'Например: передумала';
+    $('[data-do-err]').textContent = ''; openDlg('order');
+  };
+  const fo = $('[data-form="order"]');
+  fo.addEventListener('submit', async e => {
+    e.preventDefault(); const note = $('[data-do-note]').value.trim(), err = $('[data-do-err]');
+    if (note.length < 3) { err.textContent = 'Напиши пару слов: это увидишь потом в журнале.'; $('[data-do-note]').focus(); return; }
+    const btn = fo.querySelector('[type="submit"]'); btn.disabled = true;
+    const r = await api.post('/api/admin/orders/' + ordCur.id + '/' + ordMode, { note });
+    btn.disabled = false;
+    if (!r.ok) { if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
+    dlg('order').close(); await loadOrders(); drawOrders(); loadPurchases();
+    toast(ordMode === 'confirm' ? 'Оплата отмечена, доступ открыт' : 'Возврат отмечен');
+  });
+
   /* ---------- Журнал, выход, сброс демо ---------- */
   const drawLog = () => {
     const ul = $('[data-log]'); ul.textContent = '';
@@ -729,11 +783,11 @@
 
   /* ---------- Роутер ---------- */
   const views = $$('[data-view]');
-  const NAV = { today: 'today', clients: 'clients', client: 'clients', content: 'content', video: 'content', material: 'content', leads: 'leads', more: 'more', prices: 'more', log: 'more' };
-  const TITLES = { today: 'Сегодня', clients: 'Клиенты', client: 'Клиент', content: 'Контент', video: 'Видео', material: 'Материал', leads: 'Заявки', more: 'Ещё', prices: 'Тарифы и цены', log: 'Журнал' };
+  const NAV = { today: 'today', clients: 'clients', client: 'clients', content: 'content', video: 'content', material: 'content', leads: 'leads', more: 'more', prices: 'more', log: 'more', payments: 'more' };
+  const TITLES = { today: 'Сегодня', clients: 'Клиенты', client: 'Клиент', content: 'Контент', video: 'Видео', material: 'Материал', leads: 'Заявки', more: 'Ещё', prices: 'Тарифы и цены', log: 'Журнал', payments: 'Оплаты' };
   let firstRun = true, routeName = '';
-  const DRAW = { today: drawToday, clients: drawClients, leads: drawLeads, prices: drawPrices, log: drawLog };
-  const FRESH = { today: () => Promise.all([loadClients(), loadPurchases()]), clients: loadClients, prices: loadPrices, log: loadLog };
+  const DRAW = { today: drawToday, clients: drawClients, leads: drawLeads, prices: drawPrices, log: drawLog, payments: drawOrders };
+  const FRESH = { today: () => Promise.all([loadClients(), loadPurchases()]), clients: loadClients, prices: loadPrices, log: loadLog, payments: loadOrders };
   const route = () => {
     const full = location.hash.replace(/^#\/?/, ''), qi = full.indexOf('?'), path = qi > -1 ? full.slice(0, qi) : full, qs = new URLSearchParams(qi > -1 ? full.slice(qi + 1) : '');
     const parts = path.split('/');
@@ -747,7 +801,7 @@
       $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
       if (tab === 'videos') { drawVideos(); loadContent().then(ok => { if (ok && routeName === 'content' && !$('[data-pane="videos"]').hidden) drawVideos(); }); } else drawMaterials();
     }
-    if ((name === 'prices' || name === 'log') && !canMoney) { location.replace('#/more'); return; }
+    if ((name === 'prices' || name === 'log' || name === 'payments') && !canMoney) { location.replace('#/more'); return; }
     routeName = name;
     (DRAW[name] || (() => {}))();
     /* Сначала рисуем то, что уже загружено, потом тихо обновляем с сервера */

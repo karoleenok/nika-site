@@ -36,6 +36,7 @@
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3" fill="currentColor"/></symbol>
   <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5" fill="currentColor"/><circle cx="15" cy="6" r="1.5" fill="currentColor"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1.5" fill="currentColor"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h4"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
 </svg>
 <a class="skip-link" href="#main">К содержимому</a>
@@ -313,6 +314,7 @@
     <section data-view="more" hidden aria-labelledby="h-more">
       <h1 class="display lk-h1" id="h-more" tabindex="-1">Ещё</h1>
       <ul class="menu">
+        <li data-role="owner tech"><a href="#/payments"><svg class="ic" aria-hidden="true"><use href="#i-card"/></svg><span class="menu__t"><b>Оплаты</b><small>заказы, возвраты, ручное подтверждение</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
         <li data-role="owner tech"><a href="#/prices"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg><span class="menu__t"><b>Тарифы и цены</b><small>изменить без разработчика</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
         <li data-role="owner tech"><a href="#/log"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span class="menu__t"><b>Журнал действий</b><small>кто и когда менял доступы</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
       </ul>
@@ -325,6 +327,19 @@
       <h1 class="display lk-h1" id="h-prices" tabindex="-1">Тарифы и цены</h1>
       <p class="lk-p adm-gap">Цены сохраняются сразу. На главной странице сайта они обновятся, когда подключим её к серверу (Каролина скажет). Старую цену можно оставить пустой: тогда она не покажется.</p>
       <form class="tariffs" data-prices novalidate></form>
+    </section>
+
+    <!-- ===== Оплаты ===== -->
+    <section data-view="payments" hidden aria-labelledby="h-payments">
+      <a class="back" href="#/more"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>ещё</a>
+      <h1 class="display lk-h1" id="h-payments" tabindex="-1">Оплаты</h1>
+      <p class="lk-p adm-gap">Оплаты отмечаются сами. Вручную — только если деньги пришли, а&nbsp;заказ ждёт оплаты. Деньги возвращай в&nbsp;кабинете Robokassa, а&nbsp;здесь отметь возврат: доступ закроется.</p>
+      <div class="chips lk-chips" role="group" aria-label="Показать" data-pay-filter>
+        <button class="chip" type="button" aria-pressed="true" data-f="done">оплаченные</button>
+        <button class="chip" type="button" aria-pressed="false" data-f="new">ждут оплаты</button>
+        <button class="chip" type="button" aria-pressed="false" data-f="refunded">возвраты</button>
+      </div>
+      <ul class="ord" data-orders></ul>
     </section>
 
     <!-- ===== Журнал ===== -->
@@ -382,6 +397,22 @@
     <div class="sheet__act">
       <button class="btn btn--line-dark" type="button" data-close>отмена</button>
       <button class="btn btn--red" type="submit">закрыть</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" data-dlg="order" aria-labelledby="do-t">
+  <form class="sheet__in" data-form="order" method="dialog" novalidate>
+    <h2 class="sheet__t" id="do-t" data-do-title></h2>
+    <p class="sheet__p" data-do-text></p>
+    <label class="field">
+      <span class="field__label">Заметка (обязательно)</span>
+      <input class="field__input" type="text" maxlength="200" data-do-note>
+      <span class="field__err" role="alert" data-do-err></span>
+    </label>
+    <div class="sheet__act">
+      <button class="btn btn--line-dark" type="button" data-close>отмена</button>
+      <button class="btn btn--red" type="submit" data-do-ok></button>
     </div>
   </form>
 </dialog>

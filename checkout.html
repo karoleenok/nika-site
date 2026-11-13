@@ -79,19 +79,6 @@
             <p class="co__fine">Оплату принимает платёжный сервис. Данные карты на&nbsp;этом сайте не&nbsp;вводятся и&nbsp;не&nbsp;хранятся.</p>
           </form>
 
-          <!-- Шаг 2: окно платёжки. ЗАГЛУШКА: когда подключим платёжку, этот блок не показывается (см. js/pay.js, PAY_URL) -->
-          <section class="co__pay" data-co-pay hidden aria-labelledby="co-pay-t">
-            <p class="co__demo"><b>Демо.</b> Здесь будет окно платёжной системы. Деньги не&nbsp;списываются.</p>
-            <h2 class="co__h" id="co-pay-t" tabindex="-1">Оплата</h2>
-            <fieldset class="co__methods">
-              <legend class="sr-only">Способ оплаты</legend>
-              <label class="co__method"><input type="radio" name="method" value="sbp" checked><span><b>СБП</b><small>по&nbsp;QR-коду или в&nbsp;приложении банка</small></span></label>
-              <label class="co__method"><input type="radio" name="method" value="card"><span><b>Банковская карта</b><small>откроется защищённая страница банка</small></span></label>
-            </fieldset>
-            <p class="co__mail">Чек придёт на <b data-co-email></b></p>
-            <button class="btn btn--red btn--block" type="button" data-co-fake>оплатить&nbsp;<span data-co-price2></span></button>
-            <button class="co__link" type="button" data-co-edit>← изменить почту</button>
-          </section>
         </div>
       </div>
     </div>
@@ -115,6 +102,7 @@
 </footer>
 <script src="js/catalog.js"></script>
 <script src="js/pay.js" defer></script>
+<script src="js/api.js"></script>
 <script src="js/pages.js"></script>
 <script src="js/checkout.js" defer></script>
 <script src="js/typo.js" defer></script>

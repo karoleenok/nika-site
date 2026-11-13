@@ -8,6 +8,7 @@ export function loadConfig(env = process.env) {
   const prod = env.NODE_ENV === 'production';
   if (prod && env.SESSION_SECRET.length < 64) throw new Error('SESSION_SECRET короче 64 символов');
   if (prod && !env.PUBLIC_URL.startsWith('https://')) throw new Error('PUBLIC_URL на бою должен быть https');
+  if (prod && !(env.ROBOKASSA_LOGIN && env.ROBOKASSA_PASSWORD1 && env.ROBOKASSA_PASSWORD2)) throw new Error('Не заданы ключи Robokassa');
   return Object.freeze({
     prod,
     port: Number(env.PORT || 3000),

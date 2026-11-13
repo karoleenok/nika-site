@@ -50,3 +50,31 @@ export function passwordChangedMail({ removed }) {
   const tail = 'На других устройствах выполнен выход. Если изменения сделаны без твоего ведома, ответь на это письмо.';
   return { subject: 'Изменения входа в кабинет Ники Дупиной', text: `${what}\n\n${tail}`, html: layout([esc(what), esc(tail)]) };
 }
+
+const rubles = (kop) => `${(kop / 100).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽`;
+const dateRu = (d) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Vladivostok' });
+
+// Письмо покупателю после оплаты. Чек присылает налоговая через «Мой налог», здесь только подтверждение.
+export function paidMail({ title, kop, kind, endsAt, lkUrl }) {
+  const what = kind === 'access' ? `Доступ к тренировкам открыт до ${dateRu(endsAt)}.`
+    : kind === 'material' ? 'Материал уже в личном кабинете.'
+    : 'Ника напишет тебе в ближайшее время, чтобы договориться о дате.';
+  const login = kind === 'service' ? null : `Войти в кабинет: ${lkUrl}\nВход по коду, который придёт на эту почту.`;
+  const lines = [`Оплата прошла: «${title}», ${rubles(kop)}.`, what, ...(login ? [login] : []),
+    'Чек придёт отдельным письмом от налоговой (сервис «Мой налог»).',
+    'Если что-то не так, просто ответь на это письмо.'];
+  const html = layout([
+    `Оплата прошла: <b>${esc(title)}</b>, ${esc(rubles(kop))}.`, esc(what),
+    ...(login ? [`<a href="${esc(lkUrl)}" style="color:#d6201c">войти в кабинет</a><br><span style="color:#6b6b6b;font-size:14px">Вход по коду, который придёт на эту почту.</span>`] : []),
+    'Чек придёт отдельным письмом от налоговой (сервис «Мой налог»).',
+    '<span style="color:#6b6b6b;font-size:14px">Если что-то не так, просто ответь на это письмо.</span>',
+  ]);
+  return { subject: 'Оплата прошла — Ника Дупина', text: lines.join('\n\n'), html };
+}
+
+// Уведомление Нике
+export function adminPaidMail({ title, kop, email, kind, endsAt, adminUrl, test }) {
+  const tail = kind === 'access' ? `Доступ открыт до ${dateRu(endsAt)}.` : kind === 'service' ? 'Нужно связаться с покупателем.' : 'Материал открыт в кабинете.';
+  const lines = [`${test ? '[ТЕСТ] ' : ''}Новая оплата: «${title}», ${rubles(kop)}.`, `Покупатель: ${email}`, tail, `Админка: ${adminUrl}`];
+  return { subject: `${test ? '[ТЕСТ] ' : ''}Оплата: ${title}`, text: lines.join('\n\n'), html: layout(lines.map(esc)) };
+}
