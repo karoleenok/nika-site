@@ -264,3 +264,29 @@ body:has(dialog[open]) { overflow: hidden; }
 @media (min-width: 600px) { .sheet__mv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .sheet__mv[hidden] { display: none; }
 .ed__hint { grid-column: 1 / -1; }
+
+/* ---------- Загрузка видео (фаза 3) ---------- */
+.up__run, .up__ok { display: grid; gap: var(--sp-3); }
+.up__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); align-items: baseline; }
+.up__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-body); font-weight: 450; line-height: var(--lh-tight); }
+.up__pct { font-family: var(--f-display); font-size: max(28px, calc(36 * var(--s))); line-height: var(--lh-display); font-variant-numeric: tabular-nums; }
+.up__bar { height: 8px; border-radius: 999px; background: var(--c-paper); overflow: hidden; }
+.up__bar > i { display: block; height: 100%; width: calc(var(--p, 0) * 1%); background: var(--c-red); border-radius: inherit; transition: width var(--dur-2) var(--ease-out); }
+.up--offline .up__bar > i { background: var(--c-warn); }
+.up--error .up__bar > i { background: var(--c-muted); }
+.up__s { color: var(--c-muted); font-size: var(--fs-small); line-height: var(--lh-small); }
+.up--offline .up__s { color: var(--c-warn); }
+.up--error .up__s { color: var(--c-red); }
+.up__act { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); align-items: center; }
+.up__act .btn .ic { width: 20px; height: 20px; margin-right: var(--sp-2); }
+.up__link { position: relative; display: inline-flex; align-items: center; min-height: 44px; color: var(--c-ink); font-size: var(--fs-small); font-weight: 450; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; cursor: pointer; }
+.up__link:focus-within { outline: 2px solid var(--c-red); outline-offset: 2px; }
+.up__ok-t { display: flex; gap: var(--sp-2); align-items: center; color: var(--c-ok); font-size: var(--fs-body); font-weight: 450; line-height: var(--lh-tight); }
+.up__ok-t .ic { flex: none; width: 22px; height: 22px; }
+
+
+.up .field__err:empty { display: none; }
+.sw-row.is-locked { cursor: not-allowed; }
+.sw-row.is-locked .sw { opacity: .45; }
+@media (prefers-reduced-motion: reduce) { .up__bar > i { transition: none; } }
+.up [hidden] { display: none !important; }

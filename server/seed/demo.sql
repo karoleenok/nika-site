@@ -49,13 +49,20 @@ JOIN users u ON u.email = d.email JOIN tariffs t ON t.slug = d.slug;
 INSERT INTO purchases (user_id, tariff_id)
 SELECT u.id, t.id FROM users u, tariffs t WHERE u.email = 'anna@example.com' AND t.slug = 'guide-emotions';
 
--- 5 готовых видео. Файлы кладёт в хранилище скрипт сида (server/seed/videos/demo-N.mp4), он же пишет размер.
-INSERT INTO videos (title, muscle_group, description, sort, s3_key, size_bytes, status, published) VALUES
-  ('Приседания: техника и дыхание', 'legs',   'Постановка стоп, глубина и положение корпуса.', 1, 'video/demo-1.mp4', 0, 'ready', true),
-  ('Ягодичный мостик',              'legs',   'Нужные мышцы без нагрузки на поясницу.',        2, 'video/demo-2.mp4', 0, 'ready', true),
-  ('Тяга резинки к поясу',          'back',   'Чувствуем лопатки, без рывков.',                3, 'video/demo-3.mp4', 0, 'ready', true),
-  ('Планка: три варианта',          'abs',    'От планки на коленях до боковой.',              4, 'video/demo-4.mp4', 0, 'ready', true),
-  ('Разминка перед тренировкой',    'warmup', 'Разогреть суставы и мышцы.',                    5, 'video/demo-5.mp4', 0, 'ready', true);
+-- Группы тренировок (как папки на Диске Ники) и 5 готовых видео.
+-- Файлы кладёт в хранилище скрипт сида (server/seed/videos/demo-N.mp4), он же пишет размер.
+INSERT INTO video_groups (name, sort) VALUES
+  ('Грудь/руки', 1), ('Ноги', 2), ('Плиометрика', 3), ('Пресс', 4), ('Разминка', 5), ('Спина', 6);
+INSERT INTO videos (title, group_id, description, gear, sort, s3_key, size_bytes, status, published)
+SELECT v.title, g.id, v.descr, v.gear, v.sort, v.key, 0, 'ready', true
+  FROM (VALUES
+    ('Приседания: техника и дыхание', 'Ноги',     'Постановка стоп, глубина и положение корпуса.', ARRAY['коврик'],          1, 'video/demo-1.mp4'),
+    ('Ягодичный мостик',              'Ноги',     'Нужные мышцы без нагрузки на поясницу.',        ARRAY['коврик'],          2, 'video/demo-2.mp4'),
+    ('Тяга резинки к поясу',          'Спина',    'Чувствуем лопатки, без рывков.',                ARRAY['длинная резинка'], 1, 'video/demo-3.mp4'),
+    ('Планка: три варианта',          'Пресс',    'От планки на коленях до боковой.',              ARRAY['коврик'],          1, 'video/demo-4.mp4'),
+    ('Разминка перед тренировкой',    'Разминка', 'Разогреть суставы и мышцы.',                    ARRAY['коврик'],          1, 'video/demo-5.mp4')
+  ) AS v(title, grp, descr, gear, sort, key)
+  JOIN video_groups g ON g.name = v.grp;
 
 INSERT INTO leads (name, contact, service, message, consent_at, is_new) VALUES
   ('Кристина', 'demo-tg-kristina', 'Сопровождение', 'Хочу понять, с чего начать.', now(), true),

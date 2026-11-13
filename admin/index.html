@@ -63,7 +63,7 @@
 
   <main id="main" class="lk-main">
     <noscript><p class="lk-card">Для админки нужен включённый JavaScript.</p></noscript>
-    <p class="demo-bar" data-demo-bar hidden>Заявки, видео и материалы пока демо: сохраняются только в этом браузере. Клиенты, доступы, цены и журнал настоящие.</p>
+    <p class="demo-bar" data-demo-bar hidden>Заявки и материалы пока демо: сохраняются только в этом браузере. Клиенты, доступы, цены, видео и журнал настоящие.</p>
 
     <!-- ===== Сегодня ===== -->
     <section data-view="today" hidden aria-labelledby="h-today">
@@ -201,13 +201,31 @@
       <a class="back" href="#/content"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>все тренировки</a>
       <h1 class="display lk-h1" id="h-video" tabindex="-1" data-ve-h></h1>
       <form class="ed" data-ve novalidate>
-        <div class="lk-card ed__card">
-          <p class="field__label">Видеофайл</p>
-          <label class="drop" data-ve-drop>
-            <input class="drop__in" type="file" accept="video/*" data-ve-file>
+        <div class="lk-card ed__card up" data-up>
+          <p class="field__label" id="up-label">Видеофайл</p>
+          <label class="drop" data-up-drop>
+            <input class="drop__in" type="file" accept="video/mp4,.mp4,.m4v" data-ve-file aria-labelledby="up-label">
             <span class="drop__t" data-ve-file-t>Выбрать видеофайл</span>
-            <span class="drop__s">Демо: файл пока никуда не загружается, хранилище подключим позже.</span>
+            <span class="drop__s">Формат MP4, до 2 ГБ. Не закрывай вкладку и не блокируй экран, пока идёт загрузка. Лучше по Wi‑Fi.</span>
           </label>
+          <div class="up__run" data-up-run hidden>
+            <div class="up__row"><span class="up__name" data-up-name></span><span class="up__pct" data-up-pct>0%</span></div>
+            <div class="up__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-labelledby="up-label" data-up-bar><i></i></div>
+            <p class="up__s" data-up-s aria-live="polite"></p>
+            <div class="up__act">
+              <button class="btn btn--red btn--sm" type="button" data-up-retry hidden>повторить</button>
+              <button class="up__link" type="button" data-up-cancel>отменить загрузку</button>
+            </div>
+          </div>
+          <div class="up__ok" data-up-ok hidden>
+            <p class="up__ok-t"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span data-up-ok-t>Файл загружен</span></p>
+            <div class="player up__player" data-up-player hidden></div>
+            <div class="up__act">
+              <button class="btn btn--line-dark btn--sm" type="button" data-up-watch><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>посмотреть</button>
+              <label class="up__link up__replace">заменить файл<input class="drop__in" type="file" accept="video/mp4,.mp4,.m4v" data-up-replace></label>
+            </div>
+          </div>
+          <span class="field__err" role="alert" data-up-err></span>
         </div>
 
         <div class="lk-card ed__card">
@@ -227,15 +245,13 @@
 
         <div class="lk-card ed__card">
           <label class="sw-row">
-            <span class="sw-row__t"><b>Показывать клиентам</b><small data-ve-vis-s>Пока выключено, клиенты это видео не видят.</small></span>
+            <span class="sw-row__t"><b>Опубликовать</b><small data-ve-vis-s>Пока выключено, клиенты это видео не видят.</small></span>
             <input class="sw" type="checkbox" role="switch" name="on" data-ve-on>
           </label>
         </div>
 
         <div class="ed__act">
           <button class="btn btn--red" type="submit">сохранить</button>
-          <button class="btn btn--line-dark" type="button" data-ve-preview>посмотреть как клиент</button>
-          <small class="field__help ed__hint">Откроется страница видео так, как её увидит клиент.</small>
         </div>
         <button class="btn-del" type="button" data-ve-del>удалить видео</button>
       </form>
@@ -416,6 +432,7 @@
 <script src="../js/api.js"></script>
 <script src="../js/lk-data.js"></script>
 <script src="../js/admin-data.js"></script>
+<script src="../js/uploader.js"></script>
 <script src="../js/admin.js"></script>
 </body>
 </html>

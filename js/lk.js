@@ -1,5 +1,6 @@
 /* Личный кабинет клиента. Экраны переключаются по hash: #/ #/video #/video/v01 #/extra #/profile.
-   Срок доступа и оплаты приходят с сервера (/api/me/access). Видео и материалы пока демо (window.LK_DATA).
+   Срок доступа и оплаты приходят с сервера (/api/me/access), тренировки из /api/videos,
+   само видео по ссылке на 5 минут (/api/videos/:id/play). Материалы пока демо (window.LK_DATA).
    Всё, что приходит из данных, вставляется через textContent. */
 (() => {
   'use strict';
@@ -15,8 +16,11 @@
   const D = window.LK_DATA;
   if (!D) return;
   D.client = { name: me.name, email: me.email };
-  const ar = await window.NikaApi.get('/api/me/access');
-  if (ar.status === 401) { location.replace('login.html'); return; }
+  const [ar, vr] = await Promise.all([window.NikaApi.get('/api/me/access'), window.NikaApi.get('/api/videos')]);
+  if (ar.status === 401 || vr.status === 401) { location.replace('login.html'); return; }
+  D.groups = vr.ok ? vr.data.groups : [];
+  D.videos = vr.ok ? vr.data.videos : [];
+  const videosFailed = !vr.ok;
   const AC = ar.ok ? ar.data : null;   // null: сервер не ответил, показываем честное сообщение вместо выдуманного срока
 
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
@@ -49,7 +53,7 @@
   const planLine = AC && AC.plan ? 'Тариф «' + AC.plan.name + '»' + (AC.plan.weeks ? ' · ' + AC.plan.weeks + ' ' + plural(AC.plan.weeks, 'неделя', 'недели', 'недель') : '') : '';
   const chip = (cls) => { const c = el('span', 'stat stat--' + state, label); if (cls) c.classList.add(cls); return c; };
 
-  if (D.demo) $('[data-demo-bar]').hidden = false;   // тренировки и материалы пока демо
+  if (D.demo) $('[data-demo-bar]').hidden = false;   // материалы пока демо
   $$('[data-name]').forEach(n => { n.textContent = (D.client.name || '').split(' ')[0]; });   // в приветствии только имя, без фамилии
 
   const acc = $('[data-acc]');
@@ -120,6 +124,12 @@
     grid.textContent = ''; list.forEach(v => grid.appendChild(card(v)));
     count.textContent = list.length ? list.length + ' ' + plural(list.length, 'тренировка', 'тренировки', 'тренировок') : '';
     empty.hidden = list.length > 0; grid.hidden = !list.length;
+    /* Пусто не из-за фильтра: тренировки не загрузились или Ника их ещё не опубликовала */
+    const none = !D.videos.length;
+    $('.empty__t', empty).textContent = videosFailed ? 'Не получилось загрузить тренировки' : none ? 'Тренировки скоро появятся' : 'Ничего не нашлось';
+    $('.empty__p', empty).textContent = videosFailed ? 'Проверь интернет и обнови страницу.' : none ? 'Ника добавляет видео. Загляни чуть позже.' : 'Попробуй другое слово или сбрось фильтр.';
+    $('[data-reset]').hidden = none;
+    $('[data-search-form]').hidden = none; chips.hidden = none;
     $('[data-lock-note]').hidden = !locked;
   };
   qInput.addEventListener('input', () => { filt.q = qInput.value; drawLib(); });
@@ -137,9 +147,9 @@
     $('#h-watch').textContent = v.title;
     $('[data-w-meta]').textContent = gName(v.group);
     $('[data-w-text]').textContent = v.text;
-    $('[data-w-gear]').textContent = 'Понадобится: ' + v.gear.join(', ');
+    $('[data-w-gear]').textContent = v.gear.length ? 'Понадобится: ' + v.gear.join(', ') : '';
     $('[data-player]').hidden = locked; $('[data-locked]').hidden = !locked;
-    $('[data-player-note]').textContent = 'Здесь будет видео. Подключим, когда выберем хранилище.';
+    resetPlayer();
     const isDone = doneSet().has(v.id);
     doneBtn.setAttribute('aria-pressed', String(isDone)); doneBtn.textContent = isDone ? 'просмотрено ✓' : 'отметить просмотренным';
     doneBtn.disabled = locked;
@@ -156,7 +166,39 @@
     s.has(cur.id) ? s.delete(cur.id) : s.add(cur.id); saveDone(s);
     doneBtn.setAttribute('aria-pressed', String(s.has(cur.id))); doneBtn.textContent = s.has(cur.id) ? 'просмотрено ✓' : 'отметить просмотренным';
   });
-  $('[data-play]').addEventListener('click', () => { $('[data-player-note]').textContent = 'Это демо: видео пока нет.'; });
+  /* ---------- Плеер ----------
+     Ссылка на файл живёт 5 минут. Если она истекла посреди просмотра (перемотка, пауза), берём новую
+     и продолжаем с того же места. */
+  const playerBox = $('[data-player]'), playBtn = $('[data-play]'), note = $('[data-player-note]');
+  let vidEl = null, playFor = null;
+  const resetPlayer = () => { if (vidEl) { vidEl.removeAttribute('src'); vidEl.load(); vidEl.remove(); } vidEl = null; playFor = null; playBtn.hidden = false; note.textContent = ''; playerBox.classList.remove('is-on'); };
+  const getUrl = async id => {
+    const r = await window.NikaApi.get('/api/videos/' + id + '/play');
+    if (r.status === 401) { location.replace('login.html'); return null; }
+    if (!r.ok) { note.textContent = r.data.error; return null; }
+    return r.data.url;
+  };
+  playBtn.addEventListener('click', async () => {
+    if (!cur || locked) return;
+    const id = cur.id; playBtn.disabled = true; note.textContent = 'Загружаю видео…';
+    const url = await getUrl(id); playBtn.disabled = false;
+    if (!url || !cur || cur.id !== id) return;
+    note.textContent = ''; playBtn.hidden = true; playerBox.classList.add('is-on');
+    const v = document.createElement('video');
+    v.controls = true; v.playsInline = true; v.preload = 'metadata'; v.setAttribute('controlslist', 'nodownload');
+    v.addEventListener('contextmenu', e => e.preventDefault());
+    let retried = 0;
+    v.addEventListener('error', async () => {
+      if (retried >= 2 || playFor !== id) { note.textContent = 'Видео не загрузилось. Проверь интернет и обнови страницу.'; return; }
+      retried++;
+      const at = v.currentTime, fresh = await getUrl(id);
+      if (!fresh || playFor !== id) return;
+      v.src = fresh; v.currentTime = at; v.play().catch(() => {});
+    });
+    v.addEventListener('playing', () => { retried = 0; });
+    v.src = url; vidEl = v; playFor = id; playerBox.appendChild(v);
+    v.play().catch(() => {});
+  });
 
   /* ---------- Материалы ---------- */
   const xl = $('[data-xlist]');

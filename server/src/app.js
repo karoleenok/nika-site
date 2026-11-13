@@ -7,6 +7,8 @@ import fastifyCookie from '@fastify/cookie';
 import authRoutes from './auth/routes.js';
 import adminRoutes from './admin/routes.js';
 import lkRoutes from './lk/routes.js';
+import videoRoutes from './videos/routes.js';
+import { cspHeader } from './csp.js';
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -50,11 +52,18 @@ export async function buildApp({ config, pool, s3, mailer, serveStatic = !config
   await authRoutes(app, { config, pool, mailer });
   await adminRoutes(app, { pool });
   await lkRoutes(app, { pool });
+  await videoRoutes(app, { pool, s3 });
 
   app.all('/api/*', async (req, reply) => reply.code(404).send({ error: 'Не найдено' }));
 
   // Локально сервер сам раздаёт статику сайта. На бою это делает nginx.
   if (serveStatic) {
+    // Та же политика безопасности, что будет на бою: так локально сразу видно, если что-то заблокировано
+    const csp = cspHeader(config.s3.publicEndpoint);
+    app.addHook('onSend', async (req, reply, payload) => {
+      if (String(reply.getHeader('content-type') || '').startsWith('text/html')) reply.header('content-security-policy', csp);
+      return payload;
+    });
     app.register(fastifyStatic, {
       root: siteRoot,
       allowedPath: (p) => !/^\/(server|node_modules|\.git|\.env|_backup|tools|docker-compose\.yml|start\.sh|README\.md)(\/|$)/.test(p) && !/\/\./.test(p),

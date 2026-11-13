@@ -1,7 +1,8 @@
 /* Админка Ники. Экраны по hash: #/ #/clients #/client/ID #/content #/content/materials
    #/video/ID|new #/material/ID|new #/leads #/more #/prices #/log.
    Клиенты, доступы, цены и журнал приходят с сервера (js/api.js), роль проверяет сервер.
-   ДЕМО пока: заявки (фаза 5) и контент (группы, видео, материалы, фаза 3): они в localStorage и видны в кабинете клиента.
+   Группы и видео тоже с сервера (фаза 3), файлы грузит js/uploader.js прямо в хранилище.
+   ДЕМО пока: заявки и материалы (фаза 5): они в localStorage и видны в кабинете клиента.
    Всё из данных вставляется через textContent. */
 (() => {
   'use strict';
@@ -32,33 +33,19 @@
   const first = name => name.split(' ')[0];
   const num = v => Number(String(v || '').replace(/\D/g, '')) || 0;
 
-  /* ---------- Контент: общий с кабинетом клиента ---------- */
-  const raw = L.all ? JSON.parse(JSON.stringify(L.all)) : {
-    groups: L.groups.map(g => ({ ...g, on: true })),
-    videos: L.videos.map(v => ({ ...v, on: true })),
-    extras: L.extras.map((x, i) => ({ ...x, on: true, price: num(x.price), old: i === 0 ? 1699 : 1699, text: '', gift: i === 0 }))
+  /* ---------- Контент ---------- */
+  /* Группы и видео живут на сервере (loadContent). Материалы пока демо: localStorage, общий с кабинетом клиента. */
+  const raw = {
+    groups: [], videos: [],
+    extras: L.all && L.all.extras ? JSON.parse(JSON.stringify(L.all.extras)) : L.extras.map((x, i) => ({ ...x, on: true, price: num(x.price), old: 1699, text: '', gift: i === 0 }))
   };
-  const persist = () => wr(CONTENT, JSON.stringify(raw));
+  const persist = () => wr(CONTENT, JSON.stringify({ extras: raw.extras }));
   const vById = id => raw.videos.find(v => v.id === id);
   const gById = id => raw.groups.find(g => g.id === id);
-  const gName = id => (gById(id) || {}).name || '';
   const inGroup = gid => raw.videos.filter(v => v.group === gid);
-  /* Порядок в группе = порядок в общем массиве. Вставка/перестановка меняют только свои места. */
-  const setGroupOrder = (gid, ids) => {
-    const slots = []; raw.videos.forEach((v, i) => { if (v.group === gid) slots.push(i); });
-    const items = ids.map(vById); slots.forEach((i, k) => { raw.videos[i] = items[k]; });
-  };
-  const placeVideo = (v, gid, pos) => {
-    const i = raw.videos.indexOf(v); if (i > -1) raw.videos.splice(i, 1);
-    v.group = gid; const list = inGroup(gid);
-    if (!list.length) { raw.videos.push(v); return; }
-    if (pos <= 0) raw.videos.splice(raw.videos.indexOf(list[0]), 0, v);
-    else if (pos >= list.length) raw.videos.splice(raw.videos.indexOf(list[list.length - 1]) + 1, 0, v);
-    else raw.videos.splice(raw.videos.indexOf(list[pos]), 0, v);
-  };
 
   /* ---------- Данные с сервера ---------- */
-  /* Клиенты, доступы, цены и журнал живут на сервере. Заявки, видео и материалы пока демо (фазы 3 и 5). */
+  /* Клиенты, доступы, цены, журнал, группы и видео живут на сервере. Заявки и материалы пока демо (фаза 5). */
   const api = window.NikaApi;
   const ROLE = who.role;
   const canMoney = ROLE === 'owner' || ROLE === 'tech';
@@ -371,12 +358,32 @@
   });
 
   /* ---------- Контент: тренировки (группы и видео) ---------- */
+  const loadContent = async () => {
+    const r = await api.get('/api/admin/videos');
+    if (!r.ok) { if (r.status === 401) fail(r); return false; }
+    raw.groups = r.data.groups.map(g => ({ id: g.id, name: g.name, on: g.visible }));
+    raw.videos = r.data.videos.map(v => ({ ...v, group: v.groupId, on: v.published }));
+    return true;
+  };
+  const UP = window.NikaUpload;
+  const RUNNING = ['prepare', 'uploading', 'offline', 'finishing'];
+  const upOf = id => { const u = UP.current(); return u && u.videoId === id ? u : null; };
+  const mb = b => (b / 1048576).toLocaleString('ru-RU', { maximumFractionDigits: b < 10 * 1048576 ? 1 : 0 }) + ' МБ';
+
   const open = new Set();   // свёрнутые группы
-  const vMeta = v => (v.on === false ? 'скрыто от клиентов' : 'видно клиентам');
+  const vMeta = v => {
+    const u = upOf(v.id);
+    if (u && RUNNING.includes(u.state.phase)) return u.state.phase === 'offline' ? 'нет связи, загрузка на паузе' : 'загружается, ' + u.state.pct + '%';
+    if (u && u.state.phase === 'error') return 'загрузка остановилась, открой и нажми «повторить»';
+    if (v.upload && v.status !== 'ready') return 'загрузка прервалась, открой, чтобы продолжить';
+    if (v.status === 'empty' || v.status === 'uploading') return 'нет файла';
+    if (v.status === 'failed') return 'файл не загрузился';
+    return v.on ? 'опубликовано' : 'файл загружен, не опубликовано';
+  };
   const drawVideos = () => {
     const box = $('[data-groups]'); box.textContent = '';
-    const total = raw.videos.length, hid = raw.videos.filter(v => v.on === false).length;
-    $('[data-v-sum]').textContent = total + ' ' + plural(total, 'видео', 'видео', 'видео') + ' в ' + raw.groups.length + ' ' + plural(raw.groups.length, 'группе', 'группах', 'группах') + (hid ? ', скрыто ' + hid : '');
+    const total = raw.videos.length, hid = raw.videos.filter(v => !v.on).length;
+    $('[data-v-sum]').textContent = total + ' видео в ' + raw.groups.length + ' ' + plural(raw.groups.length, 'группе', 'группах', 'группах') + (hid ? ', не опубликовано ' + hid : '');
     raw.groups.forEach(g => {
       const list = inGroup(g.id), collapsed = open.has(g.id);
       const card = el('section', 'grp' + (g.on === false ? ' is-off' : ''));
@@ -391,23 +398,26 @@
       if (!list.length) body.appendChild(el('p', 'grp__empty', 'В этой группе пока нет видео.'));
       const ul = el('ul', 'vlist');
       list.forEach(v => {
-        const li = el('li', 'vi' + (v.on === false ? ' is-off' : '')); li.dataset.id = v.id;
+        const li = el('li', 'vi' + (!v.on ? ' is-off' : '')); li.dataset.id = v.id;
         const gr = el('button', 'grip'); gr.type = 'button'; gr.dataset.grip = ''; gr.appendChild(icon('i-grip'));
         gr.setAttribute('aria-label', 'Переместить «' + v.title + '». Стрелки вверх и вниз меняют место.');
         li.appendChild(gr); li.appendChild(el('span', 'vi__no'));
         const a = el('a', 'vi__go'); a.href = '#/video/' + v.id;
         const b = el('span'); b.appendChild(el('span', 'vi__n', v.title)); b.appendChild(el('span', 'vi__s', vMeta(v))); a.appendChild(b);
-        if (v.on === false) a.appendChild(el('span', 'stat stat--off', 'скрыто'));
+        if (!v.on) a.appendChild(el('span', 'stat stat--off', v.status === 'ready' ? 'скрыто' : 'нет файла'));
         li.appendChild(a); ul.appendChild(li);
       });
-      sortable(ul, ids => { setGroupOrder(g.id, ids); persist(); drawNumbersOnly(); });
+      sortable(ul, async ids => {
+        const r = await api.post('/api/admin/videos/order', { groupId: g.id, ids });
+        if (!r.ok) { if (r.status === 401) return fail(r); toast(r.data.error); }
+        await loadContent(); if (!r.ok) drawVideos();
+      });
       if (list.length) body.appendChild(ul);
       const add = el('a', 'grp__add'); add.href = '#/video/new?g=' + g.id; add.appendChild(icon('i-plus')); add.appendChild(document.createTextNode('добавить видео в «' + g.name + '»'));
       body.appendChild(add); card.appendChild(body); box.appendChild(card);
     });
     if (!raw.groups.length) box.appendChild(el('p', 'empty-line', 'Групп пока нет. Нажми «+ группа», чтобы начать.'));
   };
-  const drawNumbersOnly = () => { /* номера считает CSS-счётчик, ничего перерисовывать не нужно */ };
 
   /* Группа: добавить, переименовать, спрятать, переместить, удалить */
   let gEdit = null;
@@ -420,26 +430,34 @@
     openDlg('group');
   };
   $('[data-g-add]').addEventListener('click', () => openGroup(null));
-  $('[data-form="group"]').addEventListener('submit', e => {
+  $('[data-form="group"]').addEventListener('submit', async e => {
     e.preventDefault(); const n = $('[data-dg-name]').value.trim();
     if (!n) { $('[data-dg-err]').textContent = 'Напиши название группы.'; $('[data-dg-name]').focus(); return; }
-    if (raw.groups.some(g => g !== gEdit && g.name.toLowerCase() === n.toLowerCase())) { $('[data-dg-err]').textContent = 'Такая группа уже есть.'; return; }
-    const on = $('[data-dg-on]').checked;
-    if (gEdit) { gEdit.name = n; gEdit.on = on; } else raw.groups.push({ id: 'g' + Date.now(), name: n, on });
-    persist(); dlg('group').close(); drawVideos(); toast(gEdit ? 'Группа сохранена' : 'Группа добавлена');
+    const body = { name: n, visible: $('[data-dg-on]').checked }, was = gEdit;
+    const r = was ? await api.request('PATCH', '/api/admin/video-groups/' + was.id, body) : await api.post('/api/admin/video-groups', body);
+    if (!r.ok) { if (r.status === 401) return fail(r); $('[data-dg-err]').textContent = r.data.error; return; }
+    await loadContent(); dlg('group').close(); drawVideos(); toast(was ? 'Группа сохранена' : 'Группа добавлена');
   });
-  const moveGroup = d => { const i = raw.groups.indexOf(gEdit), j = i + d; if (!gEdit || j < 0 || j >= raw.groups.length) { toast(d < 0 ? 'Это уже первая группа' : 'Это уже последняя группа'); return; } raw.groups.splice(j, 0, raw.groups.splice(i, 1)[0]); persist(); drawVideos(); toast('Группа теперь ' + (j + 1) + '-я из ' + raw.groups.length); };
+  const moveGroup = async d => {
+    const i = raw.groups.indexOf(gEdit), j = i + d;
+    if (!gEdit || j < 0 || j >= raw.groups.length) { toast(d < 0 ? 'Это уже первая группа' : 'Это уже последняя группа'); return; }
+    const ids = raw.groups.map(g => g.id); ids.splice(j, 0, ids.splice(i, 1)[0]);
+    const r = await api.post('/api/admin/video-groups/order', { ids });
+    if (!r.ok) { if (r.status === 401) return fail(r); toast(r.data.error); return; }
+    await loadContent(); gEdit = gById(gEdit.id); drawVideos(); toast('Группа теперь ' + (j + 1) + '-я из ' + raw.groups.length);
+  };
   $('[data-dg-up]').addEventListener('click', () => moveGroup(-1));
   $('[data-dg-down]').addEventListener('click', () => moveGroup(1));
-  $('[data-dg-del]').addEventListener('click', () => {
-    const g = gEdit; if (!g) return; const n = inGroup(g.id).length; dlg('group').close();
-    if (n) { toast('В группе ещё ' + n + ' ' + plural(n, 'видео', 'видео', 'видео') + '. Сначала перенеси их в другую группу.'); return; }
-    const i = raw.groups.indexOf(g); raw.groups.splice(i, 1); persist(); drawVideos();
-    toast('Группа удалена', 'вернуть', () => { raw.groups.splice(i, 0, g); persist(); drawVideos(); });
+  $('[data-dg-del]').addEventListener('click', async () => {
+    const g = gEdit; if (!g) return; dlg('group').close();
+    const r = await api.del('/api/admin/video-groups/' + g.id);
+    if (!r.ok) { if (r.status === 401) return fail(r); toast(r.data.error); return; }
+    await loadContent(); drawVideos();
+    toast('Группа удалена', 'вернуть', async () => { await api.post('/api/admin/video-groups', { name: g.name, visible: g.on !== false }); await loadContent(); drawVideos(); });
   });
 
   /* ---------- Редактор видео ---------- */
-  let ve = null;   // { v, isNew, tags, file }
+  let ve = null;   // { v, isNew, tags }
   const vf = $('[data-ve]'), vgSel = $('[data-ve-group]'), vpSel = $('[data-ve-pos]'), tagsUl = $('[data-ve-tags]');
   const drawTags = () => {
     tagsUl.textContent = '';
@@ -454,38 +472,159 @@
     vpSel.value = String(Math.min(keep || n, n));
   };
   vgSel.addEventListener('change', () => { vpSel.value = ''; drawPos(); });
-  const setFile = (box, tEl, name, def) => { box.classList.toggle('is-set', !!name); tEl.textContent = name ? 'Выбран файл: ' + name : def; };
-  $('[data-ve-file]').addEventListener('change', e => { const f = e.target.files[0]; ve.file = f ? f.name : ve.file; setFile($('[data-ve-drop]'), $('[data-ve-file-t]'), ve.file, 'Выбрать видеофайл'); });
-  $('[data-ve-on]').addEventListener('change', e => { $('[data-ve-vis-s]').textContent = e.target.checked ? 'Клиенты видят это видео в своём кабинете.' : 'Пока выключено, клиенты это видео не видят.'; });
+
+  /* «Опубликовать» доступно только для загруженного файла */
+  const pubSw = vf.elements.on, pubRow = pubSw.closest('.sw-row');
+  const drawPublish = () => {
+    const ready = !!(ve && ve.v && ve.v.status === 'ready');
+    pubSw.disabled = !ready; if (!ready) pubSw.checked = false;
+    pubRow.classList.toggle('is-locked', !ready);
+    $('[data-ve-vis-s]').textContent = !ready ? 'Включится, когда файл загрузится до конца.' : pubSw.checked ? 'Клиенты видят это видео в своём кабинете.' : 'Пока выключено, клиенты это видео не видят.';
+  };
+  pubSw.addEventListener('change', drawPublish);
+
+  /* Карточка файла: пусто, загрузка, нет связи, ошибка, готово */
+  const upCard = $('[data-up]'), upErr = $('[data-up-err]'), player = $('[data-up-player]');
+  const resetPlayer = () => { player.textContent = ''; player.hidden = true; };
+  const drawUp = () => {
+    if (!ve) return;
+    const v = ve.v, u = v ? upOf(v.id) : null, st = u ? u.state : null;
+    const running = !!st && st.phase !== 'done' && st.phase !== 'canceled';
+    const ready = !!v && v.status === 'ready';
+    $('[data-up-run]').hidden = !running;
+    $('[data-up-ok]').hidden = running || !ready;
+    $('[data-up-drop]').hidden = running || ready;
+    upCard.classList.toggle('up--offline', running && st.phase === 'offline');
+    upCard.classList.toggle('up--error', running && st.phase === 'error');
+    if (running) {
+      resetPlayer();
+      $('[data-up-name]').textContent = st.fileName;
+      $('[data-up-pct]').textContent = st.pct + '%';
+      const bar = $('[data-up-bar]'); bar.style.setProperty('--p', st.pct); bar.setAttribute('aria-valuenow', String(st.pct));
+      $('[data-up-s]').textContent = {
+        prepare: 'Готовлю загрузку…',
+        uploading: mb(st.loaded) + ' из ' + mb(st.total) + '. Не закрывай вкладку.',
+        offline: 'Нет связи. Продолжим сами, как только интернет вернётся.',
+        finishing: 'Собираю файл и проверяю…',
+        error: st.error
+      }[st.phase] || '';
+      $('[data-up-retry]').hidden = st.phase !== 'error';
+      $('[data-up-cancel]').textContent = st.phase === 'error' ? 'отменить' : 'отменить загрузку';
+    } else if (ready) {
+      $('[data-up-ok-t]').textContent = 'Файл загружен' + (v.sizeBytes ? ', ' + mb(v.sizeBytes) : '');
+    } else {
+      $('[data-ve-file-t]').textContent = v && v.upload ? (ve.resumePct ? 'Загрузка прервалась на ' + ve.resumePct + '%. ' : 'Загрузка прервалась. ') + 'Выбери тот же файл, докачаем остальное'
+        : v && v.status === 'failed' ? 'Файл не загрузился. Выбери его ещё раз' : 'Выбрать видеофайл';
+      $('[data-up-drop]').classList.toggle('is-set', false);
+    }
+    drawPublish();
+  };
+
+  const cardBody = () => {
+    const f = vf.elements;
+    return { title: f.title.value.trim(), groupId: vgSel.value, pos: Number(vpSel.value) - 1, text: f.text.value.trim(), gear: ve.tags.slice(), published: !pubSw.disabled && pubSw.checked };
+  };
+
+  const pickFile = async input => {
+    const file = input.files[0]; input.value = ''; upErr.textContent = '';
+    if (!file || !ve) return;
+    const u = UP.current();
+    if (u && RUNNING.includes(u.state.phase)) { upErr.textContent = ve.v && u.videoId === ve.v.id ? 'Загрузка уже идёт.' : 'Сейчас загружается другое видео. Дождись конца, потом выбирай следующее.'; return; }
+    const why = await UP.checkFile(file);
+    if (why) { upErr.textContent = why; return; }
+    if (u) UP.clear();   // от прошлой загрузки осталась ошибка — начинаем новую
+    if (!ve.v) {
+      /* Новое видео: сначала карточка (из того, что уже введено), потом файл. Название по умолчанию — имя файла. */
+      const f = vf.elements;
+      if (!f.title.value.trim()) f.title.value = file.name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').slice(0, 80);
+      const r = await api.post('/api/admin/videos', cardBody());
+      if (!r.ok) { if (r.status === 401) return fail(r); upErr.textContent = r.data.error; return; }
+      await loadContent();
+      UP.start(r.data.id, file);
+      location.replace('#/video/' + r.data.id);
+      toast('Файл загружается. Название и описание можно править прямо сейчас.');
+      return;
+    }
+    UP.start(ve.v.id, file); drawUp();
+  };
+  $('[data-ve-file]').addEventListener('change', e => pickFile(e.target));
+  $('[data-up-replace]').addEventListener('change', e => pickFile(e.target));
+  $('[data-up-retry]').addEventListener('click', () => { const u = UP.current(); if (u) u.retry(); });
+  $('[data-up-cancel]').addEventListener('click', () => {
+    const u = UP.current(); if (!u) return;
+    if (u.state.phase === 'error') { u.cancel(); return; }
+    confirmDlg('Отменить загрузку?', 'Уже загруженная часть файла удалится. Начать можно будет заново.', 'отменить загрузку', () => u.cancel());
+  });
+  $('[data-up-watch]').addEventListener('click', async () => {
+    if (!ve || !ve.v) return; upErr.textContent = '';
+    const r = await api.get('/api/admin/videos/' + ve.v.id + '/play');
+    if (!r.ok) { if (r.status === 401) return fail(r); upErr.textContent = r.data.error; return; }
+    resetPlayer();
+    const vid = document.createElement('video');
+    vid.controls = true; vid.playsInline = true; vid.preload = 'metadata'; vid.src = r.data.url;
+    vid.setAttribute('controlslist', 'nodownload');
+    player.appendChild(vid); player.hidden = false; vid.play().catch(() => {});
+  });
+
+  /* Загрузчик сообщает о каждом шаге: обновляем только то, что на экране */
+  UP.subscribe(u => {
+    if (!u || u.state.phase === 'canceled') {
+      loadContent().then(() => { if (ve && ve.v) ve.v = vById(ve.v.id) || ve.v; if (routeName === 'video') drawUp(); if (routeName === 'content') drawVideos(); });
+      return;
+    }
+    if (u.state.phase === 'done') {
+      loadContent().then(() => {
+        const v = vById(u.videoId);
+        if (ve && ve.v && ve.v.id === u.videoId) ve.v = v || ve.v;
+        UP.clear();
+        if (routeName === 'video') drawUp(); if (routeName === 'content') drawVideos();
+        toast('«' + (v ? v.title : 'Видео') + '» загружено. Посмотри и включи «Опубликовать».');
+      });
+      return;
+    }
+    if (routeName === 'video' && ve && ve.v && ve.v.id === u.videoId) drawUp();
+    if (routeName === 'content') { const v = vById(u.videoId), s = $('.vi[data-id="' + u.videoId + '"] .vi__s'); if (s && v) s.textContent = vMeta(v); }
+  });
+
   const drawVideoEd = (id, gid) => {
     const isNew = id === 'new', v = isNew ? null : vById(id);
     if (!isNew && !v) { location.replace('#/content'); return false; }
     if (!raw.groups.length) { toast('Сначала добавь группу'); location.replace('#/content'); return false; }
-    ve = { v, isNew, tags: v ? v.gear.slice() : [], file: v ? v.file || null : null };
+    ve = { v, isNew, tags: v ? v.gear.slice() : [], resumePct: null };
     $('[data-ve-h]').textContent = isNew ? 'Новое видео' : v.title;
     vgSel.textContent = ''; raw.groups.forEach(g => { const o = el('option', '', g.name); o.value = g.id; vgSel.appendChild(o); });
     const f = vf.elements; f.title.value = v ? v.title : ''; f.text.value = v ? v.text : '';
     vgSel.value = v ? v.group : (gById(gid) ? gid : raw.groups[0].id);
     vpSel.value = v ? String(inGroup(v.group).indexOf(v) + 1) : ''; drawPos();
-    f.on.checked = v ? v.on !== false : false; $('[data-ve-vis-s]').textContent = f.on.checked ? 'Клиенты видят это видео в своём кабинете.' : 'Пока выключено, клиенты это видео не видят.';
-    setFile($('[data-ve-drop]'), $('[data-ve-file-t]'), ve.file, 'Выбрать видеофайл'); $('[data-ve-err]').textContent = ''; drawTags();
-    $('[data-ve-del]').hidden = isNew; $('[data-ve-preview]').hidden = isNew;
+    pubSw.checked = v ? v.on : false;
+    $('[data-ve-err]').textContent = ''; upErr.textContent = ''; resetPlayer(); drawTags(); drawUp();
+    $('[data-ve-del]').hidden = isNew;
+    /* Прерванная загрузка: узнаём, сколько уже в хранилище */
+    if (v && v.upload && !upOf(v.id)) {
+      api.get('/api/admin/uploads/' + v.upload.id + '/parts').then(r => {
+        if (r.ok && ve && ve.v === v) { ve.resumePct = Math.floor(r.data.doneBytes / r.data.sizeBytes * 100); drawUp(); }
+      });
+    }
     return true;
   };
-  vf.addEventListener('submit', e => {
-    e.preventDefault(); const f = vf.elements, t = f.title.value.trim();
-    if (!t) { $('[data-ve-err]').textContent = 'Напиши название, чтобы клиенты нашли видео.'; f.title.focus(); return; }
-    const v = ve.v || { id: 'v' + Date.now() };
-    Object.assign(v, { title: t, text: f.text.value.trim(), gear: ve.tags.slice(), on: f.on.checked, file: ve.file });
-    placeVideo(v, vgSel.value, Number(vpSel.value) - 1); persist();
-    const was = ve.isNew; toast(was ? 'Видео добавлено' + (v.on ? '' : ' (пока скрыто)') : 'Сохранено'); location.hash = '#/content';
+  vf.addEventListener('submit', async e => {
+    e.preventDefault(); const b = cardBody(), err = $('[data-ve-err]'); err.textContent = '';
+    if (!b.title) { err.textContent = 'Напиши название, чтобы клиенты нашли видео.'; vf.elements.title.focus(); return; }
+    const btn = vf.querySelector('[type="submit"]'); btn.disabled = true;
+    const r = ve.v ? await api.request('PATCH', '/api/admin/videos/' + ve.v.id, b) : await api.post('/api/admin/videos', b);
+    btn.disabled = false;
+    if (!r.ok) { if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
+    await loadContent();
+    toast(ve.v ? 'Сохранено' : 'Видео добавлено. Теперь выбери файл.');
+    location.hash = ve.v ? '#/content' : '#/video/' + r.data.id;
   });
-  $('[data-ve-preview]').addEventListener('click', () => { if (!ve.v) return; wr('nika_lk_session', '1'); window.open('../lk/index.html#/video/' + ve.v.id, '_blank', 'noopener'); });
   $('[data-ve-del]').addEventListener('click', () => {
     const v = ve.v; if (!v) return;
-    confirmDlg('Удалить видео?', '«' + v.title + '» пропадёт из кабинета всех клиентов. Если не уверена, лучше выключи «Показывать клиентам».', 'удалить', () => {
-      const i = raw.videos.indexOf(v); raw.videos.splice(i, 1); persist(); location.hash = '#/content';
-      toast('Видео удалено', 'вернуть', () => { raw.videos.splice(i, 0, v); persist(); if (location.hash === '#/content') drawVideos(); });
+    confirmDlg('Удалить видео?', '«' + v.title + '» пропадёт из кабинета всех клиентов, файл удалится насовсем. Если не уверена, лучше выключи «Опубликовать».', 'удалить', async () => {
+      const u = upOf(v.id); if (u && RUNNING.includes(u.state.phase)) await u.cancel();
+      const r = await api.del('/api/admin/videos/' + v.id);
+      if (!r.ok) { if (r.status === 401) return fail(r); toast(r.data.error); return; }
+      await loadContent(); location.hash = '#/content'; toast('Видео удалено');
     });
   });
 
@@ -586,7 +725,7 @@
     if (!logList.length) ul.appendChild(el('li', 'hist__e', 'Пока ничего не менялось.'));
   };
   $$('[data-logout]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); window.NikaApi.logout('admin'); }));
-  $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Вернутся демо-видео, группы и материалы, заявки тоже. Клиенты, доступы и цены не затрагиваются.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); } catch (_) {} location.hash = '#/'; location.reload(); }));
+  $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Вернутся демо-материалы и заявки. Клиенты, доступы, цены и видео не затрагиваются.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); } catch (_) {} location.hash = '#/'; location.reload(); }));
 
   /* ---------- Роутер ---------- */
   const views = $$('[data-view]');
@@ -606,7 +745,7 @@
       const tab = parts[1] === 'materials' ? 'materials' : 'videos';
       $$('[data-seg]').forEach(a => a.setAttribute('aria-selected', String(a.dataset.seg === tab)));
       $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
-      if (tab === 'videos') drawVideos(); else drawMaterials();
+      if (tab === 'videos') { drawVideos(); loadContent().then(ok => { if (ok && routeName === 'content' && !$('[data-pane="videos"]').hidden) drawVideos(); }); } else drawMaterials();
     }
     if ((name === 'prices' || name === 'log') && !canMoney) { location.replace('#/more'); return; }
     routeName = name;
@@ -622,7 +761,7 @@
     firstRun = false;
   };
   window.addEventListener('hashchange', route);
-  await Promise.all([loadClients(), loadPurchases(), loadAccessTariffs(), loadPrices()]);
+  await Promise.all([loadClients(), loadPurchases(), loadAccessTariffs(), loadPrices(), loadContent()]);
   route();
 }
 })();
