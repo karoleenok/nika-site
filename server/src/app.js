@@ -9,13 +9,14 @@ import adminRoutes from './admin/routes.js';
 import lkRoutes from './lk/routes.js';
 import videoRoutes from './videos/routes.js';
 import payRoutes from './pay/routes.js';
+import leadRoutes from './leads/routes.js';
 import { cspHeader } from './csp.js';
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 export async function buildApp({ config, pool, s3, mailer, serveStatic = !config.prod }) {
   const app = Fastify({
-    logger: config.prod ? { level: 'info', redact: ['req.headers.cookie', 'req.headers.authorization'] } : false,
+    logger: config.prod ? { level: 'info', redact: ['req.headers.cookie', 'req.headers.authorization', 'req.body', 'body'] } : false,
     trustProxy: config.prod ? '127.0.0.1' : false,
     bodyLimit: 64 * 1024,
   });
@@ -57,6 +58,7 @@ export async function buildApp({ config, pool, s3, mailer, serveStatic = !config
   await lkRoutes(app, { pool });
   await videoRoutes(app, { pool, s3 });
   await payRoutes(app, { config, pool, mailer });
+  await leadRoutes(app, { config, pool, mailer });
 
   app.all('/api/*', async (req, reply) => reply.code(404).send({ error: 'Не найдено' }));
 

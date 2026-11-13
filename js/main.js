@@ -151,15 +151,24 @@
 
   /* Кнопки покупки живут в js/pay.js (режимы: checkout / whatsapp). */
 
-  /* ---------- Формы теста (без бэкенда): одна в финале, одна во вкладке «питание» ---------- */
+  /* ---------- Формы теста: одна в финале, одна во вкладке «питание» ----------
+     Заявка уходит на сервер (POST /api/leads), он отдаёт одноразовый ключ анкеты, дальше test.html.
+     Если сервера нет (сайт на GitHub Pages) или он не ответил, данные не теряем: передаём Нике через WhatsApp. */
   $$('[data-test-form]').forEach(form => {
-    const msg = $('.form__msg', form);
-    const endpoint = form.dataset.endpoint || '';   // появится на этапе админки
+    const msg = $('.form__msg', form), btn = $('button[type="submit"]', form), btnText = btn.textContent;
+    const shownAt = Date.now();
     const setMsg = (t, ok) => { msg.textContent = t; msg.classList.toggle('is-ok', !!ok); };
-    const phoneOk = v => v.replace(/\D/g, '').length >= 10;
+    const phoneOk = v => { const d = v.replace(/\D/g, ''); return d.length >= 10 && d.length <= 15; };
+    const viaWhatsApp = (name, tel) => {
+      if (!phone) { setMsg('Не получилось отправить. Напиши Нике в WhatsApp.'); return; }
+      const text = 'Здравствуйте! Пишу вам с сайта, меня зовут ' + name + '. Хочу пройти тест и получить рекомендации. Мой номер: ' + tel;
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+      form.reset(); setMsg('Открываем WhatsApp. Отправь сообщение, и Ника ответит.', true);
+    };
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (btn.disabled) return;
       const name = form.elements.name, tel = form.elements.phone, ok = form.elements.consent, agree = form.elements.agree;
       let bad = null;
       [name, tel, ok, agree].forEach(i => i.removeAttribute('aria-invalid'));
@@ -171,24 +180,23 @@
         setMsg('Поставь обе галочки: согласие на обработку данных и ознакомление с документами.');
         (ok.checked ? agree : ok).focus(); return;
       }
-      if (!endpoint) {
-        // Сервера для заявок пока нет: данные не теряем, а передаём Нике сообщением в WhatsApp от самого человека.
-        if (!phone) { setMsg('Не получилось отправить. Напиши Нике в WhatsApp.'); return; }
-        const text = 'Здравствуйте! Пишу вам с сайта, меня зовут ' + name.value.trim() + '. Хочу пройти тест и получить рекомендации. Мой номер: ' + tel.value.trim();
-        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
-        form.reset(); setMsg('Открываем WhatsApp. Отправь сообщение, и Ника ответит.', true);
-        return;
-      }
+      btn.disabled = true; btn.textContent = 'отправляем…'; setMsg('');
+      let r = null, data = {};
       try {
-        const r = await fetch(endpoint, {
-          method: 'POST',
+        r = await fetch('/api/leads', {
+          method: 'POST', credentials: 'same-origin', cache: 'no-store',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name.value.trim(), phone: tel.value.trim(), consent: true }),
-          credentials: 'same-origin'
+          body: JSON.stringify({ name: name.value.trim(), phone: tel.value.trim(), service: 'test', consent: true, agree: true,
+            website: form.elements.website ? form.elements.website.value : '', ms: Date.now() - shownAt })
         });
-        if (!r.ok) throw new Error(String(r.status));
-        form.reset(); setMsg('Спасибо! Ника свяжется с тобой.', true);
-      } catch (_) { setMsg('Не получилось отправить. Попробуй ещё раз или напиши в WhatsApp.'); }
+        data = await r.json().catch(() => ({}));
+      } catch (_) { r = null; }
+      btn.disabled = false; btn.textContent = btnText;
+      // Сервера нет вовсе (404 на статичном хостинге, нет связи) — запасной путь через WhatsApp
+      if (!r || r.status === 404 || r.status === 405) { viaWhatsApp(name.value.trim(), tel.value.trim()); return; }
+      if (!r.ok) { setMsg(data.error || 'Не получилось отправить. Попробуй ещё раз или напиши в WhatsApp.'); return; }
+      try { sessionStorage.setItem('nika_quiz_key', data.quizKey); } catch (_) {}
+      location.assign('test.html');
     });
   });
 

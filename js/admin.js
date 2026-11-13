@@ -2,7 +2,7 @@
    #/video/ID|new #/material/ID|new #/leads #/more #/prices #/log.
    Клиенты, доступы, цены и журнал приходят с сервера (js/api.js), роль проверяет сервер.
    Группы и видео тоже с сервера (фаза 3), файлы грузит js/uploader.js прямо в хранилище.
-   ДЕМО пока: заявки и материалы (фаза 5): они в localStorage и видны в кабинете клиента.
+   Заявки с сервера (фаза 5). ДЕМО пока: материалы, они в localStorage и видны в кабинете клиента.
    Всё из данных вставляется через textContent. */
 (() => {
   'use strict';
@@ -45,7 +45,7 @@
   const inGroup = gid => raw.videos.filter(v => v.group === gid);
 
   /* ---------- Данные с сервера ---------- */
-  /* Клиенты, доступы, цены, журнал, группы и видео живут на сервере. Заявки и материалы пока демо (фаза 5). */
+  /* Клиенты, доступы, цены, журнал, группы и видео живут на сервере. Материалы пока демо. */
   const api = window.NikaApi;
   const ROLE = who.role;
   const canMoney = ROLE === 'owner' || ROLE === 'tech';
@@ -58,7 +58,8 @@
     return diff === 0 ? 'сегодня, ' + t : diff === 1 ? 'вчера, ' + t : fmt(d) + (d.getFullYear() !== today.getFullYear() ? ' ' + d.getFullYear() : '');
   };
   let clients = [], purchases = [], accessTariffs = [], priceList = [], logList = [];
-  const leads = A.leads.map(x => ({ ...x }));
+  let leads = [], canQuiz = false;
+  const loadLeads = async () => { const r = await api.get('/api/admin/leads'); if (!r.ok) { fail(r); return; } leads = r.data.leads; canQuiz = r.data.canQuiz; updateDot(); };
   const toClient = v => ({ ...v, plan: v.plan ? v.plan.name : '', weeks: v.plan ? v.plan.weeks : 0, until: v.endsAt ? new Date(v.endsAt) : null });
   /* ok / warn — зелёный и жёлтый; bad и none (доступа не было) — красный */
   const stateOf = c => (c.state === 'none' ? 'bad' : c.state);
@@ -98,6 +99,10 @@
       case 'access.extend': return 'Доступ продлён' + (e ? ' до ' + fmt(e) : '');
       case 'access.undo': return 'Отменено последнее продление';
       case 'access.close': return 'Доступ закрыт';
+      case 'lead.done': return 'Заявка отмечена обработанной';
+      case 'lead.reopen': return 'Заявка возвращена в новые';
+      case 'lead.delete': return 'Заявка удалена вместе с ответами теста';
+      case 'lead.quiz_view': return 'Просмотр ответов теста (заявка №' + (x.target || '') + ')';
       case 'order.paid': return 'Оплата «' + (m.title || '') + '», ' + money((m.sumKop || 0) / 100) + (m.test ? ' (тест)' : '');
       case 'order.manual': return 'Оплата «' + (m.title || '') + '» отмечена вручную';
       case 'order.refund': return 'Возврат «' + (m.title || '') + '», ' + money((m.sumKop || 0) / 100);
@@ -677,19 +682,57 @@
   });
 
   /* ---------- Заявки ---------- */
+  /* Заявки с сервера. Ответы теста (данные о здоровье) сервер отдаёт только Нике (owner), каждый просмотр пишется в журнал. */
+  const quizCache = new Map();
+  const showQuiz = async (l, box, btn) => {
+    btn.disabled = true;
+    let q = quizCache.get(l.id);
+    if (!q) { const r = await api.get('/api/admin/leads/' + l.id + '/quiz'); btn.disabled = false; if (!r.ok) { fail(r); return; } q = r.data; quizCache.set(l.id, q); }
+    btn.remove();
+    q.answers.forEach(x => {
+      box.appendChild(el('p', 'lead__qt', x.q));
+      const c = el('div', 'lead__q'); x.a.forEach(v => c.appendChild(el('span', '', v))); box.appendChild(c);
+    });
+    const a = el('div', 'lead__a', 'Предварительно: ' + q.analyses.join(', ') + '.');
+    a.appendChild(el('small', '', 'Список составил тест, направление подтверждаешь ты. Согласие на данные о здоровье: ' + when(q.consentAt) + '.'));
+    box.appendChild(a);
+  };
   const drawLeads = () => {
     const ul = $('[data-leads]'); ul.textContent = '';
+    if (!leads.length) { ul.appendChild(el('li', 'lead lead--empty', 'Заявок пока нет. Когда кто-то оставит имя и телефон на сайте, заявка появится здесь.')); return; }
     leads.forEach(l => {
-      const li = el('li', 'lead'); const h = el('div', 'lead__h');
-      h.appendChild(el('span', 'lead__n', l.name)); if (l.isNew) h.appendChild(el('span', 'stat stat--new', 'новая')); h.appendChild(el('span', 'lead__m', l.via + ' · ' + l.when));
-      li.appendChild(h); li.appendChild(el('p', 'lead__t', l.text));
-      if (l.quiz) {
-        const q = el('div', 'lead__q'); l.quiz.forEach(x => q.appendChild(el('span', '', x))); li.appendChild(q);
-        const a = el('div', 'lead__a', 'Предварительно: ' + l.analyses.join(', ') + '.'); a.appendChild(el('small', '', 'Список составил тест, направление подтверждаешь ты.')); li.appendChild(a);
+      const li = el('li', 'lead' + (l.isNew ? '' : ' lead--done')); const h = el('div', 'lead__h');
+      h.appendChild(el('span', 'lead__n', l.name)); if (l.isNew) h.appendChild(el('span', 'stat stat--new', 'новая'));
+      h.appendChild(el('span', 'lead__m', l.service + ' · ' + when(l.createdAt)));
+      li.appendChild(h);
+      const tel = el('a', 'lead__tel', l.phone); tel.href = 'tel:' + l.phone; li.appendChild(tel);
+      if (l.message) li.appendChild(el('p', 'lead__t', l.message));
+      if (l.quiz === 'waiting') li.appendChild(el('p', 'lead__m', 'Тест ещё не пройден: человек оставил контакты, но не ответил на вопросы.'));
+      if (l.quiz === 'done') {
+        const box = el('div', 'lead__quiz'); li.appendChild(box);
+        if (canQuiz) { const b = el('button', 'btn btn--line-dark', 'показать ответы теста'); b.type = 'button'; b.addEventListener('click', () => showQuiz(l, box, b)); box.appendChild(b); }
+        else box.appendChild(el('p', 'lead__m', 'Тест пройден. Ответы видит только Ника.'));
       }
       const act = el('div', 'lead__act');
-      const w = el('button', 'btn btn--red', 'ответить в WhatsApp'); w.type = 'button'; w.addEventListener('click', () => contact({ name: l.name }, 'Здравствуй, ' + l.name + '! Это Ника. Получила твою заявку.')); act.appendChild(w);
-      if (l.isNew) { const d = el('button', 'btn btn--line-dark', 'отметить обработанной'); d.type = 'button'; d.addEventListener('click', () => { l.isNew = false; drawLeads(); updateDot(); toast('Заявка обработана'); }); act.appendChild(d); }
+      const w = el('button', 'btn btn--red', 'ответить в WhatsApp'); w.type = 'button';
+      w.addEventListener('click', () => contact({ phone: l.phone }, 'Здравствуйте, ' + first(l.name) + '! Это Ника. Получила вашу заявку с сайта.')); act.appendChild(w);
+      const d = el('button', 'btn btn--line-dark', l.isNew ? 'отметить обработанной' : 'вернуть в новые'); d.type = 'button';
+      d.addEventListener('click', async () => {
+        d.disabled = true;
+        const r = await api.post('/api/admin/leads/' + l.id + '/done', { done: l.isNew });
+        d.disabled = false; if (!r.ok) { fail(r); return; }
+        const was = l.isNew; l.isNew = !was; drawLeads(); updateDot();
+        toast(was ? 'Заявка обработана' : 'Заявка снова в новых');
+      });
+      act.appendChild(d);
+      if (canMoney) {
+        const x = el('button', 'lead__del', 'удалить'); x.type = 'button';
+        x.addEventListener('click', () => confirmDlg('Удалить заявку?', 'Заявка удалится вместе с ответами теста, вернуть не получится. Так делают, если человек попросил удалить его данные.', 'удалить', async () => {
+          const r = await api.del('/api/admin/leads/' + l.id); if (!r.ok) { fail(r); return; }
+          leads = leads.filter(z => z !== l); quizCache.delete(l.id); drawLeads(); updateDot(); toast('Заявка удалена');
+        }));
+        act.appendChild(x);
+      }
       li.appendChild(act); ul.appendChild(li);
     });
   };
@@ -779,7 +822,7 @@
     if (!logList.length) ul.appendChild(el('li', 'hist__e', 'Пока ничего не менялось.'));
   };
   $$('[data-logout]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); window.NikaApi.logout('admin'); }));
-  $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Вернутся демо-материалы и заявки. Клиенты, доступы, цены и видео не затрагиваются.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); } catch (_) {} location.hash = '#/'; location.reload(); }));
+  $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Вернутся демо-материалы. Клиенты, доступы, цены и видео не затрагиваются.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); } catch (_) {} location.hash = '#/'; location.reload(); }));
 
   /* ---------- Роутер ---------- */
   const views = $$('[data-view]');
@@ -787,7 +830,7 @@
   const TITLES = { today: 'Сегодня', clients: 'Клиенты', client: 'Клиент', content: 'Контент', video: 'Видео', material: 'Материал', leads: 'Заявки', more: 'Ещё', prices: 'Тарифы и цены', log: 'Журнал', payments: 'Оплаты' };
   let firstRun = true, routeName = '';
   const DRAW = { today: drawToday, clients: drawClients, leads: drawLeads, prices: drawPrices, log: drawLog, payments: drawOrders };
-  const FRESH = { today: () => Promise.all([loadClients(), loadPurchases()]), clients: loadClients, prices: loadPrices, log: loadLog, payments: loadOrders };
+  const FRESH = { today: () => Promise.all([loadClients(), loadPurchases(), loadLeads()]), clients: loadClients, prices: loadPrices, log: loadLog, payments: loadOrders, leads: loadLeads };
   const route = () => {
     const full = location.hash.replace(/^#\/?/, ''), qi = full.indexOf('?'), path = qi > -1 ? full.slice(0, qi) : full, qs = new URLSearchParams(qi > -1 ? full.slice(qi + 1) : '');
     const parts = path.split('/');
@@ -815,7 +858,7 @@
     firstRun = false;
   };
   window.addEventListener('hashchange', route);
-  await Promise.all([loadClients(), loadPurchases(), loadAccessTariffs(), loadPrices(), loadContent()]);
+  await Promise.all([loadClients(), loadPurchases(), loadAccessTariffs(), loadPrices(), loadContent(), loadLeads()]);
   route();
 }
 })();

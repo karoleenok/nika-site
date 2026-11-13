@@ -318,6 +318,7 @@
             <label class="field"><span class="sr-only">Номер телефона</span>
               <input type="tel" name="phone" placeholder="номер телефона" autocomplete="tel" inputmode="tel" required maxlength="24">
             </label>
+            <label class="hp" aria-hidden="true">Сайт<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
             <button class="btn btn--red btn--block" type="submit">начать тестирование</button>
             <label class="consent">
               <input type="checkbox" name="consent" required>
@@ -478,7 +479,6 @@
       </div>
       <div class="test__right">
         <img class="script-img script-img--test" src="assets/script/script-proven.svg" width="266" height="39" alt="" loading="lazy" decoding="async">
-        <!-- Форма пока без бэкенда: отправка подключается на этапе админки -->
         <form class="form" id="test-form" data-test-form novalidate autocomplete="on">
           <label class="field"><span class="sr-only">Имя</span>
             <input type="text" name="name" placeholder="имя" autocomplete="given-name" required maxlength="80">
@@ -486,7 +486,8 @@
           <label class="field"><span class="sr-only">Номер телефона</span>
             <input type="tel" name="phone" placeholder="номер телефона" autocomplete="tel" inputmode="tel" required maxlength="24">
           </label>
-          <button class="btn btn--red btn--block" type="submit">начать тестирование</button>
+          <label class="hp" aria-hidden="true">Сайт<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+            <button class="btn btn--red btn--block" type="submit">начать тестирование</button>
           <label class="consent">
               <input type="checkbox" name="consent" required>
               <span>Я&nbsp;даю <a href="legal/consent.html" target="_blank" rel="noopener">согласие на&nbsp;обработку персональных данных</a></span>

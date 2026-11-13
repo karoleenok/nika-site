@@ -78,3 +78,9 @@ export function adminPaidMail({ title, kop, email, kind, endsAt, adminUrl, test 
   const lines = [`${test ? '[ТЕСТ] ' : ''}Новая оплата: «${title}», ${rubles(kop)}.`, `Покупатель: ${email}`, tail, `Админка: ${adminUrl}`];
   return { subject: `${test ? '[ТЕСТ] ' : ''}Оплата: ${title}`, text: lines.join('\n\n'), html: layout(lines.map(esc)) };
 }
+
+// Нике о новой заявке. Телефона и ответов анкеты в письме нет: письмо может лежать в чужом почтовом ящике, данные — только в админке.
+export function adminLeadMail({ name, service, adminUrl }) {
+  const lines = [`Новая заявка с сайта: ${service}.`, `Имя: ${name}`, `Телефон и подробности — в админке: ${adminUrl}`];
+  return { subject: `Заявка: ${service}`, text: lines.join('\n\n'), html: layout(lines.map(esc)) };
+}

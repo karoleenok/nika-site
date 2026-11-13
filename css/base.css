@@ -104,3 +104,5 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
   }
   .js [data-reveal], .js .lines > .line > span { opacity: 1; transform: none; }
 }
+/* Ловушка для ботов в формах: человек поле не видит и не заполняет */
+.hp { position: absolute !important; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }

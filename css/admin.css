@@ -305,3 +305,12 @@ body:has(dialog[open]) { overflow: hidden; }
 .ord__act { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
 .ord__act .btn { flex: 1 1 160px; }
 @media (min-width: 768px) { .ord__act .btn { flex: 0 0 auto; } }
+.lead--done { background: transparent; border: 1px solid rgba(14, 14, 14, .12); }
+.lead--done .lead__n { color: var(--c-muted); }
+.lead--empty { color: var(--c-muted); font-size: var(--fs-small); line-height: 1.4; }
+.lead__quiz { display: grid; gap: var(--sp-2); }
+.lead__quiz > .btn { justify-self: start; }
+.lead__qt { margin-top: var(--sp-1); color: var(--c-muted); font-size: var(--fs-tiny); line-height: 1.3; }
+.lead__del { justify-self: start; min-height: 44px; padding: 0; color: var(--c-muted); font-size: var(--fs-small); text-decoration: underline; text-underline-offset: .18em; }
+@media (hover: hover) { .lead__del:hover { color: var(--c-red); } }
+.lead__tel { justify-self: start; display: inline-flex; align-items: center; min-height: 44px; margin-block: -10px; font-size: var(--fs-small); text-decoration: underline; text-underline-offset: .18em; }
