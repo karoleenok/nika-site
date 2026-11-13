@@ -15,7 +15,11 @@ export async function setup() {
   await a.query('DROP DATABASE IF EXISTS nika_test WITH (FORCE)');
   await a.query('CREATE DATABASE nika_test');
   await a.end();
-  const config = loadConfig({ ...process.env, DATABASE_URL: url.toString() });
+  // Тестовые ключи Robokassa, если в .env их нет: тесты не должны зависеть от чужих настроек
+  const config = loadConfig({ ...process.env, DATABASE_URL: url.toString(),
+    ROBOKASSA_LOGIN: process.env.ROBOKASSA_LOGIN || 'test-shop',
+    ROBOKASSA_PASSWORD1: process.env.ROBOKASSA_PASSWORD1 || 'test-password-1',
+    ROBOKASSA_PASSWORD2: process.env.ROBOKASSA_PASSWORD2 || 'test-password-2' });
   const pool = createPool(config.databaseUrl);
   await migrate(pool, () => {});
   const mails = [];
