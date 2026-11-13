@@ -45,7 +45,7 @@ jobs:
         env:
           DB_PASSWORD: x
           APP_TAG: x
-          ENV_FILE: .env
+          ENV_FILE: ${{ github.workspace }}/.env
 
       - name: Конфиг nginx собирается
         run: |
