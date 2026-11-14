@@ -318,7 +318,7 @@
         <li data-role="owner tech"><a href="#/prices"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg><span class="menu__t"><b>Тарифы и цены</b><small>изменить без разработчика</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
         <li data-role="owner tech"><a href="#/log"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span class="menu__t"><b>Журнал действий</b><small>кто и когда менял доступы</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
       </ul>
-      <div class="stack"><button class="btn btn--line-dark" type="button" data-reset-demo>сбросить демо-данные</button><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
+      <div class="stack"><button class="btn btn--line-dark" type="button" data-change-pass>сменить пароль</button><button class="btn btn--line-dark" type="button" data-reset-demo>сбросить демо-данные</button><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
     </section>
 
     <!-- ===== Цены ===== -->
@@ -417,6 +417,21 @@
   </form>
 </dialog>
 
+<dialog class="sheet" data-dlg="pass" aria-labelledby="dp-t">
+  <form class="sheet__in" data-form="pass" method="dialog" novalidate>
+    <h2 class="sheet__t" id="dp-t">Сменить пароль</h2>
+    <p class="sheet__p">Минимум 8 символов. На других устройствах придётся войти заново.</p>
+    <input type="text" name="username" autocomplete="username" hidden>
+    <label class="field"><span class="field__label">Текущий пароль</span><input class="field__input" type="password" name="current" autocomplete="current-password" maxlength="128"></label>
+    <label class="field"><span class="field__label">Новый пароль</span><input class="field__input" type="password" name="password" autocomplete="new-password" maxlength="128"></label>
+    <label class="field"><span class="field__label">Новый пароль ещё раз</span><input class="field__input" type="password" name="again" autocomplete="new-password" maxlength="128"><span class="field__err" role="alert" data-dp-err></span></label>
+    <div class="sheet__act">
+      <button class="btn btn--line-dark" type="button" data-close>отмена</button>
+      <button class="btn btn--red" type="submit">сохранить</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="sheet" data-dlg="newclient" aria-labelledby="dn-t">
   <form class="sheet__in" data-form="newclient" method="dialog" novalidate>
     <h2 class="sheet__t" id="dn-t">Новый клиент</h2>
@@ -464,6 +479,6 @@
 <script src="../js/lk-data.js?v=20261113b"></script>
 <script src="../js/admin-data.js?v=20261113b"></script>
 <script src="../js/uploader.js?v=20261113b"></script>
-<script src="../js/admin.js?v=20261113b"></script>
+<script src="../js/admin.js?v=20261114c"></script>
 </body>
 </html>

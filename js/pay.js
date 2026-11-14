@@ -2,8 +2,8 @@
 
    КАК ПЕРЕКЛЮЧАЕТСЯ ОПЛАТА (без правок кода):
    GitHub → Settings → Secrets and variables → Actions → Variables → PAY_ONLINE.
-   Не задана или 0  → по кнопке «купить» открывается окно: «оплата на сайте пока недоступна,
-                      напиши Нике в WhatsApp» с готовым сообщением под конкретный товар.
+   Не задана или 0  → по кнопке «купить» открывается окно «Купить можно через Нику»
+                      с готовым сообщением в WhatsApp под конкретный товар.
    1                → кнопка ведёт в checkout.html и дальше в Robokassa, окна нет.
    После смены переменной запустить выкладку (Actions → Выкладка → Run workflow).
 
@@ -46,13 +46,13 @@
     const ask = it && it.after === 'contact'
       ? 'Подскажите, как оплатить и на какую дату есть ближайшая запись?'
       : 'Подскажите, как оплатить?';
-    return 'Здравствуйте, Ника! Хочу купить на сайте «' + name + '»' + price + ', но оплата на сайте пока не работает. ' + ask;
+    return 'Здравствуйте, Ника! Хочу купить на сайте «' + name + '»' + price + '. ' + ask;
   };
   const waUrl = text => 'https://wa.me/' + phone + '?text=' + encodeURIComponent(text);
 
   /* ---------- Окно ---------- */
   const css = document.createElement('link');
-  css.rel = 'stylesheet'; css.href = new URL('css/pay-offline.css?v=20261114b', base).href;
+  css.rel = 'stylesheet'; css.href = new URL('css/pay-offline.css?v=20261114c', base).href;
   document.head.appendChild(css);
 
   const WA_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.5-.3Z"/></svg>';
@@ -66,16 +66,16 @@
       '<div class="po__back" data-po-close></div>' +
       '<div class="po__panel">' +
         '<div class="po__grip" aria-hidden="true"></div>' +
-        '<div class="po__head"><span class="po__label">оплата на сайте временно недоступна</span>' +
+        '<div class="po__head"><span class="po__label">оплата через Нику</span>' +
           '<button class="po__x" type="button" data-po-close aria-label="Закрыть"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>' +
         '<h2 class="po__title" id="po-title" tabindex="-1">Купить можно через&nbsp;Нику</h2>' +
-        '<p class="po__text">Напиши Нике в&nbsp;WhatsApp: она пришлёт, как оплатить, и&nbsp;сама откроет доступ или договорится о&nbsp;дате. Обычно отвечает в&nbsp;течение дня.</p>' +
+        '<p class="po__text">Напиши Нике в&nbsp;WhatsApp: она пришлёт реквизиты, подтвердит оплату и&nbsp;сама откроет доступ или договорится о&nbsp;дате. Обычно отвечает в&nbsp;течение дня.</p>' +
         '<div class="po__item" data-po-item hidden><p class="po__kind" data-po-kind></p><p class="po__name" data-po-name></p><p class="po__price" data-po-price></p></div>' +
         '<div class="po__acts">' +
           '<a class="btn btn--red" data-po-wa target="_blank" rel="noopener noreferrer">' + WA_ICON + '<span>написать Нике в WhatsApp</span></a>' +
           '<button class="btn po__later" type="button" data-po-close>вернуться на сайт</button>' +
         '</div>' +
-        '<p class="po__fine">Откроется WhatsApp с готовым сообщением про этот товар. Ты увидишь текст до отправки.</p>' +
+        '<p class="po__fine">Откроется WhatsApp с готовым сообщением. Ты увидишь текст до отправки.</p>' +
       '</div>';
     document.body.appendChild(dlg);
     dlg.addEventListener('click', e => { if (e.target.closest('[data-po-close]')) close(); });

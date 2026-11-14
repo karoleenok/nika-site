@@ -46,6 +46,15 @@ export async function bootstrapProd(pool, env = process.env, log = console.log) 
         [email, rest.join(':') || email, role]);
       if (r.rowCount) log(`админ добавлен: ${role}`);
     }
+    // Стартовые пароли: хеш argon2id лежит в seed/admin-passwords.json (сам пароль нигде не хранится).
+    // Ставим только тем, у кого пароля ещё нет: после смены в админке файл ничего не перезапишет.
+    try {
+      const hashes = JSON.parse(await fs.readFile(path.join(seedDir, 'admin-passwords.json'), 'utf8'));
+      for (const [email, h] of Object.entries(hashes)) {
+        const r = await c.query('UPDATE admins SET password_hash = $2 WHERE email = $1 AND password_hash IS NULL', [email, h]);
+        if (r.rowCount) log('стартовый пароль админа задан');
+      }
+    } catch (e) { if (e.code !== 'ENOENT') throw e; }
     const a = await c.query("SELECT count(*)::int AS n FROM admins WHERE role = 'owner' AND active");
     if (a.rows[0].n === 0) throw new Error('Нет ни одного владельца (owner). Задай INITIAL_ADMINS');
   });

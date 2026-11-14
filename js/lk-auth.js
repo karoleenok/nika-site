@@ -13,7 +13,7 @@
   if (wa && phone) { wa.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(wa.dataset.wa); wa.target = '_blank'; wa.rel = 'noopener noreferrer'; }
   document.querySelectorAll('[data-days]').forEach(n => { n.textContent = String(DAYS); });
 
-  const steps = { email: $('[data-step="email"]'), code: $('[data-step="code"]'), password: $('[data-step="password"]'), link: $('[data-step="link"]') };
+  const steps = { login: $('[data-step="login"]'), email: $('[data-step="email"]'), code: $('[data-step="code"]'), password: $('[data-step="password"]'), link: $('[data-step="link"]') };
   const show = name => Object.keys(steps).forEach(k => { if (steps[k]) steps[k].hidden = k !== name; });
   const email = $('[data-email]'), code = $('[data-code]'), pass = $('[data-pass]');
   const sentTo = $('[data-sent-to]'), resend = $('[data-resend]');
@@ -102,6 +102,32 @@
     code.select();
   });
 
+  /* ---------- Админка: вход по почте и паролю ---------- */
+  if (steps.login) {
+    const le = $('[data-l-email]'), lp = $('[data-l-pass]'), lerrE = $('[data-err="lemail"]'), lerrP = $('[data-err="lpass"]');
+    const eyeL = $('[data-l-eye]');
+    eyeL.addEventListener('click', () => {
+      const on = lp.type === 'password';
+      lp.type = on ? 'text' : 'password'; eyeL.textContent = on ? 'скрыть' : 'показать';
+      eyeL.setAttribute('aria-pressed', String(on)); eyeL.setAttribute('aria-label', on ? 'Скрыть пароль' : 'Показать пароль');
+    });
+    steps.login.addEventListener('submit', async e => {
+      e.preventDefault();
+      setErr(le, lerrE, ''); setErr(lp, lerrP, '');
+      const v = le.value.trim();
+      if (!validEmail(v)) { setErr(le, lerrE, 'Проверь почту: похоже, в адресе опечатка.'); le.focus(); return; }
+      if (!lp.value) { setErr(lp, lerrP, 'Введи пароль.'); lp.focus(); return; }
+      busy(steps.login, true);
+      const r = await API.post('/api/auth/password', { email: v, password: lp.value, kind: KIND, remember: $('[data-l-remember]').checked });
+      busy(steps.login, false);
+      if (r.ok) { location.replace(GO); return; }
+      setErr(lp, lerrP, r.data.error); lp.select();
+    });
+    $('[data-l-code]').addEventListener('click', () => { email.value = le.value.trim(); show('email'); email.focus(); });
+    $('[data-e-back]').addEventListener('click', () => { le.value = email.value.trim(); show('login'); lp.focus(); });
+    show('login');
+  }
+
   /* ---------- Вход по паролю (необязательный, задаётся в профиле кабинета) ---------- */
   if (steps.password) {
     $('[data-to-pass]').addEventListener('click', () => {
@@ -125,7 +151,7 @@
       e.preventDefault();
       if (!pass.value) { setErr(pass, errPass, 'Введи пароль.'); pass.focus(); return; }
       busy(steps.password, true);
-      const r = await API.post('/api/auth/password', { email: email.value.trim(), password: pass.value, remember: $('[data-remember-pass]').checked });
+      const r = await API.post('/api/auth/password', { email: email.value.trim(), password: pass.value, kind: KIND, remember: $('[data-remember-pass]').checked });
       busy(steps.password, false);
       if (r.ok) { location.replace(GO); return; }
       setErr(pass, errPass, r.data.error);

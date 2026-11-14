@@ -143,17 +143,23 @@ export default async function authRoutes(app, { config, pool, mailer }) {
   });
 
   // ---------- 4. Пароль ----------
+  // Клиент: необязательный пароль из профиля. Админ: основной способ входа (письма с кодом могут не ходить).
   app.post('/api/auth/password', async (req, reply) => {
     const email = normEmail(req.body?.email);
+    const kind = kindOf(req.body?.kind);
     const pw = String(req.body?.password ?? '');
     if (!validEmail(email) || !pw || pw.length > 128) return bad(reply, 400, GENERIC_PASS);
     if (passByEmail.blocked(email) || passByIp.blocked(req.ip)) return bad(reply, 429, 'Слишком много попыток. Подожди 15 минут или войди по коду.');
-    const { rows } = await pool.query('SELECT id, password_hash FROM users WHERE email = $1', [email]);
+    const table = kind === 'admin' ? 'admins' : 'users';
+    const { rows } = await pool.query(`SELECT id, password_hash FROM ${table} WHERE email = $1 ${kind === 'admin' ? 'AND active' : ''}`, [email]);
     const u = rows[0];
     const ok = u?.password_hash ? await checkPassword(u.password_hash, pw) : (await burnTime(pw), false);
     if (!ok) { passByEmail.hit(email); passByIp.hit(req.ip); return bad(reply, 400, GENERIC_PASS); }
     passByEmail.clear(email);
-    await startSession(pool, reply, 'user', u.id, req.body?.remember);
+    await tx(pool, async (c) => {
+      await startSession(c, reply, kind, u.id, req.body?.remember);
+      if (kind === 'admin') await c.query(`INSERT INTO audit_log (admin_id, action) VALUES ($1, 'login')`, [u.id]);
+    });
     return { ok: true };
   });
 
@@ -177,6 +183,26 @@ export default async function authRoutes(app, { config, pool, mailer }) {
     reply.header('cache-control', 'no-store');
     const { name, email, role } = req.admin;
     return { name, email, role };
+  });
+
+  // ---------- Смена пароля админа: нужен текущий пароль (или вход по коду, если пароля ещё нет) ----------
+  app.put('/api/admin/password', async (req, reply) => {
+    const cur = String(req.body?.current ?? ''), pw = String(req.body?.password ?? '');
+    const { rows } = await pool.query('SELECT password_hash FROM admins WHERE id = $1', [req.admin.id]);
+    if (rows[0].password_hash && !(await checkPassword(rows[0].password_hash, cur))) {
+      if (passByIp.blocked(req.ip)) return bad(reply, 429, 'Слишком много попыток. Подожди 15 минут.');
+      passByIp.hit(req.ip);
+      return bad(reply, 400, 'Текущий пароль неверный.');
+    }
+    const problem = passwordProblem(pw, req.admin.email);
+    if (problem) return bad(reply, 400, problem);
+    const h = await hashPassword(pw);
+    await tx(pool, async (c) => {
+      await c.query('UPDATE admins SET password_hash = $1 WHERE id = $2', [h, req.admin.id]);
+      await c.query('DELETE FROM sessions WHERE admin_id = $1 AND id <> $2', [req.admin.id, req.auth.sessionId]);
+      await c.query(`INSERT INTO audit_log (admin_id, action) VALUES ($1, 'password_change')`, [req.admin.id]);
+    });
+    return { ok: true };
   });
 
   // ---------- Пароль в профиле: задать / сменить / убрать ----------

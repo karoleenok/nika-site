@@ -63,7 +63,7 @@ export default async function payRoutes(app, { config, pool, mailer }) {
   });
 
   app.post('/api/pay/start', async (req, reply) => {
-    if (rk.online !== true) return bad(reply, 503, 'Оплата на сайте пока недоступна. Напиши Нике в WhatsApp, она поможет оплатить.');
+    if (rk.online !== true) return bad(reply, 503, 'Оплата проходит через Нику. Напиши ей в WhatsApp, она пришлёт, как оплатить.');
     reply.header('cache-control', 'no-store');
     if (!rk.login || !rk.password1 || !rk.password2) return bad(reply, 503, 'Оплата временно недоступна. Напиши Нике, она поможет.');
     if (startLimit.blocked(req.ip)) return bad(reply, 429, 'Слишком много попыток. Подожди 15 минут.');

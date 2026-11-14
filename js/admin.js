@@ -107,6 +107,7 @@
       case 'order.manual': return 'Оплата «' + (m.title || '') + '» отмечена вручную';
       case 'order.refund': return 'Возврат «' + (m.title || '') + '», ' + money((m.sumKop || 0) / 100);
       case 'tariff.price': return 'Цена «' + (m.name || '') + '»: ' + money(m.from) + ' → ' + money(m.to);
+      case 'password_change': return 'Изменён пароль для входа в админку';
       default: return 'Действие: ' + x.action;
     }
   };
@@ -253,6 +254,18 @@
     const r = await api.post('/api/admin/clients', body); btn.disabled = false;
     if (!r.ok) { if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
     dlg('newclient').close(); await loadClients(); toast('Клиент добавлен'); location.hash = '#/client/' + r.data.id;
+  });
+
+  /* Смена пароля админа */
+  const fpw = $('[data-form="pass"]');
+  $('[data-change-pass]').addEventListener('click', () => { fpw.reset(); $('[data-dp-err]').textContent = ''; openDlg('pass'); fpw.elements.current.focus(); });
+  fpw.addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.currentTarget, err = $('[data-dp-err]'); err.textContent = '';
+    if (f.elements.password.value !== f.elements.again.value) { err.textContent = 'Новые пароли не совпадают.'; f.elements.again.focus(); return; }
+    const btn = f.querySelector('[type="submit"]'); btn.disabled = true;
+    const r = await api.put('/api/admin/password', { current: f.elements.current.value, password: f.elements.password.value }); btn.disabled = false;
+    if (!r.ok) { if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
+    dlg('pass').close(); toast('Пароль изменён');
   });
 
   /* ---------- Карточка клиента ---------- */

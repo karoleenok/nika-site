@@ -24,17 +24,42 @@
     <a class="auth__logo" href="../index.html" aria-label="Ника Дупина, на главную"><img src="../assets/logo-hd.svg" width="97" height="53" alt="Н.Д."></a>
 
     <h1 class="display auth__title pg-in">Админка<br>Ники</h1>
-    <p class="auth__lead pg-in" style="--d:.06s">Пароль не нужен. Пришлём код на твою почту. Позже добавим второй шаг защиты.</p>
+    <p class="auth__lead pg-in" style="--d:.06s">Войди по почте и паролю. Пароль можно сменить в разделе «Ещё».</p>
 
     <div class="auth__card pg-in" style="--d:.12s">
+      <!-- Вход по почте и паролю (основной) -->
+      <form class="auth__step" data-step="login" novalidate>
+        <label class="field">
+          <span class="field__label">Почта</span>
+          <input class="field__input" type="email" name="email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="твоя@почта.ru" required data-l-email>
+          <span class="field__err" data-err="lemail" role="alert"></span>
+        </label>
+        <label class="field">
+          <span class="field__label">Пароль</span>
+          <span class="field__pw">
+            <input class="field__input" type="password" name="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" maxlength="128" aria-describedby="lpass-err" required data-l-pass>
+            <button class="field__eye" type="button" aria-pressed="false" aria-label="Показать пароль" data-l-eye>показать</button>
+          </span>
+          <span class="field__err" id="lpass-err" data-err="lpass" role="alert"></span>
+        </label>
+        <label class="check">
+          <input type="checkbox" name="remember" checked data-l-remember>
+          <span class="check__box" aria-hidden="true"></span>
+          <span>Запомнить меня на&nbsp;<span data-days>14</span>&nbsp;дней на&nbsp;этом устройстве</span>
+        </label>
+        <button class="btn btn--red btn--block" type="submit">войти</button>
+        <div class="auth__row"><button class="linkbtn" type="button" data-l-code>войти по коду из письма</button></div>
+      </form>
+
       <!-- Шаг 1: почта -->
-      <form class="auth__step" data-step="email" novalidate>
+      <form class="auth__step" data-step="email" novalidate hidden>
         <label class="field">
           <span class="field__label">Почта</span>
           <input class="field__input" type="email" name="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="твоя@почта.ru" required data-email>
           <span class="field__err" data-err="email" role="alert"></span>
         </label>
         <button class="btn btn--red btn--block" type="submit">получить код</button>
+        <div class="auth__row"><button class="linkbtn" type="button" data-e-back>войти по паролю</button></div>
         <p class="auth__hint">Нажимая кнопку, ты соглашаешься с <a class="u" href="../legal/privacy.html">политикой обработки персональных данных</a>.</p>
       </form>
 
@@ -62,6 +87,6 @@
   </div>
 </main>
 <script src="../js/api.js?v=20261113b"></script>
-<script src="../js/lk-auth.js?v=20261113b"></script>
+<script src="../js/lk-auth.js?v=20261114c"></script>
 </body>
 </html>
