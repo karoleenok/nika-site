@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="../css/tokens.css?v=20261113b">
   <link rel="stylesheet" href="../css/base.css?v=20261113b">
   <link rel="stylesheet" href="../css/pages.css?v=20261113b">
-  <link rel="stylesheet" href="../css/lk.css?v=20261115a">
-  <link rel="stylesheet" href="../css/admin.css?v=20261115a">
+  <link rel="stylesheet" href="../css/lk.css?v=20261115b">
+  <link rel="stylesheet" href="../css/admin.css?v=20261115b">
 </head>
 <body class="lk adm">
 <svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
@@ -192,6 +192,12 @@
           <button class="btn btn--line-dark btn--sm" type="button" data-g-add>+ группа</button>
         </div>
         <p class="hint">Клиенты видят видео в таком порядке, как здесь. Чтобы поменять, потяни за значок <svg class="ic ic--inl" aria-hidden="true"><use href="#i-grip"/></svg> и отпусти на новом месте. Чтобы изменить видео, нажми на него.</p>
+        <div class="sw-list adm-soon">
+          <label class="sw-row">
+            <span class="sw-row__t"><b>Показывать клиентам уроки «скоро»</b><small>Видео, которые ещё не опубликованы, видны в кабинете с меткой «скоро». По нажатию клиент читает: «Уроки проходят проверку на сервере: в ближайшие 1–2 дня всё появится». Выключи, когда всё загружено.</small></span>
+            <input class="sw" type="checkbox" role="switch" data-soon-sw>
+          </label>
+        </div>
         <div class="groups" data-groups></div>
       </div>
 
@@ -325,7 +331,7 @@
         <li data-role="owner tech"><a href="#/prices"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg><span class="menu__t"><b>Тарифы и цены</b><small>изменить без разработчика</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
         <li data-role="owner tech"><a href="#/log"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span class="menu__t"><b>Журнал действий</b><small>кто и когда менял доступы</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
       </ul>
-      <div class="stack"><button class="btn btn--line-dark" type="button" data-change-pass>сменить пароль</button><button class="btn btn--line-dark" type="button" data-reset-demo>сбросить демо-данные</button><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
+      <div class="stack"><button class="btn btn--line-dark" type="button" data-tour-start>как пользоваться админкой</button><button class="btn btn--line-dark" type="button" data-change-pass>сменить пароль</button><button class="btn btn--line-dark" type="button" data-reset-demo>сбросить демо-данные</button><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
     </section>
 
     <!-- ===== Цены ===== -->
@@ -508,6 +514,22 @@
   </form>
 </dialog>
 
+<!-- Экскурсия по админке: карточка с шагами и рамка вокруг раздела в меню. Запускается сама при первом входе и кнопкой в «Ещё». -->
+<div class="tour-ring" data-tour-ring hidden aria-hidden="true"></div>
+<section class="tour" data-tour hidden role="dialog" aria-labelledby="tour-t" aria-describedby="tour-p" tabindex="-1">
+  <div class="tour__top">
+    <p class="tour__n" data-tour-n></p>
+    <button class="tour__x" type="button" aria-label="Закрыть экскурсию" data-tour-close><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <h2 class="tour__t" id="tour-t" data-tour-t></h2>
+  <p class="tour__p" id="tour-p" data-tour-p aria-live="polite"></p>
+  <div class="tour__bar" aria-hidden="true"><i data-tour-bar></i></div>
+  <div class="tour__act">
+    <button class="btn btn--line btn--sm" type="button" data-tour-prev>назад</button>
+    <button class="btn btn--red btn--sm" type="button" data-tour-next>дальше</button>
+  </div>
+</section>
+
 <div class="toast" data-toast role="status" aria-live="polite" hidden>
   <span class="toast__t" data-toast-t></span>
   <button class="toast__b" type="button" data-toast-b hidden></button>
@@ -517,6 +539,6 @@
 <script src="../js/lk-data.js?v=20261113b"></script>
 <script src="../js/admin-data.js?v=20261115a"></script>
 <script src="../js/uploader.js?v=20261113b"></script>
-<script src="../js/admin.js?v=20261115a"></script>
+<script src="../js/admin.js?v=20261115b"></script>
 </body>
 </html>

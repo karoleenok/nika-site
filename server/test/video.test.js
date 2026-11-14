@@ -50,6 +50,8 @@ async function uploadWhole(id, buf, fp = `f-${id}`) {
 before(async () => {
   t = await setup();
   s3 = createS3(t.config.s3);
+  // Режим «уроки скоро появятся» здесь выключен: проверяем обычную публикацию. Сам режим — в soon.test.js
+  await t.pool.query(`UPDATE settings SET value = 'false' WHERE key = 'videos_soon'`);
   await t.pool.query(`INSERT INTO admins (email, name, role) VALUES ('owner@x.com','Ника','owner'),('staff@x.com','Диана','staff')`);
   await t.pool.query(`INSERT INTO users (email, name) VALUES ('on@x.com','Ольга'),('off@x.com','Вера')`);
   await t.pool.query(`INSERT INTO access_periods (user_id, starts_at, ends_at, source)

@@ -374,18 +374,38 @@ export default async function videoRoutes(app, { pool, s3 }) {
     return { ok: true };
   });
 
+  // ---------- Настройка «уроки скоро появятся» ----------
+  const videosSoon = async (db = pool) => (await db.query(`SELECT value FROM settings WHERE key = 'videos_soon'`)).rows[0]?.value === true;
+  app.get('/api/admin/settings', async (req, reply) => { noStore(reply); return { videosSoon: await videosSoon() }; });
+  app.put('/api/admin/settings', async (req, reply) => {
+    if (typeof req.body?.videosSoon !== 'boolean') return bad(reply, 400, 'Не получилось сохранить. Попробуй ещё раз.');
+    const on = req.body.videosSoon;
+    await tx(pool, async (c) => {
+      await c.query(`INSERT INTO settings (key, value) VALUES ('videos_soon', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`, [JSON.stringify(on)]);
+      await audit(c, req.admin.id, 'settings.videos_soon', { meta: { on } });
+    });
+    return { ok: true, videosSoon: on };
+  });
+
   // ---------- Кабинет клиента ----------
   // Список виден и без доступа (замки в библиотеке), сами файлы только с доступом
   app.get('/api/videos', { preHandler: app.requireUser }, async (req, reply) => {
     noStore(reply);
+    const soonOn = await videosSoon();
     const [g, v] = await Promise.all([
       pool.query('SELECT id, name FROM video_groups WHERE visible ORDER BY sort, id'),
-      pool.query(`SELECT v.id, v.group_id, v.title, v.description, v.gear FROM videos v JOIN video_groups g ON g.id = v.group_id
-                   WHERE v.published AND v.status = 'ready' AND g.visible ORDER BY g.sort, g.id, v.sort, v.id`),
+      // Режим «скоро»: неопубликованные уроки с названием тоже в списке, но только название и группа
+      pool.query(`SELECT v.id, v.group_id, v.title, v.description, v.gear, (v.published AND v.status = 'ready') AS live
+                    FROM videos v JOIN video_groups g ON g.id = v.group_id
+                   WHERE g.visible AND ((v.published AND v.status = 'ready') OR ($1 AND btrim(v.title) <> ''))
+                   ORDER BY g.sort, g.id, v.sort, v.id`, [soonOn]),
     ]);
     return {
+      soon: soonOn,
       groups: g.rows.map((r) => ({ id: String(r.id), name: r.name })),
-      videos: v.rows.map((r) => ({ id: String(r.id), group: String(r.group_id), title: r.title, text: r.description, gear: r.gear || [] })),
+      videos: v.rows.map((r) => (r.live
+        ? { id: String(r.id), group: String(r.group_id), title: r.title, text: r.description, gear: r.gear || [] }
+        : { id: String(r.id), group: String(r.group_id), title: r.title, text: '', gear: [], soon: true })),
     };
   });
 

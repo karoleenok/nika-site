@@ -19,7 +19,11 @@
   const [ar, vr] = await Promise.all([window.NikaApi.get('/api/me/access'), window.NikaApi.get('/api/videos')]);
   if (ar.status === 401 || vr.status === 401) { location.replace('login.html'); return; }
   D.groups = vr.ok ? vr.data.groups : [];
-  D.videos = vr.ok ? vr.data.videos : [];
+  /* D.videos — то, что можно смотреть. D.soon — уроки «скоро»: видны в списке, по нажатию окно, файла ещё нет. */
+  const allVideos = vr.ok ? vr.data.videos : [];
+  D.videos = allVideos.filter(v => !v.soon);
+  D.soon = allVideos.filter(v => v.soon);
+  const soonMode = vr.ok && vr.data.soon === true;
   const videosFailed = !vr.ok;
   const AC = ar.ok ? ar.data : null;   // null: сервер не ответил, показываем честное сообщение вместо выдуманного срока
 
@@ -82,6 +86,8 @@
 
   const renderContinue = () => {
     const box = $('[data-continue]');
+    /* На главной кабинета: пока смотреть нечего, говорим, когда появятся уроки */
+    $('[data-soon-home]').hidden = !(soonMode && !videosFailed && !D.videos.length);
     const done = doneSet();
     const last = byId(rd(LAST));
     const v = last || D.videos.find(x => !done.has(x.id));
@@ -106,7 +112,26 @@
       chips.appendChild(b);
     });
   };
+  /* Окно «урок скоро откроется» */
+  const soonDlg = $('[data-soon]');
+  const openSoon = v => {
+    $('[data-soon-title]').textContent = v.title; $('[data-soon-group]').textContent = gName(v.group);
+    if (soonDlg.showModal) soonDlg.showModal(); else soonDlg.setAttribute('open', '');
+    $('[data-soon-ok]').focus();
+  };
+  soonDlg.addEventListener('click', e => { if (e.target === soonDlg) soonDlg.close(); });
+  $('[data-soon-ok]').addEventListener('click', () => soonDlg.close());
+  const soonCard = v => {
+    const li = el('li'); const b = el('button', 'vcard vcard--soon'); b.type = 'button';
+    const t = el('span', 'thumb'); t.setAttribute('aria-hidden', 'true'); t.appendChild(icon('i-play', 'ic--play'));
+    const bd = el('span', 'badge badge--soon'); bd.appendChild(icon('i-clock')); bd.appendChild(document.createTextNode('скоро')); t.appendChild(bd);
+    const body = el('span', 'vcard__body');
+    body.appendChild(el('span', 'vcard__t', v.title));
+    body.appendChild(el('span', 'vcard__m', gName(v.group) + ' · скоро'));
+    b.appendChild(t); b.appendChild(body); b.addEventListener('click', () => openSoon(v)); li.appendChild(b); return li;
+  };
   const card = v => {
+    if (v.soon) return soonCard(v);
     const li = el('li'); const a = el('a', 'vcard'); a.href = '#/video/' + v.id;
     const t = el('span', 'thumb'); t.setAttribute('aria-hidden', 'true');
     t.appendChild(icon('i-play', 'ic--play'));
@@ -120,14 +145,17 @@
   const drawLib = () => {
     drawChips();
     const q = filt.q.trim().toLowerCase();
-    const list = D.videos.filter(v => (filt.group === 'all' || v.group === filt.group) && (!q || (v.title + ' ' + gName(v.group)).toLowerCase().includes(q)));
+    const list = allVideos.filter(v => (filt.group === 'all' || v.group === filt.group) && (!q || (v.title + ' ' + gName(v.group)).toLowerCase().includes(q)));
     grid.textContent = ''; list.forEach(v => grid.appendChild(card(v)));
-    count.textContent = list.length ? list.length + ' ' + plural(list.length, 'тренировка', 'тренировки', 'тренировок') : '';
+    const nReady = list.filter(v => !v.soon).length, nSoon = list.length - nReady;
+    count.textContent = [nReady ? nReady + ' ' + plural(nReady, 'тренировка', 'тренировки', 'тренировок') : '', nSoon ? 'скоро: ' + nSoon : ''].filter(Boolean).join(' · ');
     empty.hidden = list.length > 0; grid.hidden = !list.length;
     /* Пусто не из-за фильтра: тренировки не загрузились или Ника их ещё не опубликовала */
-    const none = !D.videos.length;
+    const none = !allVideos.length;
     $('.empty__t', empty).textContent = videosFailed ? 'Не получилось загрузить тренировки' : none ? 'Тренировки скоро появятся' : 'Ничего не нашлось';
-    $('.empty__p', empty).textContent = videosFailed ? 'Проверь интернет и обнови страницу.' : none ? 'Ника добавляет видео. Загляни чуть позже.' : 'Попробуй другое слово или сбрось фильтр.';
+    $('.empty__p', empty).textContent = videosFailed ? 'Проверь интернет и обнови страницу.' : none ? (soonMode ? 'Уроки проходят проверку на сервере: в ближайшие 1–2 дня всё появится в личном кабинете.' : 'Ника добавляет видео. Загляни чуть позже.') : 'Попробуй другое слово или сбрось фильтр.';
+    /* Плашка над списком: есть уроки «скоро». Когда список пуст, тот же текст уже стоит в пустом состоянии. */
+    $('[data-soon-note]').hidden = !D.soon.length;
     $('[data-reset]').hidden = none;
     $('[data-search-form]').hidden = none; chips.hidden = none;
     $('[data-lock-note]').hidden = !locked;

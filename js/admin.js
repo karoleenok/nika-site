@@ -109,6 +109,7 @@
       case 'order.refund': return 'Возврат «' + (m.title || '') + '», ' + money((m.sumKop || 0) / 100);
       case 'tariff.price': return 'Цена «' + (m.name || '') + '»: ' + money(m.from) + ' → ' + money(m.to);
       case 'password_change': return 'Изменён пароль для входа в админку';
+      case 'settings.videos_soon': return m.on ? 'Включён показ уроков «скоро» в кабинете' : 'Выключен показ уроков «скоро» в кабинете';
       default: return 'Действие: ' + x.action;
     }
   };
@@ -418,6 +419,61 @@
     cpMsg.textContent = ok ? 'Скопировано. Вставь сообщение в чат с клиентом.' : 'Не получилось скопировать. Выдели пароль и скопируй вручную.';
   });
   $('[data-dcp-finish]').addEventListener('click', async () => { dlg('cpass').close(); await reloadClient(); toast('Пароль задан'); });
+
+  /* ---------- Переключатель «уроки скоро» ---------- */
+  const soonSw = $('[data-soon-sw]');
+  const loadSettings = async () => { const r = await api.get('/api/admin/settings'); if (r.ok) soonSw.checked = !!r.data.videosSoon; };
+  soonSw.addEventListener('change', async () => {
+    const on = soonSw.checked; soonSw.disabled = true;
+    const r = await api.request('PUT', '/api/admin/settings', { videosSoon: on });
+    soonSw.disabled = false;
+    if (!r.ok) { soonSw.checked = !on; fail(r); return; }
+    toast(on ? 'Клиенты видят уроки с меткой «скоро»' : 'Клиенты видят только опубликованные уроки');
+  });
+
+  /* ---------- Экскурсия по админке ----------
+     Карточка с шагами + рамка вокруг раздела в меню; на каждом шаге открывается сам раздел.
+     Страница под карточкой остаётся рабочей. Первый раз запускается сама, потом кнопкой в «Ещё». */
+  const TOUR_KEY = 'nika_adm_tour_done';
+  const TOUR = [
+    { hash: null, t: 'Короткая экскурсия', p: 'Покажу за минуту, где что лежит. Пройти заново можно в любой момент: «Ещё» → «как пользоваться админкой».' },
+    { hash: '#/', nav: 'today', t: 'Сегодня', p: 'Здесь те, у кого доступ скоро закончится или уже закончился. Нажми «написать в WhatsApp»: сообщение о продлении подставится само.' },
+    { hash: '#/clients', nav: 'clients', t: 'Клиенты', p: 'Все клиенты и поиск по ним. В карточке клиента можно открыть, продлить или закрыть доступ и оставить заметку для себя.' },
+    { hash: '#/clients', nav: 'clients', t: 'Вход клиента в кабинет', p: 'В карточке клиента есть блок «Вход в кабинет». Нажми «задать пароль»: сайт придумает пароль и покажет его один раз. Отправь его клиенту в WhatsApp.' },
+    { hash: '#/content', nav: 'content', t: 'Контент', p: 'Группы и видео. Порядок меняется перетаскиванием. Видео открывается клиентам, когда файл загружен и включено «Опубликовать». До этого оно видно с меткой «скоро», если включён переключатель вверху.' },
+    { hash: '#/leads', nav: 'leads', t: 'Заявки', p: 'Заявки с сайта и ответы теста. Красная точка в меню значит, что есть новые. Обработанную заявку отметь, чтобы не потерять остальные.' },
+    { hash: '#/more', nav: 'more', t: 'Ещё', p: canMoney ? 'Оплаты, тарифы и цены, журнал действий. Здесь же смена пароля и эта экскурсия.' : 'Смена пароля, выход и эта экскурсия.' },
+  ];
+  const tourEl = $('[data-tour]'), ring = $('[data-tour-ring]');
+  let tourI = -1;
+  const tourPlace = () => {
+    const s = TOUR[tourI], a = s && s.nav ? $('[data-nav="' + s.nav + '"]') : null;
+    if (!a) { ring.hidden = true; return; }
+    const r = a.getBoundingClientRect(), pad = 4;
+    ring.style.left = (r.left + pad) + 'px'; ring.style.top = (r.top + pad) + 'px';
+    ring.style.width = (r.width - pad * 2) + 'px'; ring.style.height = (r.height - pad * 2) + 'px';
+    ring.hidden = false;
+  };
+  const tourShow = i => {
+    tourI = i; const s = TOUR[i], last = i === TOUR.length - 1;
+    $('[data-tour-n]').textContent = 'шаг ' + (i + 1) + ' из ' + TOUR.length;
+    $('[data-tour-t]').textContent = s.t; $('[data-tour-p]').textContent = s.p;
+    $('[data-tour-bar]').style.width = ((i + 1) / TOUR.length * 100) + '%';
+    $('[data-tour-prev]').hidden = i === 0;
+    $('[data-tour-next]').textContent = i === 0 ? 'начать' : last ? 'готово' : 'дальше';
+    if (s.hash && location.hash !== s.hash && !(s.hash === '#/' && !location.hash)) location.hash = s.hash;
+    /* Раздел переключается и забирает фокус на заголовок: возвращаем его на кнопку шага */
+    setTimeout(() => { tourPlace(); if (!tourEl.hidden) $('[data-tour-next]').focus({ preventScroll: true }); }, 60);
+  };
+  const tourStart = () => { tourEl.hidden = false; tourEl.classList.remove('is-in'); void tourEl.offsetWidth; tourEl.classList.add('is-in'); tourShow(0); };
+  const tourEnd = () => { tourEl.hidden = true; ring.hidden = true; tourI = -1; wr(TOUR_KEY, '1'); };
+  $('[data-tour-next]').addEventListener('click', () => { if (tourI >= TOUR.length - 1) { tourEnd(); toast('Экскурсия всегда под рукой: «Ещё» → «как пользоваться админкой»'); } else tourShow(tourI + 1); });
+  $('[data-tour-prev]').addEventListener('click', () => { if (tourI > 0) tourShow(tourI - 1); });
+  $('[data-tour-close]').addEventListener('click', tourEnd);
+  $('[data-tour-start]').addEventListener('click', tourStart);
+  tourEl.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); tourEnd(); } });
+  window.addEventListener('resize', () => { if (tourI >= 0) tourPlace(); });
+  window.addEventListener('scroll', () => { if (tourI >= 0) tourPlace(); }, { passive: true });
 
   const fcl = $('[data-form="close"]');
   $('[data-c-close]').addEventListener('click', () => {
@@ -926,7 +982,9 @@
     firstRun = false;
   };
   window.addEventListener('hashchange', route);
-  await Promise.all([loadClients(), loadPurchases(), loadAccessTariffs(), loadPrices(), loadContent(), loadLeads()]);
+  await Promise.all([loadClients(), loadPurchases(), loadAccessTariffs(), loadPrices(), loadContent(), loadLeads(), loadSettings()]);
   route();
+  /* Первый вход на этом устройстве: показываем экскурсию один раз */
+  if (!rd(TOUR_KEY)) tourStart();
 }
 })();

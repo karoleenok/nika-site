@@ -328,3 +328,31 @@ body:has(dialog[open]) { overflow: hidden; }
 .cred dt, .cred dd { margin: 0; }
 .cred dd { font-size: var(--fs-body); line-height: 1.3; font-weight: 450; overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
 .cred .cred__pw { font-size: var(--fs-card-t); font-weight: 600; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+
+/* ---------- Переключатель «уроки скоро» ---------- */
+.adm-soon { margin-bottom: var(--sp-4); }
+
+/* ---------- Экскурсия по админке ---------- */
+.tour { position: fixed; z-index: 110; left: var(--gutter); right: var(--gutter); bottom: calc(var(--lk-tab) + var(--safe-b, 0px) + 12px); max-width: 520px; margin-inline: auto; display: grid; gap: var(--sp-3); padding: var(--sp-5); background: var(--c-ink); color: var(--c-white); border-radius: var(--r-card); box-shadow: 0 16px 48px rgba(0, 0, 0, .45); }
+.tour[hidden] { display: none; }
+.tour:focus { outline: none; }
+.tour.is-in { animation: tour-in .35s var(--ease-out) both; }
+@keyframes tour-in { from { transform: translateY(16px); opacity: 0; } }
+.tour__top { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: 28px; }
+.tour__n { color: var(--c-on-dark-2); font-size: var(--fs-tiny); line-height: 1.3; font-variant-numeric: tabular-nums; }
+.tour__x { display: grid; place-items: center; width: 44px; height: 44px; margin: -8px -12px -8px 0; color: var(--c-on-dark-2); border-radius: 50%; }
+.tour__x .ic { width: 20px; height: 20px; }
+.tour__x:focus-visible { outline: 2px solid var(--c-white); outline-offset: -6px; }
+.tour__t { font-family: var(--f-display); font-weight: 700; text-transform: uppercase; font-size: calc(var(--fs-pg-h2) * .8); line-height: .9; padding-top: .1em; }
+.tour__p { color: var(--c-on-dark-2); font-size: var(--fs-small); line-height: 1.4; text-wrap: pretty; min-height: 4.2em; }
+.tour__bar { height: 3px; border-radius: 3px; background: rgba(255, 255, 255, .16); overflow: hidden; }
+.tour__bar > i { display: block; height: 100%; width: 0; background: var(--c-red); border-radius: 3px; transition: width var(--dur-2) var(--ease-out); }
+.tour__act { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.tour__act .btn[hidden] { display: none; }
+.tour__act .btn:only-child, .tour__act .btn[hidden] + .btn { grid-column: 1 / -1; }
+.tour-ring { position: fixed; z-index: 105; pointer-events: none; border: 2px solid var(--c-red); border-radius: 14px; box-shadow: 0 0 0 4px rgba(220, 26, 29, .28); transition: left var(--dur-2) var(--ease-out), top var(--dur-2) var(--ease-out), width var(--dur-2) var(--ease-out), height var(--dur-2) var(--ease-out); animation: tour-pulse 1.6s ease-in-out infinite; }
+.tour-ring[hidden] { display: none; }
+@keyframes tour-pulse { 50% { box-shadow: 0 0 0 9px rgba(220, 26, 29, 0); } }
+@media (hover: hover) { .tour__x:hover { color: var(--c-white); } }
+@media (min-width: 1024px) { .tour { left: auto; right: var(--sp-7); bottom: var(--sp-7); width: 420px; margin: 0; } }
+@media (prefers-reduced-motion: reduce) { .tour.is-in, .tour-ring { animation: none; transition: none; } .tour__bar > i { transition: none; } }
