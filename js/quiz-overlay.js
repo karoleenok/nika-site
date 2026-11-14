@@ -506,8 +506,8 @@
   const waLink = (fl) => {
     const names = fl.filter((b) => !b.repro).map((b) => b.short);   // про половые гормоны в сообщение не пишем
     const text = names.length
-      ? 'Здравствуйте, Ника! Я прошёл(ла) тест на сайте. По результатам выделились блоки: ' + names.join(', ') + '. Хочу, чтобы вы разобрали мою ситуацию по анализам.'
-      : 'Здравствуйте, Ника! Я прошёл(ла) тест на сайте. Хочу, чтобы вы разобрали мою ситуацию по анализам.';
+      ? 'Здравствуйте, Ника! Я прошёл(ла) тест на сайте. По результатам выделились блоки: ' + names.join(', ') + '. Хочу записаться на консультацию, чтобы разобрать мою ситуацию по анализам.'
+      : 'Здравствуйте, Ника! Я прошёл(ла) тест на сайте. Хочу записаться на консультацию, чтобы разобрать мою ситуацию по анализам.';
     // Если ответы на сервер не попали, контакт передаём в самом сообщении
     const who2 = saveState !== 'ok' && saveState !== 'sending' && who.name ? ' Меня зовут ' + who.name + ', мой номер: ' + who.phone + '.' : '';
     return 'https://wa.me/' + SETTINGS.waPhone + '?text=' + encodeURIComponent(T(text + who2));
@@ -547,8 +547,8 @@
 
     // Действия
     const acts = h('div', 'qo__acts');
-    const wa = h('a', 'btn btn--red btn--block', 'отправить результаты Нике'); wa.href = waLink(fl); wa.target = '_blank'; wa.rel = 'noopener';
-    acts.append(wa, h('p', 'qo__fine', nb('Откроется WhatsApp с готовым сообщением. Ты увидишь текст до отправки.')), note);
+    const wa = h('a', 'btn btn--red btn--block', 'записаться на консультацию'); wa.href = waLink(fl); wa.target = '_blank'; wa.rel = 'noopener';
+    acts.append(wa, h('p', 'qo__fine', nb('Откроется WhatsApp с готовым сообщением и итогом теста. Ты увидишь текст до отправки.')), note);
     const real = SETTINGS.app.links.filter((l) => l.href && l.href !== '#');
     if (real.length) {
       real.forEach((l) => { const a = h('a', 'btn btn--ink btn--block', 'скачать приложение · ' + l.label); a.href = l.href; a.target = '_blank'; a.rel = 'noopener'; acts.appendChild(a); });

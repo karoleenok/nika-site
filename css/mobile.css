@@ -213,6 +213,9 @@ body.menu-lock { overflow: hidden; }
 .test__title { font-size: var(--fs-h3); line-height: .8; }
 .test__text { max-width: none; margin-top: 14px; font-size: var(--fs-body); line-height: 1.2; }
 .test__right { display: flex; flex-direction: column; }
+.test__text + .test__text { margin-top: 8px; }
+.test__time { margin-top: 14px; font-size: var(--fs-body); }
+.test__stamp { font-size: calc(30 * var(--m)); margin: 4px 4px 16px 0; }
 .script-img--test { align-self: flex-end; width: calc(200 * var(--m)); margin-bottom: 12px; }
 .form { margin-top: 0; gap: 8px; }
 .field input { padding: 0 16px; font-size: 16px; }

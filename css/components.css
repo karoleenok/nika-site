@@ -428,6 +428,14 @@
 .test__title { font-size: var(--fs-h2); color: var(--c-red); }
 .test__text { margin-top: var(--sp-4); max-width: calc(520 * var(--s)); font-size: var(--fs-small); line-height: var(--lh-small); color: var(--c-muted); }
 .test__right { display: flex; flex-direction: column; }
+.test__text + .test__text { margin-top: var(--sp-2); }
+.test__time { margin-top: var(--sp-4); font-size: var(--fs-small); line-height: var(--lh-small); font-weight: 600; color: var(--c-ink); }
+/* Акцент «перестань подбирать витамины наугад»: красный, по диагонали, как рукописные сноски */
+.test__stamp {
+  align-self: flex-end; margin: 0 0 var(--sp-5); text-align: right;
+  font-size: calc(44 * var(--s)); line-height: .85; color: var(--c-red); text-transform: uppercase;
+  transform: rotate(-4deg); transform-origin: right center; padding-top: .12em;
+}
 
 .form { display: grid; gap: var(--sp-2); margin-top: auto; }
 .field input {
