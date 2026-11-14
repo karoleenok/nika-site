@@ -47,7 +47,7 @@ jobs:
           APP_TAG: x
           ENV_FILE: ${{ github.workspace }}/.env
 
-      - name: Конфиг nginx собирается
+      - name: Конфиг nginx собирается (версия как в Ubuntu 24.04)
         run: |
           mkdir -p /tmp/ng/live/example.ru /tmp/ng/shared
           openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=example.ru \
@@ -55,7 +55,7 @@ jobs:
           echo 'add_header X-Test "1" always;' > /tmp/ng/shared/nginx-headers.conf
           sed -e 's/__DOMAIN__/example.ru/g' -e '/listen \[::\]/d' -e 's#/etc/letsencrypt#/tmp/ng#g' -e 's#/srv/nika/shared#/tmp/ng/shared#g' \
             deploy/nginx/nika.conf > /tmp/ng/nika.conf
-          docker run --rm -v /tmp/ng:/tmp/ng:ro nginx:1.27-alpine sh -c \
+          docker run --rm -v /tmp/ng:/tmp/ng:ro nginx:1.24-alpine sh -c \
             'cp /tmp/ng/nika.conf /etc/nginx/conf.d/default.conf && nginx -t'
 
       - name: Логи, если упало

@@ -48,7 +48,10 @@ PREV="$(readlink "$ROOT/current" 2>/dev/null || true)"
 switch_to() {   # $1 = папка версии
   ln -sfn "$1" "$ROOT/current.new" && mv -Tf "$ROOT/current.new" "$ROOT/current"
   APP_TAG="$(basename "$1")" compose up -d --no-deps app
-  [ "${NIKA_SKIP_NGINX:-0}" = 1 ] || { sudo /usr/sbin/nginx -t && sudo /usr/bin/systemctl reload nginx; }
+  if [ "${NIKA_SKIP_NGINX:-0}" != 1 ]; then
+    if [ -x /usr/local/sbin/nika-nginx-apply ]; then sudo -n /usr/local/sbin/nika-nginx-apply
+    else sudo /usr/sbin/nginx -t && sudo /usr/bin/systemctl reload nginx; fi
+  fi
 }
 healthy() {
   for _ in $(seq 1 30); do

@@ -45,7 +45,7 @@ printf '%s\n' "$DEPLOY_PUBKEY" > /home/deploy/.ssh/authorized_keys
 chown deploy:deploy /home/deploy/.ssh/authorized_keys && chmod 600 /home/deploy/.ssh/authorized_keys
 # Единственное, что deploy может делать от root: проверить и перечитать конфиг nginx
 cat > /etc/sudoers.d/nika-deploy <<'SUDO'
-deploy ALL=(root) NOPASSWD: /usr/sbin/nginx -t, /usr/bin/systemctl reload nginx
+deploy ALL=(root) NOPASSWD: /usr/sbin/nginx -t, /usr/bin/systemctl reload nginx, /usr/local/sbin/nika-nginx-apply
 SUDO
 chmod 440 /etc/sudoers.d/nika-deploy
 visudo -cf /etc/sudoers.d/nika-deploy
@@ -123,6 +123,7 @@ nginx -t && systemctl reload nginx
 
 log "сертификат: пробуем каждые 10 минут, пока домен не начнёт смотреть на сервер"
 install -m 755 "$SRC/server/get-cert.sh" /usr/local/sbin/nika-get-cert
+install -m 755 "$SRC/server/nginx-apply.sh" /usr/local/sbin/nika-nginx-apply
 install -d /etc/letsencrypt/renewal-hooks/deploy
 printf '#!/bin/sh\nsystemctl reload nginx\n' > /etc/letsencrypt/renewal-hooks/deploy/reload-nginx
 chmod 755 /etc/letsencrypt/renewal-hooks/deploy/reload-nginx
