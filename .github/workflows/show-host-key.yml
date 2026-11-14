@@ -1,0 +1,26 @@
+# Разовая ручная задача: показывает публичный ключ хоста сервера в формате known_hosts.
+# Строку из лога копируем в секрет SSH_KNOWN_HOSTS. Секретов не читает, на сервер ничего не пишет.
+name: Показать ключ сервера
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: none
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Запросить ключ хоста
+        env:
+          HOST: ${{ vars.SSH_HOST }}
+        run: |
+          [ -n "$HOST" ] || { echo "::error::Не задана переменная SSH_HOST"; exit 1; }
+          ssh-keyscan -T 10 -t ed25519 "$HOST" 2>/dev/null > hostkey.txt
+          [ -s hostkey.txt ] || { echo "::error::Сервер не отдал ключ (порт 22 закрыт или сервер не запущен)"; exit 1; }
+          echo "Отпечаток:"; ssh-keygen -lf hostkey.txt
+          echo "--- ЭТУ СТРОКУ целиком скопировать в секрет SSH_KNOWN_HOSTS ---"
+          cat hostkey.txt
+          echo "--- конец ---"
