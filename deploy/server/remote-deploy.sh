@@ -13,6 +13,9 @@ cd "$REL"
 compose() { docker compose -p nika -f "$REL/deploy/compose.prod.yml" --env-file "$ENV_FILE" "$@"; }
 log() { echo "[deploy $SHA] $*"; }
 
+# nginx (www-data) должен пройти через releases/<sha> к public/. Списка папок он не получит (751), секреты лежат в shared/.
+chmod 751 "$ROOT/releases"; chmod 755 "$REL"
+
 log "статика: в public/ только файлы сайта, без сервера и служебного"
 rsync -a --delete \
   --exclude='/public' --exclude='/server' --exclude='/deploy' --exclude='/tools' --exclude='/.github' \

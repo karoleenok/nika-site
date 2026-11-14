@@ -98,7 +98,8 @@ APT
 systemctl enable --now unattended-upgrades
 
 log "папки сайта"
-install -d -o deploy -g deploy -m 750 /srv/nika /srv/nika/releases /srv/nika/shared
+install -d -o deploy -g deploy -m 750 /srv/nika /srv/nika/shared
+install -d -o deploy -g deploy -m 751 /srv/nika/releases   # 751: nginx проходит к статике, но не листает
 install -d -o deploy -g deploy -m 700 /srv/nika/backups
 install -d -m 755 /var/www/certbot /etc/nika
 # Заголовки по умолчанию до первой выкладки (выкладка перезапишет)
