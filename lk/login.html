@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../css/tokens.css?v=20261113b">
   <link rel="stylesheet" href="../css/base.css?v=20261113b">
   <link rel="stylesheet" href="../css/pages.css?v=20261113b">
-  <link rel="stylesheet" href="../css/lk.css?v=20261113b">
+  <link rel="stylesheet" href="../css/lk.css?v=20261115a">
 </head>
 <body class="lk lk--auth" data-wa-phone="79141636665" data-session-days="30">
 <a class="skip-link" href="#main">К содержимому</a>
@@ -24,9 +24,33 @@
     <a class="auth__logo" href="../index.html" aria-label="Ника Дупина, на главную"><img src="../assets/logo-hd.svg" width="97" height="53" alt="Н.Д."></a>
 
     <h1 class="display auth__title pg-in">Вход<br>в кабинет</h1>
-    <p class="auth__lead pg-in" style="--d:.06s">Пришлём код на&nbsp;почту, с&nbsp;которой была выполнена оплата.</p>
+    <p class="auth__lead pg-in" style="--d:.06s" data-lead data-lead-pass="Войди по&nbsp;почте и&nbsp;паролю, который прислала Ника.">Пришлём код на&nbsp;почту, с&nbsp;которой была выполнена оплата.</p>
 
-    <div class="auth__card pg-in" style="--d:.12s">
+    <div class="auth__card pg-in" style="--d:.12s" data-card>
+      <!-- Вход по почте и паролю одной формой: показывается первым, пока письма с кодом не ходят (решает сервер, /api/auth/config) -->
+      <form class="auth__step" data-step="login" novalidate hidden>
+        <label class="field">
+          <span class="field__label">Почта</span>
+          <input class="field__input" type="email" name="email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="name@mail.ru" required data-l-email>
+          <span class="field__err" data-err="lemail" role="alert"></span>
+        </label>
+        <label class="field">
+          <span class="field__label">Пароль</span>
+          <span class="field__pw">
+            <input class="field__input" type="password" name="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" maxlength="128" aria-describedby="lpass-err" required data-l-pass>
+            <button class="field__eye" type="button" aria-pressed="false" aria-label="Показать пароль" data-l-eye>показать</button>
+          </span>
+          <span class="field__err" id="lpass-err" data-err="lpass" role="alert"></span>
+        </label>
+        <label class="check">
+          <input type="checkbox" name="remember" checked data-l-remember>
+          <span class="check__box" aria-hidden="true"></span>
+          <span>Запомнить меня на&nbsp;<span data-days>30</span>&nbsp;дней на&nbsp;этом устройстве</span>
+        </label>
+        <button class="btn btn--red btn--block" type="submit">войти</button>
+        <p class="auth__hint">Нет пароля или не&nbsp;помнишь его? <a class="u" href="#" data-wa="Здравствуйте, Ника! Мне нужен пароль для входа в личный кабинет.">Напиши Нике</a>, она пришлёт новый. Нажимая «войти», ты&nbsp;соглашаешься с <a class="u" href="../legal/privacy.html">политикой обработки персональных данных</a>.</p>
+      </form>
+
       <!-- Шаг 1: почта -->
       <form class="auth__step" data-step="email" novalidate>
         <label class="field">
@@ -100,6 +124,6 @@
 </main>
 <!-- ПРОВЕРИТЬ: номер WhatsApp Ники (data-wa-phone), тот же, что на главной -->
 <script src="../js/api.js?v=20261113b"></script>
-<script src="../js/lk-auth.js?v=20261113b"></script>
+<script src="../js/lk-auth.js?v=20261115a"></script>
 </body>
 </html>

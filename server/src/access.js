@@ -26,7 +26,7 @@ export function accessView(row, now = new Date()) {
 
 // Общий кусок запроса: клиент + его текущее состояние доступа + когда ему последний раз напоминали о продлении
 export const CLIENT_SELECT = `
-  SELECT u.id, u.name, u.email, u.phone, u.note, u.created_at,
+  SELECT u.id, u.name, u.email, u.phone, u.note, u.created_at, u.password_hash IS NOT NULL AS has_password, u.password_temp,
          a.active_end, a.chain_start,
          l.ends_at AS last_end, l.closed_at AS last_closed_at, l.tariff_id, l.tariff_name, l.tariff_days,
          r.at AS last_remind_at
@@ -46,6 +46,8 @@ export function clientView(row, now = new Date()) {
   return {
     id: String(row.id), name: row.name, email: row.email, phone: row.phone, note: row.note,
     createdAt: row.created_at,
+    // есть ли пароль для входа и временный ли он (выдан из админки, клиент ещё не сменил)
+    hasPassword: !!row.has_password, passwordTemp: !!row.has_password && !!row.password_temp,
     // «Напомнили» держим 3 дня, потом снова можно напоминать
     reminded: !!row.last_remind_at && now - new Date(row.last_remind_at) < 3 * DAY,
     tariffId: row.tariff_id ? String(row.tariff_id) : null,

@@ -260,3 +260,16 @@ body.lk--auth { background: var(--c-ink); color: var(--c-white); }
   .vcard .badge--ok .ic, .vcard .badge--lock .ic { width: 14px; height: 14px; }
   .vcard__body { padding: 0 var(--sp-2) 0 0; }
 }
+
+/* ---------- Первый вход по временному паролю: окно «придумай свой пароль» ---------- */
+.gate { border: 0; padding: 0; background: var(--c-white); color: var(--c-ink); width: 100%; max-width: 100%; margin: auto 0 0; border-radius: var(--r-section) var(--r-section) 0 0; max-height: 92vh; max-height: 92svh; overflow: auto; }
+.gate::backdrop { background: rgba(14, 14, 14, .72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.gate[open] { animation: gate-in .35s var(--ease-out); }
+@keyframes gate-in { from { transform: translateY(40px); opacity: 0; } }
+.gate__in { display: grid; gap: var(--sp-4); padding: var(--inset) var(--inset) calc(var(--inset) + env(safe-area-inset-bottom, 0px)); }
+.gate__t { font-family: var(--f-display); font-weight: 700; text-transform: uppercase; font-size: var(--fs-pg-h2); line-height: .9; padding-top: .1em; }
+.gate__in .lk-p { margin-top: calc(-1 * var(--sp-2)); }
+.gate__alt { display: flex; justify-content: center; margin-top: calc(-1 * var(--sp-2)); }
+@media (min-width: 768px) { .gate { max-width: 520px; margin: auto; border-radius: var(--r-section); } .gate[open] { animation-name: gate-in-d; } }
+@keyframes gate-in-d { from { transform: scale(.96); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .gate[open] { animation: none; } }

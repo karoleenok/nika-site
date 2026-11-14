@@ -6,7 +6,7 @@ import { createS3 } from '../src/s3.js';
 import { buildApp } from '../src/app.js';
 import { migrate } from '../scripts/migrate.js';
 
-export async function setup() {
+export async function setup(extraEnv = {}) {
   const base = loadConfig();
   const url = new URL(base.databaseUrl); url.pathname = '/nika_test';
   const adminUrl = new URL(base.databaseUrl); adminUrl.pathname = '/postgres';
@@ -19,7 +19,7 @@ export async function setup() {
   const config = loadConfig({ ...process.env, DATABASE_URL: url.toString(),
     ROBOKASSA_LOGIN: process.env.ROBOKASSA_LOGIN || 'test-shop',
     ROBOKASSA_PASSWORD1: process.env.ROBOKASSA_PASSWORD1 || 'test-password-1',
-    ROBOKASSA_PASSWORD2: process.env.ROBOKASSA_PASSWORD2 || 'test-password-2', PAY_ONLINE: '1' });
+    ROBOKASSA_PASSWORD2: process.env.ROBOKASSA_PASSWORD2 || 'test-password-2', PAY_ONLINE: '1', ...extraEnv });
   const pool = createPool(config.databaseUrl);
   await migrate(pool, () => {});
   const mails = [];

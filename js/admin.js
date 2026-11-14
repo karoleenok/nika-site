@@ -95,6 +95,7 @@
       case 'client.update': return 'Изменены данные клиента';
       case 'client.note': return 'Изменена заметка о клиенте';
       case 'client.remind': return 'Отправлено напоминание о продлении';
+      case 'client.password': return m.reset ? 'Выдан новый пароль для входа в кабинет' : 'Задан пароль для входа в кабинет';
       case 'access.open': return 'Доступ открыт' + (e ? ' до ' + fmt(e) : '');
       case 'access.extend': return 'Доступ продлён' + (e ? ' до ' + fmt(e) : '');
       case 'access.undo': return 'Отменено последнее продление';
@@ -129,7 +130,9 @@
   const dlg = n => $('[data-dlg="' + n + '"]');
   const openDlg = n => { const d = dlg(n); if (d.showModal) d.showModal(); else d.setAttribute('open', ''); return d; };
   $$('dialog').forEach(d => {
-    d.addEventListener('click', e => { if (e.target === d) d.close(); });
+    /* data-sticky: окно нельзя закрыть мимо кнопки (в нём пароль, который показывается один раз) */
+    d.addEventListener('click', e => { if (e.target === d && !d.hasAttribute('data-sticky')) d.close(); });
+    d.addEventListener('cancel', e => { if (d.hasAttribute('data-sticky')) e.preventDefault(); });
     $$('[data-close]', d).forEach(b => b.addEventListener('click', () => d.close()));
   });
   let confirmFn = null;
@@ -295,6 +298,7 @@
     $('[data-c-remind]').textContent = c.reminded ? 'написать ещё раз о продлении' : 'напомнить о продлении';
     $('[data-c-remind]').hidden = c.state !== 'warn' && c.state !== 'bad';
     $('[data-c-note]').value = c.note || '';
+    drawPass(c);
     const f = $('[data-c-form]'); f.elements.name.value = c.name; f.elements.email.value = c.email; f.elements.phone.value = c.phone; $('[data-c-err]').textContent = '';
     $('[data-c-pay]').textContent = ''; $('[data-c-hist]').textContent = '';
     const mine = c.id;
@@ -364,6 +368,57 @@
       await reloadClient(); toast('Отменено');
     });
   });
+  /* ---------- Пароль клиента: сервер придумывает, показываем один раз ---------- */
+  const fcp = $('[data-form="cpass"]'), cpAsk = $('[data-dcp-ask]'), cpDone = $('[data-dcp-done]'), cpPw = $('[data-dcp-pw]'), cpMsg = $('[data-dcp-msg]');
+  const loginUrl = location.origin + '/lk/login.html';
+  let cpText = '';
+  const passMsg = (c, pw, must) => 'Привет, ' + first(c.name) + '! Твой вход в личный кабинет:\n' + loginUrl + '\n\nПочта: ' + c.email + '\nПароль: ' + pw +
+    (must ? '\n\nПри первом входе кабинет попросит придумать свой пароль.' : '') + '\nЕсли не получится войти, напиши мне.';
+  const drawPass = c => {
+    const chip = $('[data-c-passchip]');
+    $('[data-c-passstate]').hidden = !c.hasPassword; chip.className = 'stat stat--' + (c.passwordTemp ? 'warn' : 'ok'); chip.textContent = c.passwordTemp ? 'временный пароль' : 'пароль задан';
+    $('[data-c-passnote]').textContent = !c.hasPassword ? 'Пароля пока нет. Задай его и отправь клиенту: он войдёт по почте и паролю, письмо с кодом не нужно.'
+      : c.passwordTemp ? 'Клиент ещё не сменил пароль на свой. Если пароль потерялся, выдай новый.'
+      : 'Клиент входит по своему паролю. Если он его забыл, выдай новый.';
+    $('[data-c-pass]').textContent = c.hasPassword ? 'выдать новый пароль' : 'задать пароль';
+  };
+  const cpWipe = () => { cpPw.textContent = ''; cpText = ''; cpMsg.textContent = ''; dlg('cpass').removeAttribute('data-sticky'); };
+  dlg('cpass').addEventListener('close', cpWipe);
+  $('[data-c-pass]').addEventListener('click', () => {
+    if (!cur) return;
+    cpWipe(); cpAsk.hidden = false; cpDone.hidden = true;
+    $('[data-dcp-title]').textContent = cur.hasPassword ? 'Выдать новый пароль' : 'Задать пароль';
+    $('[data-dcp-ok]').textContent = cur.hasPassword ? 'выдать' : 'задать';
+    $('[data-dcp-text]').textContent = 'Сайт сам придумает пароль для ' + cur.name + ' и покажет его один раз. ' +
+      (cur.hasPassword ? 'Прежний пароль перестанет работать, на всех устройствах клиенту придётся войти заново.' : 'Клиент войдёт по почте ' + cur.email + ' и этому паролю.');
+    $('[data-dcp-must]').checked = true; $('[data-dcp-err]').textContent = ''; openDlg('cpass');
+  });
+  fcp.addEventListener('submit', async e => {
+    e.preventDefault(); if (!cpAsk || cpAsk.hidden) return;
+    const c = cur, btn = $('[data-dcp-ok]'), must = $('[data-dcp-must]').checked; btn.disabled = true;
+    const r = await api.post('/api/admin/clients/' + c.id + '/password', { mustChange: must });
+    btn.disabled = false;
+    if (!r.ok) { if (r.status === 401) return fail(r); $('[data-dcp-err]').textContent = r.data.error; return; }
+    cpText = passMsg({ name: c.name, email: r.data.email }, r.data.password, must);
+    $('[data-dcp-title]').textContent = 'Пароль готов';
+    $('[data-dcp-url]').textContent = loginUrl.replace(/^https?:\/\//, ''); $('[data-dcp-email]').textContent = r.data.email; cpPw.textContent = r.data.password;
+    $('[data-dcp-wa]').hidden = !waDigits(c.phone);
+    cpAsk.hidden = true; cpDone.hidden = false; dlg('cpass').setAttribute('data-sticky', '');
+    ($('[data-dcp-wa]').hidden ? $('[data-dcp-copy]') : $('[data-dcp-wa]')).focus();
+    c.hasPassword = true; c.passwordTemp = must; drawPass(c);
+  });
+  $('[data-dcp-wa]').addEventListener('click', () => { if (cur && cpText && contact(cur, cpText)) cpMsg.textContent = 'WhatsApp открыт. Проверь, что сообщение ушло.'; });
+  $('[data-dcp-copy]').addEventListener('click', async () => {
+    if (!cpText) return;
+    let ok = false;
+    try { await navigator.clipboard.writeText(cpText); ok = true; } catch (_) {
+      const ta = document.createElement('textarea'); ta.value = cpText; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      dlg('cpass').appendChild(ta); ta.select(); try { ok = document.execCommand('copy'); } catch (_) {} ta.remove();
+    }
+    cpMsg.textContent = ok ? 'Скопировано. Вставь сообщение в чат с клиентом.' : 'Не получилось скопировать. Выдели пароль и скопируй вручную.';
+  });
+  $('[data-dcp-finish]').addEventListener('click', async () => { dlg('cpass').close(); await reloadClient(); toast('Пароль задан'); });
+
   const fcl = $('[data-form="close"]');
   $('[data-c-close]').addEventListener('click', () => {
     if (!cur) return;

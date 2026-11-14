@@ -314,3 +314,17 @@ body:has(dialog[open]) { overflow: hidden; }
 .lead__del { justify-self: start; min-height: 44px; padding: 0; color: var(--c-muted); font-size: var(--fs-small); text-decoration: underline; text-underline-offset: .18em; }
 @media (hover: hover) { .lead__del:hover { color: var(--c-red); } }
 .lead__tel { justify-self: start; display: inline-flex; align-items: center; min-height: 44px; margin-block: -10px; font-size: var(--fs-small); text-decoration: underline; text-underline-offset: .18em; }
+
+/* ---------- Пароль клиента: кнопка в карточке и окно с паролем ---------- */
+.adm-pass { margin-top: var(--sp-4); }
+.pw__state[hidden] { display: none; }
+.sheet__grp { display: grid; gap: var(--sp-4); }
+.sheet__grp[hidden] { display: none; }
+.sheet__ok { color: var(--c-ok); font-size: var(--fs-small); line-height: 1.35; }
+.sheet__ok:empty { display: none; }
+.cred { display: grid; gap: var(--sp-3); padding: var(--sp-4); border-radius: var(--r-card); background: var(--c-paper); }
+.cred > div { display: grid; gap: 2px; min-width: 0; }
+.cred dt { color: var(--c-muted); font-size: var(--fs-tiny); line-height: 1.3; }
+.cred dt, .cred dd { margin: 0; }
+.cred dd { font-size: var(--fs-body); line-height: 1.3; font-weight: 450; overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
+.cred .cred__pw { font-size: var(--fs-card-t); font-weight: 600; letter-spacing: .02em; font-variant-numeric: tabular-nums; }

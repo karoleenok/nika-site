@@ -9,8 +9,9 @@
   const DAYS = Number(document.body.dataset.sessionDays) || 30;
 
   const phone = (document.body.dataset.waPhone || '').replace(/\D/g, '');
-  const wa = $('[data-wa]');
-  if (wa && phone) { wa.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(wa.dataset.wa); wa.target = '_blank'; wa.rel = 'noopener noreferrer'; }
+  document.querySelectorAll('[data-wa]').forEach(wa => {
+    if (phone) { wa.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(wa.dataset.wa); wa.target = '_blank'; wa.rel = 'noopener noreferrer'; }
+  });
   document.querySelectorAll('[data-days]').forEach(n => { n.textContent = String(DAYS); });
 
   const steps = { login: $('[data-step="login"]'), email: $('[data-step="email"]'), code: $('[data-step="code"]'), password: $('[data-step="password"]'), link: $('[data-step="link"]') };
@@ -102,7 +103,8 @@
     code.select();
   });
 
-  /* ---------- Админка: вход по почте и паролю ---------- */
+  /* ---------- Вход по почте и паролю одной формой ----------
+     Админка: всегда основной способ. Кабинет: основной, пока письма с кодом не ходят (сервер отвечает mail: false). */
   if (steps.login) {
     const le = $('[data-l-email]'), lp = $('[data-l-pass]'), lerrE = $('[data-err="lemail"]'), lerrP = $('[data-err="lpass"]');
     const eyeL = $('[data-l-eye]');
@@ -123,9 +125,22 @@
       if (r.ok) { location.replace(GO); return; }
       setErr(lp, lerrP, r.data.error); lp.select();
     });
-    $('[data-l-code]').addEventListener('click', () => { email.value = le.value.trim(); show('email'); email.focus(); });
-    $('[data-e-back]').addEventListener('click', () => { le.value = email.value.trim(); show('login'); lp.focus(); });
-    show('login');
+    const toCode = $('[data-l-code]'), back = $('[data-e-back]');
+    if (toCode) toCode.addEventListener('click', () => { email.value = le.value.trim(); show('email'); email.focus(); });
+    if (back) back.addEventListener('click', () => { le.value = email.value.trim(); show('login'); lp.focus(); });
+    if (KIND === 'admin') show('login');
+    else if (urlToken === null) {
+      /* Пока ждём ответ, карточку не показываем: иначе форма «получить код» мелькнёт и сменится */
+      const card = $('[data-card]'), lead = $('[data-lead]');
+      card.style.visibility = 'hidden';
+      const done = mailOn => {
+        if (!card.style.visibility) return;
+        card.style.visibility = '';
+        if (mailOn === false) { if (lead) lead.textContent = lead.dataset.leadPass; show('login'); }
+      };
+      API.get('/api/auth/config').then(r => done(r.ok ? r.data.mail : true));
+      setTimeout(() => done(true), 4000);
+    }
   }
 
   /* ---------- Вход по паролю (необязательный, задаётся в профиле кабинета) ---------- */

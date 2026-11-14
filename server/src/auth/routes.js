@@ -1,12 +1,13 @@
 import { newToken, hashToken, newCode, hashCode, sameBytes, normEmail, validEmail } from './crypto.js';
 import { cookieName, cookieOptions, createSession, readSession, deleteSession, deleteOtherUserSessions } from './sessions.js';
 import { hashPassword, checkPassword, burnTime, passwordProblem } from './password.js';
-import { Limiter, CODE_LIMITS } from './limits.js';
+import { Limiter, CODE_LIMITS, PASS_LIMITS } from './limits.js';
 import { loginCodeMail, passwordChangedMail } from '../mail.js';
 import { tx } from '../db.js';
 
 const CODE_TTL_MIN = 10, LINK_TTL_MIN = 15, CODE_MAX_ATTEMPTS = 5;
-const GENERIC_PASS = 'Неверная почта или пароль. Можно войти по коду.';
+const GENERIC_PASS = 'Неверная почта или пароль.';
+const minutes = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'минуту' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'минуты' : 'минут'}`;
 const BAD_CODE = 'Код неверный или устарел. Запроси новый.';
 
 const bad = (reply, status, error, extra = {}) => reply.code(status).send({ error, ...extra });
@@ -14,9 +15,10 @@ const kindOf = (v) => (v === 'admin' ? 'admin' : 'user');
 
 export default async function authRoutes(app, { config, pool, mailer }) {
   const secure = config.publicUrl.startsWith('https://');
-  const passByEmail = new Limiter({ max: 5, windowMs: 15 * 60e3 });
-  const passByIp = new Limiter({ max: 20, windowMs: 15 * 60e3 });
-  const sweep = setInterval(() => { passByEmail.sweep(); passByIp.sweep(); }, 60e3);
+  const passByPair = new Limiter(PASS_LIMITS.perPair);
+  const passByIp = new Limiter(PASS_LIMITS.perIp);
+  const passByEmail = new Limiter(PASS_LIMITS.perEmail);
+  const sweep = setInterval(() => { passByPair.sweep(); passByIp.sweep(); passByEmail.sweep(); }, 60e3);
   sweep.unref();
   app.addHook('onClose', async () => clearInterval(sweep));
 
@@ -53,6 +55,12 @@ export default async function authRoutes(app, { config, pool, mailer }) {
     const s = await createSession(db, { kind, id, persistent: !!remember });
     setCookie(reply, kind, s.token, s.maxAgeMs);
   }
+
+  // Что показывать на экране входа: если почта не настроена, клиент входит по почте и паролю от Ники
+  app.get('/api/auth/config', async (req, reply) => {
+    reply.header('cache-control', 'no-store');
+    return { mail: config.mailOn };
+  });
 
   // ---------- 1. Получить код ----------
   app.post('/api/auth/code', async (req, reply) => {
@@ -149,13 +157,15 @@ export default async function authRoutes(app, { config, pool, mailer }) {
     const kind = kindOf(req.body?.kind);
     const pw = String(req.body?.password ?? '');
     if (!validEmail(email) || !pw || pw.length > 128) return bad(reply, 400, GENERIC_PASS);
-    if (passByEmail.blocked(email) || passByIp.blocked(req.ip)) return bad(reply, 429, 'Слишком много попыток. Подожди 15 минут или войди по коду.');
+    const pair = `${email}|${req.ip}`;
+    const stop = [[passByPair, pair], [passByIp, req.ip], [passByEmail, email]].find(([l, k]) => l.blocked(k));
+    if (stop) return bad(reply, 429, `Слишком много попыток. Подожди ${minutes(stop[0].waitMin(stop[1]))} и попробуй снова.`);
     const table = kind === 'admin' ? 'admins' : 'users';
     const { rows } = await pool.query(`SELECT id, password_hash FROM ${table} WHERE email = $1 ${kind === 'admin' ? 'AND active' : ''}`, [email]);
     const u = rows[0];
     const ok = u?.password_hash ? await checkPassword(u.password_hash, pw) : (await burnTime(pw), false);
-    if (!ok) { passByEmail.hit(email); passByIp.hit(req.ip); return bad(reply, 400, GENERIC_PASS); }
-    passByEmail.clear(email);
+    if (!ok) { passByPair.hit(pair); passByIp.hit(req.ip); passByEmail.hit(email); return bad(reply, 400, GENERIC_PASS); }
+    passByPair.clear(pair);
     await tx(pool, async (c) => {
       await startSession(c, reply, kind, u.id, req.body?.remember);
       if (kind === 'admin') await c.query(`INSERT INTO audit_log (admin_id, action) VALUES ($1, 'login')`, [u.id]);
@@ -174,9 +184,11 @@ export default async function authRoutes(app, { config, pool, mailer }) {
 
   // ---------- Кто я ----------
   app.get('/api/me', { preHandler: app.requireUser }, async (req, reply) => {
-    const { rows } = await pool.query('SELECT name, email, password_hash IS NOT NULL AS has_password FROM users WHERE id = $1', [req.auth.id]);
+    const { rows } = await pool.query('SELECT name, email, password_hash IS NOT NULL AS has_password, password_temp FROM users WHERE id = $1', [req.auth.id]);
     reply.header('cache-control', 'no-store');
-    return { name: rows[0].name, email: rows[0].email, hasPassword: rows[0].has_password };
+    // mustChangePassword: пароль выдала Ника, кабинет попросит придумать свой
+    // passwordOnly: письма с кодом не ходят, пароль — единственный способ входа
+    return { name: rows[0].name, email: rows[0].email, hasPassword: rows[0].has_password, mustChangePassword: rows[0].has_password && rows[0].password_temp, passwordOnly: !config.mailOn };
   });
 
   app.get('/api/admin/me', async (req, reply) => {
@@ -190,7 +202,7 @@ export default async function authRoutes(app, { config, pool, mailer }) {
     const cur = String(req.body?.current ?? ''), pw = String(req.body?.password ?? '');
     const { rows } = await pool.query('SELECT password_hash FROM admins WHERE id = $1', [req.admin.id]);
     if (rows[0].password_hash && !(await checkPassword(rows[0].password_hash, cur))) {
-      if (passByIp.blocked(req.ip)) return bad(reply, 429, 'Слишком много попыток. Подожди 15 минут.');
+      if (passByIp.blocked(req.ip)) return bad(reply, 429, `Слишком много попыток. Подожди ${minutes(passByIp.waitMin(req.ip))}.`);
       passByIp.hit(req.ip);
       return bad(reply, 400, 'Текущий пароль неверный.');
     }
@@ -209,22 +221,26 @@ export default async function authRoutes(app, { config, pool, mailer }) {
   // После любого изменения: выход на других устройствах и письмо клиенту
   app.put('/api/me/password', { preHandler: app.requireUser }, async (req, reply) => {
     const pw = String(req.body?.password ?? '');
-    const { rows } = await pool.query('SELECT email FROM users WHERE id = $1', [req.auth.id]);
+    const { rows } = await pool.query('SELECT email, password_hash, password_temp FROM users WHERE id = $1', [req.auth.id]);
     const problem = passwordProblem(pw, rows[0].email);
     if (problem) return bad(reply, 400, problem);
+    // Временный пароль от Ники нельзя «сменить» на него же
+    if (rows[0].password_temp && rows[0].password_hash && await checkPassword(rows[0].password_hash, pw)) return bad(reply, 400, 'Это пароль, который прислала Ника. Придумай свой.');
     const h = await hashPassword(pw);
     await tx(pool, async (c) => {
-      await c.query('UPDATE users SET password_hash = $1 WHERE id = $2', [h, req.auth.id]);
+      await c.query('UPDATE users SET password_hash = $1, password_temp = false WHERE id = $2', [h, req.auth.id]);
       await deleteOtherUserSessions(c, req.auth.id, req.auth.sessionId);
     });
     mailer.sendLater({ to: rows[0].email, ...passwordChangedMail({ removed: false }) });
     return { ok: true };
   });
 
-  app.delete('/api/me/password', { preHandler: app.requireUser }, async (req) => {
+  app.delete('/api/me/password', { preHandler: app.requireUser }, async (req, reply) => {
+    // Без почты пароль — единственный вход: убрав его, клиент не сможет вернуться в кабинет
+    if (!config.mailOn) return bad(reply, 400, 'Сейчас вход только по паролю, убрать его нельзя. Пароль можно сменить.');
     const { rows } = await pool.query('SELECT email FROM users WHERE id = $1', [req.auth.id]);
     await tx(pool, async (c) => {
-      await c.query('UPDATE users SET password_hash = NULL WHERE id = $1', [req.auth.id]);
+      await c.query('UPDATE users SET password_hash = NULL, password_temp = false WHERE id = $1', [req.auth.id]);
       await deleteOtherUserSessions(c, req.auth.id, req.auth.sessionId);
     });
     mailer.sendLater({ to: rows[0].email, ...passwordChangedMail({ removed: true }) });

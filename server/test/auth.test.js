@@ -146,7 +146,7 @@ test('сессия: без куки 401, с кукой профиль; выхо�
   const c = await login('anna@example.com');
   const me = await t.api('GET', '/api/me', null, { cookie: c.header });
   assert.equal(me.statusCode, 200);
-  assert.deepEqual(me.json(), { name: 'Анна', email: 'anna@example.com', hasPassword: false });
+  assert.deepEqual(me.json(), { name: 'Анна', email: 'anna@example.com', hasPassword: false, mustChangePassword: false, passwordOnly: false });
   await t.api('POST', '/api/auth/logout', {}, { cookie: c.header });
   assert.equal((await t.api('GET', '/api/me', null, { cookie: c.header })).statusCode, 401, 'старая кука больше не работает');
 });
@@ -241,12 +241,23 @@ test('пароль: смена и удаление закрывают сесси
   assert.equal((await t.api('POST', '/api/auth/password', { email: 'pwuser@example.com', password: 'Другой пароль 7' }, { ip: t.freshIp() })).statusCode, 400, 'старым паролем не войти');
 });
 
-test('пароль: после 5 ошибок на почту вход паролем закрыт на 15 минут', async () => {
+test('пароль: 10 ошибок с одного адреса закрывают вход на 5 минут только этому адресу', async () => {
   const c = await login('bob@example.com');
   await t.api('PUT', '/api/me/password', { password: 'Боб и море 2026' }, { cookie: c.header });
-  for (let i = 0; i < 5; i++) await t.api('POST', '/api/auth/password', { email: 'bob@example.com', password: 'nope' }, { ip: t.freshIp() });
-  const r = await t.api('POST', '/api/auth/password', { email: 'bob@example.com', password: 'Боб и море 2026' }, { ip: t.freshIp() });
+  const ip = t.freshIp();
+  const tryPw = (password, from) => t.api('POST', '/api/auth/password', { email: 'bob@example.com', password }, { ip: from });
+  for (let i = 0; i < 9; i++) assert.equal((await tryPw('nope', ip)).statusCode, 400);
+  assert.equal((await tryPw('Боб и море 2026', ip)).statusCode, 200, 'после 9 ошибок верный пароль ещё пускает');
+  for (let i = 0; i < 10; i++) await tryPw('nope', ip);
+  const r = await tryPw('Боб и море 2026', ip);
   assert.equal(r.statusCode, 429);
+  assert.match(r.json().error, /Подожди 5 минут/);
+  assert.equal((await tryPw('Боб и море 2026', t.freshIp())).statusCode, 200, 'чужие ошибки не запирают владельца на другом адресе');
+});
+
+test('пароль: общий потолок на почту со всех адресов (перебор с множества адресов)', async () => {
+  for (let i = 0; i < 50; i++) await t.api('POST', '/api/auth/password', { email: 'flood@example.com', password: 'nope' }, { ip: t.freshIp() });
+  assert.equal((await t.api('POST', '/api/auth/password', { email: 'flood@example.com', password: 'nope' }, { ip: t.freshIp() })).statusCode, 429);
 });
 
 test('«не помню пароль»: код по-прежнему работает', async () => {

@@ -224,6 +224,42 @@
   /* ---------- Пароль для входа (необязательный) ----------
      ДЕМО: в браузере лежит только SHA-256. На сервере: хеш argon2id или bcrypt, лимит попыток, смена пароля
      только после ввода текущего или свежего кода из письма, после смены закрыть сессии на других устройствах. */
+  const COMMON = ['12345678', '123456789', '1234567890', 'qwertyui', 'qwerty123', 'password', 'password1', '11111111', '00000000', 'йцукенгш', 'qazwsxedc', '987654321'];
+  const check = pw => {
+    if (pw.length < 8) return 'Пароль короче 8 символов.';
+    if (/^(.)\1+$/.test(pw) || COMMON.includes(pw.toLowerCase())) return 'Слишком простой пароль, такие подбирают первыми. Придумай другой.';
+    const local = (D.client.email || '').split('@')[0].toLowerCase();
+    if (local.length > 2 && pw.toLowerCase().includes(local)) return 'В пароле не должно быть части почты.';
+    return '';
+  };
+
+  /* ---------- Первый вход по паролю от Ники: сначала свой пароль, потом кабинет ---------- */
+  (() => {
+    const g = $('[data-gate]'); if (!g || !me.mustChangePassword) return;
+    const form = $('[data-gate-form]', g), p1 = $('[data-gate-pw1]', g), p2 = $('[data-gate-pw2]', g), err = $('[data-gate-err]', g), eye = $('[data-gate-eye]', g);
+    $('[data-gate-user]', g).value = me.email;
+    g.addEventListener('cancel', e => e.preventDefault());
+    eye.addEventListener('click', () => {
+      const on = p1.type === 'password'; p1.type = on ? 'text' : 'password'; p2.type = p1.type;
+      eye.textContent = on ? 'скрыть' : 'показать'; eye.setAttribute('aria-pressed', String(on)); eye.setAttribute('aria-label', on ? 'Скрыть пароль' : 'Показать пароль');
+    });
+    $('[data-gate-out]', g).addEventListener('click', () => window.NikaApi.logout('user'));
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      p1.removeAttribute('aria-invalid'); p2.removeAttribute('aria-invalid');
+      const weak = check(p1.value), bad = weak || (p1.value !== p2.value ? 'Пароли не совпадают.' : '');
+      if (bad) { const f = weak ? p1 : p2; err.textContent = bad; f.setAttribute('aria-invalid', 'true'); f.focus(); return; }
+      const btn = form.querySelector('[type="submit"]'); btn.disabled = true;
+      const r = await window.NikaApi.put('/api/me/password', { password: p1.value });
+      btn.disabled = false;
+      if (r.status === 401) { location.replace('login.html'); return; }
+      if (!r.ok) { err.textContent = r.data.error; p1.setAttribute('aria-invalid', 'true'); p1.focus(); return; }
+      form.reset(); g.close();
+    });
+    if (g.showModal) g.showModal(); else g.setAttribute('open', '');
+    p1.focus();
+  })();
+
   (() => {
     const box = $('[data-pw]'); if (!box) return;
     const form = $('[data-pw-form]', box), actions = $('[data-pw-actions]', box), conf = $('[data-pw-confirm]', box);
@@ -232,20 +268,15 @@
     const p1 = $('[data-pw1]', box), p2 = $('[data-pw2]', box), eye = $('[data-pw-eye]', box);
     let hasPw = !!me.hasPassword;
     const has = () => hasPw;
-    const COMMON = ['12345678', '123456789', '1234567890', 'qwertyui', 'qwerty123', 'password', 'password1', '11111111', '00000000', 'йцукенгш', 'qazwsxedc', '987654321'];
-    const check = pw => {
-      if (pw.length < 8) return 'Пароль короче 8 символов.';
-      if (/^(.)\1+$/.test(pw) || COMMON.includes(pw.toLowerCase())) return 'Слишком простой пароль, такие подбирают первыми. Придумай другой.';
-      const local = (D.client.email || '').split('@')[0].toLowerCase();
-      if (local.length > 2 && pw.toLowerCase().includes(local)) return 'В пароле не должно быть части почты.';
-      return '';
-    };
+    /* passwordOnly: письма с кодом пока не ходят, пароль — единственный вход, убрать его нельзя */
+    const only = !!me.passwordOnly;
     const draw = () => {
       const on = has();
       chip.hidden = !on;
       openBtn.textContent = on ? 'сменить пароль' : 'задать пароль';
-      rmBtn.hidden = !on;
-      lead.textContent = on ? 'Ты можешь входить по паролю. Если забудешь его, на экране входа нажми «не помню пароль»: придёт код.'
+      rmBtn.hidden = !on || only;
+      lead.textContent = only ? 'Ты входишь по почте и паролю. Если забудешь пароль, напиши Нике: она пришлёт новый.'
+                       : on ? 'Ты можешь входить по паролю. Если забудешь его, на экране входа нажми «не помню пароль»: придёт код.'
                             : 'Необязательно. Сейчас ты входишь по коду или ссылке из письма. Если удобнее пароль, задай его: код понадобится, только когда ты его забудешь.';
       $('[data-pw-l1]', box).textContent = on ? 'Новый пароль' : 'Пароль';
     };

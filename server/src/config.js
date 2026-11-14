@@ -33,6 +33,9 @@ export function loadConfig(env = process.env) {
       replyTo: env.MAIL_REPLY_TO || '',
       adminNotify: env.ADMIN_NOTIFY_EMAIL || '',
     }),
+    // Ходят ли письма. На бою почта считается выключенной, пока не заданы SMTP_USER и SMTP_PASSWORD
+    // (или пока MAIL_ENABLED=0): тогда вход в кабинет по почте и паролю, который выдаёт Ника.
+    mailOn: env.MAIL_ENABLED === '0' ? false : env.MAIL_ENABLED === '1' ? true : (!prod || !!(env.SMTP_USER && env.SMTP_PASSWORD)),
     // Промокод на анализы: отдаётся только тому, чья анкета сохранена по настоящему ключу заявки. Не в публичном JS.
     quiz: Object.freeze({
       promoCode: (env.QUIZ_PROMO_CODE || '').trim().slice(0, 40),

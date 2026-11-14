@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../css/tokens.css?v=20261113b">
   <link rel="stylesheet" href="../css/base.css?v=20261113b">
   <link rel="stylesheet" href="../css/pages.css?v=20261113b">
-  <link rel="stylesheet" href="../css/lk.css?v=20261113b">
+  <link rel="stylesheet" href="../css/lk.css?v=20261115a">
 </head>
 <body class="lk" data-wa-phone="79141636665">
 <!-- ПРОВЕРИТЬ: номер WhatsApp Ники (data-wa-phone), тот же, что на главной -->
@@ -197,8 +197,32 @@
 
 </div>
 
+<!-- Первый вход по паролю от Ники: просим придумать свой. Закрыть окно нельзя, можно только сменить пароль или выйти. -->
+<dialog class="gate" data-gate aria-labelledby="gate-t">
+  <form class="gate__in" data-gate-form novalidate>
+    <h2 class="gate__t" id="gate-t">Придумай свой пароль</h2>
+    <p class="lk-p">Этот вход был по&nbsp;паролю, который прислала Ника. Замени его на&nbsp;свой, и&nbsp;кабинет откроется.</p>
+    <input type="text" name="username" autocomplete="username" hidden data-gate-user>
+    <label class="field">
+      <span class="field__label">Новый пароль</span>
+      <span class="field__pw">
+        <input class="field__input" type="password" name="pw1" autocomplete="new-password" autocapitalize="none" spellcheck="false" maxlength="128" aria-describedby="gate-hint gate-err" data-gate-pw1>
+        <button class="field__eye" type="button" aria-pressed="false" aria-label="Показать пароль" data-gate-eye>показать</button>
+      </span>
+      <span class="field__hint" id="gate-hint">Не&nbsp;короче 8&nbsp;символов. Длинная фраза надёжнее короткого слова с&nbsp;цифрами.</span>
+    </label>
+    <label class="field">
+      <span class="field__label">Повтори пароль</span>
+      <input class="field__input" type="password" name="pw2" autocomplete="new-password" autocapitalize="none" spellcheck="false" maxlength="128" data-gate-pw2>
+      <span class="field__err" id="gate-err" role="alert" data-gate-err></span>
+    </label>
+    <button class="btn btn--red btn--block" type="submit">сохранить и открыть кабинет</button>
+    <div class="gate__alt"><button class="linkbtn" type="button" data-gate-out>выйти</button></div>
+  </form>
+</dialog>
+
 <script src="../js/api.js?v=20261113b"></script>
 <script src="../js/lk-data.js?v=20261113b"></script>
-<script src="../js/lk.js?v=20261113b"></script>
+<script src="../js/lk.js?v=20261115a"></script>
 </body>
 </html>

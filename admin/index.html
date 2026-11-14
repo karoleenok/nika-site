@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="../css/tokens.css?v=20261113b">
   <link rel="stylesheet" href="../css/base.css?v=20261113b">
   <link rel="stylesheet" href="../css/pages.css?v=20261113b">
-  <link rel="stylesheet" href="../css/lk.css?v=20261113b">
-  <link rel="stylesheet" href="../css/admin.css?v=20261113b">
+  <link rel="stylesheet" href="../css/lk.css?v=20261115a">
+  <link rel="stylesheet" href="../css/admin.css?v=20261115a">
 </head>
 <body class="lk adm">
 <svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
@@ -126,6 +126,13 @@
       <div class="lk-block">
         <button class="btn btn--line-dark btn--block" type="button" data-c-remind>напомнить о продлении</button>
         <button class="btn btn--line-dark btn--block adm-gap" type="button" data-c-wa>написать в WhatsApp</button>
+      </div>
+
+      <div class="lk-block lk-card">
+        <h2 class="lk-h2 lk-h2--in">Вход в кабинет</h2>
+        <p class="lk-p" data-c-passnote></p>
+        <div class="pw__state" data-c-passstate hidden><span class="stat" data-c-passchip></span></div>
+        <button class="btn btn--line-dark btn--block adm-pass" type="button" data-c-pass>задать пароль</button>
       </div>
 
       <div class="lk-block" hidden><!-- фаза 3: когда видео будут на сервере -->
@@ -432,6 +439,37 @@
   </form>
 </dialog>
 
+<dialog class="sheet" data-dlg="cpass" aria-labelledby="dcp-t">
+  <form class="sheet__in" data-form="cpass" method="dialog" novalidate>
+    <h2 class="sheet__t" id="dcp-t" data-dcp-title>Задать пароль</h2>
+    <div class="sheet__grp" data-dcp-ask>
+      <p class="sheet__p" data-dcp-text></p>
+      <label class="check">
+        <input type="checkbox" checked data-dcp-must>
+        <span class="check__box" aria-hidden="true"></span>
+        <span>Попросить клиента придумать свой пароль при первом входе</span>
+      </label>
+      <span class="field__err" role="alert" data-dcp-err></span>
+      <div class="sheet__act">
+        <button class="btn btn--line-dark" type="button" data-close>отмена</button>
+        <button class="btn btn--red" type="submit" data-dcp-ok>задать</button>
+      </div>
+    </div>
+    <div class="sheet__grp" data-dcp-done hidden>
+      <p class="sheet__p">Пароль виден только сейчас. Отправь его клиенту, пока окно открыто: потом посмотреть нельзя, можно только выдать новый.</p>
+      <dl class="cred">
+        <div><dt>Страница входа</dt><dd data-dcp-url></dd></div>
+        <div><dt>Почта</dt><dd data-dcp-email></dd></div>
+        <div><dt>Пароль</dt><dd class="cred__pw" data-dcp-pw></dd></div>
+      </dl>
+      <button class="btn btn--red btn--block" type="button" data-dcp-wa>отправить в WhatsApp</button>
+      <button class="btn btn--line-dark btn--block" type="button" data-dcp-copy>скопировать сообщение</button>
+      <p class="sheet__ok" role="status" aria-live="polite" data-dcp-msg></p>
+      <button class="btn btn--line-dark btn--block" type="button" data-dcp-finish>готово, я отправила</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="sheet" data-dlg="newclient" aria-labelledby="dn-t">
   <form class="sheet__in" data-form="newclient" method="dialog" novalidate>
     <h2 class="sheet__t" id="dn-t">Новый клиент</h2>
@@ -477,8 +515,8 @@
 
 <script src="../js/api.js?v=20261113b"></script>
 <script src="../js/lk-data.js?v=20261113b"></script>
-<script src="../js/admin-data.js?v=20261113b"></script>
+<script src="../js/admin-data.js?v=20261115a"></script>
 <script src="../js/uploader.js?v=20261113b"></script>
-<script src="../js/admin.js?v=20261114c"></script>
+<script src="../js/admin.js?v=20261115a"></script>
 </body>
 </html>

@@ -3,6 +3,8 @@
 import { tx } from '../db.js';
 import { normEmail, validEmail } from '../auth/crypto.js';
 import { CLIENT_SELECT, clientView, audit, DAY, MAX_FUTURE_DAYS } from '../access.js';
+import { hashPassword } from '../auth/password.js';
+import { generateClientPassword } from '../auth/genpass.js';
 
 const bad = (reply, status, error) => reply.code(status).send({ error });
 const idOf = (v) => (/^\d{1,15}$/.test(String(v)) ? String(v) : null);
@@ -93,6 +95,27 @@ export default async function adminRoutes(app, { pool }) {
     if (!id || !(await pool.query('SELECT 1 FROM users WHERE id = $1', [id])).rowCount) return bad(reply, 404, 'Клиент не найден');
     await audit(pool, req.admin.id, 'client.remind', { userId: id });
     return { ok: true };
+  });
+
+  // Задать клиенту пароль для входа (когда письма с кодом не ходят или клиенту так удобнее).
+  // Пароль придумывает сервер и отдаёт один раз в этом ответе; в базе только хеш, в журнале только факт.
+  // mustChange (по умолчанию да): кабинет при первом входе попросит придумать свой пароль.
+  app.post('/api/admin/clients/:id/password', async (req, reply) => {
+    noStore(reply);
+    const id = idOf(req.params.id);
+    if (!id) return bad(reply, 404, 'Клиент не найден');
+    const mustChange = req.body?.mustChange !== false;
+    const password = generateClientPassword();
+    const h = await hashPassword(password);
+    return tx(pool, async (c) => {
+      const cur = (await c.query('SELECT email, password_hash IS NOT NULL AS had FROM users WHERE id = $1 FOR UPDATE', [id])).rows[0];
+      if (!cur) return bad(reply, 404, 'Клиент не найден');
+      await c.query('UPDATE users SET password_hash = $2, password_temp = $3 WHERE id = $1', [id, h, mustChange]);
+      // Все прежние входы клиента закрываем: старый пароль и старые сессии больше не действуют
+      await c.query('DELETE FROM sessions WHERE user_id = $1', [id]);
+      await audit(c, req.admin.id, 'client.password', { userId: id, meta: { reset: cur.had, mustChange } });
+      return { ok: true, email: cur.email, password, mustChange };
+    });
   });
 
   // ---------- Доступ ----------
