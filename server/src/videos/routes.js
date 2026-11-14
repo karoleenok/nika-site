@@ -161,17 +161,20 @@ export default async function videoRoutes(app, { pool, s3 }) {
 
   app.post('/api/admin/videos', async (req, reply) => {
     const b = req.body || {};
-    return tx(pool, async (c) => {
+    // Ответ 201 отдаём только после COMMIT: иначе следующий запрос может не увидеть новое видео
+    const res = await tx(pool, async (c) => {
       const d = await readCard(c, b, { title: '', group_id: '', description: '', gear: [], published: false });
-      if (d.error) return bad(reply, 400, d.error);
+      if (d.error) return { error: d.error };
       // Новое видео всегда скрыто: файла ещё нет
       const r = await c.query(`INSERT INTO videos (title, group_id, description, gear, sort, status, published)
         VALUES ($1, $2, $3, $4, 0, 'empty', false) RETURNING id`, [d.title, d.groupId, d.description, d.gear]);
       const id = r.rows[0].id;
       await place(c, id, d.groupId, Number.isInteger(b.pos) ? b.pos : null);
       await audit(c, req.admin.id, 'video.create', { target: `video:${id}`, meta: { title: d.title } });
-      return reply.code(201).send({ id: String(id) });
+      return { id: String(id) };
     });
+    if (res.error) return bad(reply, 400, res.error);
+    return reply.code(201).send(res);
   });
 
   app.patch('/api/admin/videos/:id', async (req, reply) => {
