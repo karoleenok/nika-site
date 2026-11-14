@@ -31,6 +31,7 @@ const visibleItems = (b, sex) => b.items.filter((i) => !i.sex || i.sex === sex);
 // Возвращает очищенную копию или null. Лишние поля, чужие варианты и пункты другого пола не пропускаем.
 export function cleanAnswers(raw) {
   if (!isObj(raw) || !isObj(raw.a) || !isObj(raw.c)) return null;
+  if (Object.keys(raw).some((k) => k !== 'a' && k !== 'c')) return null;   // кроме ответов и отметок ничего не принимаем
   const A = raw.a, a = {};
   if (Object.keys(A).some((k) => !STEPS.some((s) => s.id === k))) return null;
 
