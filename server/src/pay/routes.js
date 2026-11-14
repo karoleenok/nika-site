@@ -55,7 +55,15 @@ export default async function payRoutes(app, { config, pool, mailer }) {
   };
 
   // ---------- Создать заказ и получить ссылку на оплату ----------
+  // ---------- Включена ли оплата на сайте ----------
+  // Браузер спрашивает это перед покупкой: выключено → окно «оплата через Нику в WhatsApp».
+  app.get('/api/pay/config', async (req, reply) => {
+    reply.header('cache-control', 'no-store');
+    return { online: rk.online === true };
+  });
+
   app.post('/api/pay/start', async (req, reply) => {
+    if (rk.online !== true) return bad(reply, 503, 'Оплата на сайте пока недоступна. Напиши Нике в WhatsApp, она поможет оплатить.');
     reply.header('cache-control', 'no-store');
     if (!rk.login || !rk.password1 || !rk.password2) return bad(reply, 503, 'Оплата временно недоступна. Напиши Нике, она поможет.');
     if (startLimit.blocked(req.ip)) return bad(reply, 429, 'Слишком много попыток. Подожди 15 минут.');

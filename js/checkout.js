@@ -33,6 +33,9 @@
   form.addEventListener('submit', async e => {
     e.preventDefault();
     if (go.disabled) return;
+    // Оплата на сайте выключена (PAY_ONLINE≠1): вместо Robokassa предлагаем WhatsApp
+    const P = window.NDPay;
+    if (P && !(await P.ready)) { P.offer(id); return; }
     const em = form.elements.email, ok = form.elements.consent, ag = form.elements.agree;
     [em, ok, ag].forEach(i => i.removeAttribute('aria-invalid'));
     msg.textContent = '';
@@ -57,4 +60,7 @@
   // Кнопка «назад» из Robokassa возвращает страницу из кэша с заблокированной кнопкой
   window.addEventListener('pageshow', () => busy(false));
   const o = load(); if (o && o.id === id) form.elements.email.value = o.email;
+
+  // Пришли по прямой ссылке, а оплата выключена: сразу показываем путь через Нику
+  if (window.NDPay) window.NDPay.ready.then(on => { if (!on) window.NDPay.offer(id); });
 })();

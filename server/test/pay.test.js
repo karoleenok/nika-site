@@ -155,3 +155,9 @@ test('админка: только owner/tech; ручное подтвержде
   const log = (await t.pool.query(`SELECT action FROM audit_log WHERE target = $1 ORDER BY id`, [a.orderId])).rows.map((r) => r.action);
   assert.deepEqual(log, ['order.manual', 'order.refund']);
 });
+
+test('оплата на сайте: /api/pay/config говорит, включена ли она', async () => {
+  const r = await t.api('GET', '/api/pay/config');
+  assert.equal(r.statusCode, 200);
+  assert.equal(r.json().online, true);
+});

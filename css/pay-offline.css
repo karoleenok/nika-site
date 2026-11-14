@@ -1,0 +1,78 @@
+/* ==========================================================================
+   Окно «оплата на сайте пока недоступна → купить через Нику в WhatsApp».
+   Логика: js/pay.js. Показывается, пока на сервере PAY_ONLINE не равен 1.
+   Своя шкала в px, как у теста: окно одинаково читается на 320 и на 1440.
+   Отступы: 4 · 8 · 12 · 16 · 24 · 32. Цвета и шрифты из tokens.css.
+   Мобилка: лист снизу под пальцем. От 600px: окно по центру, 480px.
+   ========================================================================== */
+
+html.po-lock, html.po-lock body { overflow: hidden; }
+
+.po {
+  position: fixed; inset: 0; z-index: 140;
+  width: 100%; max-width: none; height: 100%; max-height: none;
+  margin: 0; padding: 0; border: 0; background: transparent;
+  display: flex; align-items: flex-end; justify-content: center;
+  font-family: var(--f-text); font-size: 16px; line-height: 1.4; color: var(--c-ink);
+}
+.po:not([open]) { display: none; }
+.po::backdrop { background: transparent; }
+.po__back { position: absolute; inset: 0; background: rgba(5, 6, 11, .72); opacity: 0; transition: opacity .22s var(--ease-out); }
+.po.is-open .po__back { opacity: 1; }
+
+.po__panel {
+  position: relative; width: 100%;
+  max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain;
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--c-white); border-radius: 16px 16px 0 0;
+  transform: translateY(100%); transition: transform .34s var(--ease-out);
+}
+.po.is-open .po__panel { transform: none; }
+
+/* Ручка листа: подсказка, что это временное окно */
+.po__grip { width: 40px; height: 4px; margin: 0 auto 8px; border-radius: 4px; background: var(--c-disabled); }
+
+.po__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.po__label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 14px; line-height: 1.2; font-weight: 450; color: var(--c-warn);
+}
+.po__label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: po-pulse 1.8s ease-in-out infinite; }
+@keyframes po-pulse { 50% { opacity: .35; } }
+.po__x { display: grid; place-items: center; width: 44px; height: 44px; margin-right: -8px; border-radius: 50%; color: var(--c-ink); transition: background-color .15s; }
+
+.po__title { margin-top: 8px; font-family: var(--f-display); font-weight: 400; font-size: clamp(34px, 9vw, 44px); line-height: .9; letter-spacing: 0; text-transform: uppercase; }
+.po__title:focus { outline: none; }
+.po__text { margin-top: 12px; color: var(--c-ink); }
+
+/* Что покупаем: та же карточка, что в оформлении */
+.po__item { margin-top: 16px; padding: 12px 16px; border-radius: 12px; background: var(--c-paper); }
+.po__kind { font-size: 14px; line-height: 1.2; color: var(--c-muted); }
+.po__name { margin-top: 4px; font-weight: 500; line-height: 1.25; }
+.po__price { margin-top: 8px; font-weight: 500; }
+.po__price s { margin-left: 8px; font-weight: 400; color: var(--c-muted); }
+.po__item[hidden] { display: none; }
+
+.po__acts { display: grid; gap: 8px; margin-top: 24px; }
+.po .btn { min-height: 52px; width: 100%; font-size: 16px; padding-inline: 20px; white-space: normal; line-height: 1.1; gap: 8px; }
+.po__later { background: var(--c-paper); color: var(--c-ink); }
+.po__fine { margin-top: 12px; font-size: 13px; line-height: 1.35; color: var(--c-muted); text-align: center; }
+
+@media (hover: hover) {
+  .po__x:hover, .po__later:hover { background: var(--c-disabled); }
+}
+.po__x:focus-visible, .po .btn:focus-visible { outline: 2px solid var(--c-red); outline-offset: 2px; }
+
+@media (min-width: 600px) {
+  .po { align-items: center; padding: 24px; }
+  .po__panel { max-width: 480px; padding: 16px 32px 32px; border-radius: 16px; transform: translateY(16px) scale(.98); opacity: 0; transition: transform .3s var(--ease-out), opacity .22s var(--ease-out); }
+  .po.is-open .po__panel { transform: none; opacity: 1; }
+  .po__grip { display: none; }
+  .po__title { font-size: 48px; }
+  .po__acts { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .po__back, .po__panel { transition: none; }
+  .po__label::before { animation: none; }
+}

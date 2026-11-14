@@ -43,6 +43,8 @@ export function loadConfig(env = process.env) {
       password1: env.ROBOKASSA_PASSWORD1 || '',
       password2: env.ROBOKASSA_PASSWORD2 || '',
       test: env.ROBOKASSA_TEST !== '0',
+      // Оплата на сайте включена только явно: PAY_ONLINE=1. Пока 0, сайт предлагает купить через Нику в WhatsApp.
+      online: env.PAY_ONLINE === '1',
     }),
   });
 }
