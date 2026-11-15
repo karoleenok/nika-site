@@ -193,8 +193,18 @@ export default async function authRoutes(app, { config, pool, mailer }) {
 
   app.get('/api/admin/me', async (req, reply) => {
     reply.header('cache-control', 'no-store');
+    const { rows } = await pool.query('SELECT tour_done_at IS NOT NULL AS tour_done FROM admins WHERE id = $1', [req.admin.id]);
     const { name, email, role } = req.admin;
-    return { name, email, role };
+    return { name, email, role, tourDone: rows[0].tour_done };
+  });
+
+  // ---------- Экскурсия по админке: отметка «пройдена» на сервере (для всех устройств) ----------
+  app.put('/api/admin/tour', async (req, reply) => {
+    if (typeof req.body?.done !== 'boolean') return bad(reply, 400, 'Нужно поле done: true или false.');
+    const sql = req.body.done ? 'UPDATE admins SET tour_done_at = coalesce(tour_done_at, now()) WHERE id = $1' : 'UPDATE admins SET tour_done_at = NULL WHERE id = $1';
+    await pool.query(sql, [req.admin.id]);
+    reply.header('cache-control', 'no-store');
+    return { tourDone: req.body.done };
   });
 
   // ---------- Смена пароля админа: нужен текущий пароль (или вход по коду, если пароля ещё нет) ----------

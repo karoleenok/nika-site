@@ -177,7 +177,7 @@ test('права: /api/admin/* без входа 401, с кукой клиент
   assert.equal((await t.api('GET', '/api/admin/anything', null, { cookie: u.header })).statusCode, 401, 'закрыт любой адрес админки');
   const a = await login('nika@example.com', { kind: 'admin' });
   const me = await t.api('GET', '/api/admin/me', null, { cookie: a.header });
-  assert.deepEqual(me.json(), { name: 'Ника', email: 'nika@example.com', role: 'owner' });
+  assert.deepEqual(me.json(), { name: 'Ника', email: 'nika@example.com', role: 'owner', tourDone: false });
   const log = await t.pool.query(`SELECT count(*)::int n FROM audit_log WHERE action = 'login'`);
   assert.ok(log.rows[0].n >= 1, 'вход админа записан в журнал');
 });

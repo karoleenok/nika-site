@@ -335,6 +335,8 @@ body:has(dialog[open]) { overflow: hidden; }
 /* ---------- Экскурсия по админке ---------- */
 .tour { position: fixed; z-index: 110; left: var(--gutter); right: var(--gutter); bottom: calc(var(--lk-tab) + var(--safe-b, 0px) + 12px); max-width: 520px; margin-inline: auto; display: grid; gap: var(--sp-3); padding: var(--sp-5); background: var(--c-ink); color: var(--c-white); border-radius: var(--r-card); box-shadow: 0 16px 48px rgba(0, 0, 0, .45); }
 .tour[hidden] { display: none; }
+/* Пока идёт экскурсия, внизу страницы место под карточку: последние кнопки можно прокрутить выше неё */
+@media (max-width: 1023px) { .is-touring .lk-main { padding-bottom: calc(var(--lk-tab) + var(--safe-b, 0px) + 300px); } }
 .tour:focus { outline: none; }
 .tour.is-in { animation: tour-in .35s var(--ease-out) both; }
 @keyframes tour-in { from { transform: translateY(16px); opacity: 0; } }
@@ -350,9 +352,9 @@ body:has(dialog[open]) { overflow: hidden; }
 .tour__act { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
 .tour__act .btn[hidden] { display: none; }
 .tour__act .btn:only-child, .tour__act .btn[hidden] + .btn { grid-column: 1 / -1; }
-.tour-ring { position: fixed; z-index: 105; pointer-events: none; border: 2px solid var(--c-red); border-radius: 14px; box-shadow: 0 0 0 4px rgba(220, 26, 29, .28); transition: left var(--dur-2) var(--ease-out), top var(--dur-2) var(--ease-out), width var(--dur-2) var(--ease-out), height var(--dur-2) var(--ease-out); animation: tour-pulse 1.6s ease-in-out infinite; }
+.tour-ring { position: fixed; z-index: 105; pointer-events: none; border: 2px solid var(--c-red); border-radius: 14px; box-shadow: 0 0 0 4px rgba(220, 26, 29, .28); transition: opacity var(--dur-2) var(--ease-out), left var(--dur-2) var(--ease-out), top var(--dur-2) var(--ease-out), width var(--dur-2) var(--ease-out), height var(--dur-2) var(--ease-out); animation: tour-pulse 1.6s ease-in-out infinite; }
 .tour-ring[hidden] { display: none; }
 @keyframes tour-pulse { 50% { box-shadow: 0 0 0 9px rgba(220, 26, 29, 0); } }
 @media (hover: hover) { .tour__x:hover { color: var(--c-white); } }
-@media (min-width: 1024px) { .tour { left: auto; right: var(--sp-7); bottom: var(--sp-7); width: 420px; margin: 0; } }
+@media (min-width: 1024px) { .tour { left: auto; right: var(--sp-7); bottom: var(--sp-7); width: 420px; margin: 0; } .tour--up { top: var(--sp-7); bottom: auto; } }
 @media (prefers-reduced-motion: reduce) { .tour.is-in, .tour-ring { animation: none; transition: none; } .tour__bar > i { transition: none; } }
