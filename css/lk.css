@@ -189,6 +189,8 @@ body.lk { background: var(--c-paper); min-height: 100vh; min-height: 100svh; }
 .xcard__k { color: var(--c-muted); font-size: var(--fs-tiny); }
 .xcard__t { font-size: var(--fs-card-t); font-weight: 450; line-height: 1.15; }
 .xcard .btn { min-height: 44px; margin-top: var(--sp-2); font-size: var(--fs-small); padding-inline: var(--sp-5); }
+.xcard--gift { box-shadow: inset 0 0 0 2px var(--c-red); }
+.xcard--gift .stat { background: var(--c-red); color: var(--c-white); }
 
 /* ---------- Профиль ---------- */
 .kv { display: grid; gap: 0; }

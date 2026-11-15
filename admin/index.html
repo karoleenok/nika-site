@@ -314,8 +314,13 @@
             <span class="drop__s">PDF или видео до 1 ГБ. Клиент откроет его, только когда купит.</span>
           </label>
           <button class="btn btn--line-dark btn--sm adm-gap" type="button" data-me-open hidden>открыть загруженный файл</button>
-          <div class="bar bar--dark adm-gap" role="img" aria-label="Загружено 0%" data-me-bar hidden><i></i></div>
+          <div class="mprog adm-gap" data-me-prog hidden>
+            <div class="mprog__h"><span class="mprog__t" data-me-prog-t>Загружаем файл</span><b class="mprog__pct" data-me-pct>0%</b></div>
+            <div class="bar bar--dark mprog__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Загрузка файла" data-me-bar><i></i></div>
+            <p class="mprog__s" data-me-prog-s>Не закрывай вкладку, пока не появится «готово».</p>
+          </div>
           <p class="drop__s" aria-live="polite" data-me-busy></p>
+          <p class="field__err" role="alert" data-me-file-err></p>
         </div>
         <div class="lk-card ed__card">
           <label class="sw-row">
@@ -414,6 +419,18 @@
     <div class="sheet__act">
       <button class="btn btn--line-dark" type="button" data-close>отмена</button>
       <button class="btn btn--red" type="submit" data-dx-ok>продлить</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" data-dlg="note" aria-labelledby="dnt-t">
+  <form class="sheet__in" data-form="note" method="dialog">
+    <span class="note-ic" data-nt-ic aria-hidden="true"><svg class="ic"><use href="#i-check" data-nt-use/></svg></span>
+    <h2 class="sheet__t" id="dnt-t" data-nt-t>Готово</h2>
+    <p class="sheet__p" data-nt-p></p>
+    <div class="sheet__act" data-nt-act>
+      <button class="btn btn--line-dark" type="button" data-close data-nt-x>закрыть</button>
+      <button class="btn btn--red" type="submit" data-nt-ok>понятно</button>
     </div>
   </form>
 </dialog>
@@ -617,6 +634,6 @@
 <script src="../js/lk-data.js?v=20261115m"></script>
 <script src="../js/admin-data.js?v=20261115a"></script>
 <script src="../js/uploader.js?v=20261113b"></script>
-<script src="../js/admin.js?v=20261115y"></script>
+<script src="../js/admin.js?v=20261115x"></script>
 </body>
 </html>

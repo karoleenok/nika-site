@@ -254,15 +254,18 @@
     if (!r.ok) { if (w) w.close(); if (r.status === 401) { location.replace('login.html'); return; } btn.nextElementSibling.textContent = r.data.error; return; }
     if (w) { w.opener = null; w.location.href = r.data.url; } else location.href = r.data.url;
   };
-  D.extras.forEach(x => {
-    const li = el('li', 'xcard');
+  /* Подарки наверх, чтобы клиент их сразу заметил */
+  const isGift = x => x.owned && (x.gift || !x.price);
+  D.extras.slice().sort((a, b) => isGift(b) - isGift(a)).forEach(x => {
+    const li = el('li', 'xcard' + (isGift(x) ? ' xcard--gift' : ''));
     const img = el('img'); img.src = x.cover || '../favicon.png'; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async'; img.width = 96; img.height = 120;
     const b = el('div', 'xcard__body');
     b.appendChild(el('span', 'xcard__k', x.kind));
     b.appendChild(el('span', 'xcard__t', x.title));
     if (x.owned) {
-      b.appendChild(el('span', 'stat stat--ok', x.price ? 'куплено' : 'подарок'));
-      const a = el('button', 'btn btn--red', x.ready ? 'открыть' : 'скоро будет'); a.type = 'button'; a.disabled = !x.ready;
+      const gift = isGift(x);
+      b.appendChild(el('span', 'stat stat--ok', gift ? 'подарок' : 'куплено'));
+      const a = el('button', 'btn btn--red', !x.ready ? 'скоро будет' : gift ? 'открыть подарок' : 'открыть'); a.type = 'button'; a.disabled = !x.ready;
       a.addEventListener('click', () => openMaterial(x, a)); b.appendChild(a);
       const m = el('span', 'xcard__k'); m.setAttribute('role', 'status'); b.appendChild(m);
     } else {

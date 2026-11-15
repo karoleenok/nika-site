@@ -143,6 +143,15 @@
   });
   let confirmFn = null;
   const confirmDlg = (title, text, ok, fn) => { $('[data-dc-title]').textContent = title; $('[data-dc-text]').textContent = text; $('[data-dc-ok]').textContent = ok; confirmFn = fn; openDlg('confirm'); };
+  /* Окно-итог: явно сообщает, загрузился файл или нет. ok — кнопка действия (например «повторить»), fn — что она делает */
+  let noteFn = null;
+  const noteDlg = ({ bad = false, title, text, ok = 'понятно', fn = null, close = '' }) => {
+    $('[data-nt-ic]').classList.toggle('is-bad', bad); $('[data-nt-use]').setAttribute('href', bad ? '#i-alert' : '#i-check');
+    $('[data-nt-t]').textContent = title; $('[data-nt-p]').textContent = text; $('[data-nt-ok]').textContent = ok;
+    const x = $('[data-nt-x]'); x.hidden = !close; x.textContent = close; $('[data-nt-act]').classList.toggle('is-one', !close);
+    noteFn = fn; const d = dlg('note'); if (d.open) d.close(); openDlg('note');
+  };
+  $('[data-form="note"]').addEventListener('submit', e => { e.preventDefault(); dlg('note').close(); const f = noteFn; noteFn = null; if (f) f(); });
   $('[data-form="confirm"]').addEventListener('submit', e => { e.preventDefault(); dlg('confirm').close(); const f = confirmFn; confirmFn = null; if (f) f(); });
 
   /* ---------- Связь с клиентом ---------- */
@@ -838,6 +847,7 @@
   });
 
   /* Загрузчик сообщает о каждом шаге: обновляем только то, что на экране */
+  let lastUpErr = null;
   UP.subscribe(u => {
     if (!u || u.state.phase === 'canceled') {
       loadContent().then(() => { if (ve && ve.v) ve.v = vById(ve.v.id) || ve.v; if (routeName === 'video') drawUp(); if (routeName === 'content') drawVideos(); });
@@ -849,10 +859,15 @@
         if (ve && ve.v && ve.v.id === u.videoId) ve.v = v || ve.v;
         UP.clear();
         if (routeName === 'video') drawUp(); if (routeName === 'content') drawVideos();
-        toast('«' + (v ? v.title : 'Видео') + '» загружено. Посмотри и включи «Опубликовать».');
+        noteDlg({ title: 'Видео загружено', text: '«' + (v ? v.title : 'Видео') + '»' + (v && v.sizeBytes ? ', ' + mb(v.sizeBytes) : '') + '. Посмотри его и включи «Опубликовать», чтобы клиенты увидели.', ok: 'открыть видео', close: 'позже', fn: () => { location.hash = '#/video/' + u.videoId; } });
       });
       return;
     }
+    if (u.state.phase === 'error' && u.state.error !== lastUpErr) {
+      lastUpErr = u.state.error;
+      const v = vById(u.videoId);
+      noteDlg({ bad: true, title: 'Видео не загрузилось', text: '«' + (v ? v.title : u.state.fileName) + '». ' + (u.state.error || 'Загрузка остановилась.') + ' Уже загруженная часть сохранится, докачаем остальное.', ok: 'повторить', close: 'закрыть', fn: () => u.retry() });
+    } else if (u.state.phase !== 'error') lastUpErr = null;
     if (routeName === 'video' && ve && ve.v && ve.v.id === u.videoId) drawUp();
     if (routeName === 'content') { const v = vById(u.videoId), s = $('.vi[data-id="' + u.videoId + '"] .vi__s'); if (s && v) s.textContent = vMeta(v); }
   });
@@ -926,6 +941,11 @@
   const size = b => b < 1048576 ? Math.max(1, Math.round(b / 1024)) + ' КБ' : mb(b);
   let me = null; const mf = $('[data-me]');
   const meBar = $('[data-me-bar]'), meBusy = $('[data-me-busy]'), meSave = $('[type="submit"]', mf);
+  const meProg = $('[data-me-prog]'), meFileErr = $('[data-me-file-err]');
+  const setProg = (p, loaded, total) => {
+    meBar.style.setProperty('--p', p); meBar.setAttribute('aria-valuenow', String(p)); $('[data-me-pct]').textContent = p + '%';
+    if (total) $('[data-me-prog-s]').textContent = size(loaded) + ' из ' + size(total) + '. Не закрывай вкладку, пока не появится «готово».';
+  };
   const drawMaterialEd = id => {
     const isNew = id === 'new', x = isNew ? null : raw.extras.find(e => e.id === id);
     if (!isNew && !x) {
@@ -943,7 +963,7 @@
     setFile($('[data-me-file]').parentElement, $('[data-me-file-t]'), cur, 'Выбрать файл (PDF или видео)');
     $('[data-me-file]').value = ''; $('[data-me-cover-in]').value = '';
     $('[data-me-open]').hidden = !(x && (x.file || x.page));
-    meBar.hidden = true; meBusy.textContent = '';
+    meProg.hidden = true; meProg.classList.remove('is-bad'); meBusy.textContent = ''; meFileErr.textContent = '';
     $('[data-me-del]').hidden = isNew; return true;
   };
   /* Обложку сжимаем в браузере до 800 px по длинной стороне: в базу уходит ~100 КБ, а не фото с телефона на 8 МБ */
@@ -972,14 +992,14 @@
     const f = e.target.files[0]; if (!f) return;
     if (!FILE_EXT.test(f.name)) { toast('Подойдёт PDF или видео MP4, MOV, WebM.'); e.target.value = ''; return; }
     if (f.size > MAX_FILE) { toast('Файл больше 1 ГБ. Сожми видео и попробуй снова.'); e.target.value = ''; return; }
-    me.file = f; setFile(e.target.parentElement, $('[data-me-file-t]'), f.name + ' · ' + size(f.size), '');
+    me.file = f; meFileErr.textContent = ''; meProg.hidden = true; setFile(e.target.parentElement, $('[data-me-file-t]'), f.name + ' · ' + size(f.size), '');
   });
   /* Загрузка файла одним PUT прямо в хранилище; XHR, чтобы показать прогресс */
   const putFile = (url, headers, file) => new Promise(ok => {
     const x = new XMLHttpRequest(); x.open('PUT', url);
     Object.entries(headers).forEach(([k, v]) => x.setRequestHeader(k, v));
-    x.upload.onprogress = ev => { if (ev.lengthComputable) { const p = Math.round(ev.loaded / ev.total * 100); meBar.style.setProperty('--p', p); meBar.setAttribute('aria-label', 'Загружено ' + p + '%'); meBusy.textContent = 'Загружаем файл: ' + p + '%'; } };
-    x.onload = () => ok(x.status >= 200 && x.status < 300); x.onerror = () => ok(false); x.send(file);
+    x.upload.onprogress = ev => { if (ev.lengthComputable) setProg(Math.min(99, Math.floor(ev.loaded / ev.total * 100)), ev.loaded, ev.total); };
+    x.onload = () => ok(x.status >= 200 && x.status < 300 ? 'ok' : 'http'); x.onerror = () => ok(navigator.onLine === false ? 'offline' : 'net'); x.ontimeout = () => ok('net'); x.send(file);
   });
   const leaveGuard = e => { e.preventDefault(); e.returnValue = ''; };
   let meWorking = false;
@@ -1006,17 +1026,35 @@
       if (r.ok) { m = r.data.material; putMaterial(m); me.cover = null; } else toast(r.data.error || 'Обложка не сохранилась. Попробуй ещё раз.');
     }
     if (me.file) {
-      meBar.hidden = false; meBar.style.setProperty('--p', 0);
-      const s = await api.post('/api/admin/materials/' + m.id + '/file', { name: me.file.name, size: me.file.size });
-      const sent = s.ok && await putFile(s.data.url, s.data.headers, me.file);
-      r = sent ? await api.post('/api/admin/materials/' + m.id + '/file/done', { name: me.file.name }) : s;
-      meBar.hidden = true;
-      if (!sent || !r.ok) { done(); meBusy.textContent = ''; me.x = m; err.textContent = (r.data && r.data.error) || 'Файл не загрузился. Проверь интернет и нажми «сохранить» ещё раз.'; return; }
+      const file = me.file;
+      meProg.hidden = false; meProg.classList.remove('is-bad'); meFileErr.textContent = '';
+      $('[data-me-prog-t]').textContent = 'Загружаем ' + file.name; setProg(0, 0, file.size);
+      meProg.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      meBusy.textContent = '';
+      const s = await api.post('/api/admin/materials/' + m.id + '/file', { name: file.name, size: file.size });
+      const sent = s.ok ? await putFile(s.data.url, s.data.headers, file) : 'prep';
+      if (sent === 'ok') { $('[data-me-prog-t]').textContent = 'Проверяем файл…'; $('[data-me-prog-s]').textContent = 'Почти готово.'; }
+      r = sent === 'ok' ? await api.post('/api/admin/materials/' + m.id + '/file/done', { name: file.name }) : s;
+      if (sent !== 'ok' || !r.ok) {
+        done(); me.x = m;
+        if (r.status === 401) return fail(r);
+        const why = sent === 'offline' ? 'Пропал интернет. Подключись и нажми «повторить».'
+          : (sent === 'ok' || sent === 'prep') && r.data && r.data.error ? r.data.error
+          : 'Хранилище не приняло файл. Проверь интернет и попробуй ещё раз. Если повторится, напиши Каролине: возможно, сбилась настройка хранилища.';
+        meProg.classList.add('is-bad'); $('[data-me-prog-t]').textContent = 'Файл не загрузился'; $('[data-me-prog-s]').textContent = why;
+        meFileErr.textContent = why;
+        noteDlg({ bad: true, title: 'Файл не загрузился', text: '«' + file.name + '». ' + why + ' Название, цена и обложка уже сохранены.', ok: 'повторить', close: 'закрыть', fn: () => mf.requestSubmit() });
+        return;
+      }
+      setProg(100, file.size, file.size);
       m = r.data.material; putMaterial(m); me.file = null;
       if (f.on.checked && !m.on) {
         r = await api.request('PATCH', '/api/admin/materials/' + m.id, { on: true });
         if (r.ok) { m = r.data.material; putMaterial(m); } else toast(r.data.error);
       }
+      done(); meBusy.textContent = '';
+      noteDlg({ title: 'Файл загружен', text: '«' + m.title + '» — ' + file.name + ', ' + size(file.size) + '. ' + (m.on ? 'Клиенты уже видят материал.' : 'Материал пока скрыт. Включи «Показывать клиентам», когда будешь готова.'), ok: 'готово', fn: () => { location.hash = '#/content/materials'; } });
+      return;
     }
     done(); meBusy.textContent = '';
     toast(m.on ? 'Сохранено' : 'Сохранено. Материал пока скрыт от клиентов.');

@@ -251,12 +251,13 @@ export default async function materialRoutes(app, { pool, s3 }) {
 
   app.get('/api/me/materials', { preHandler: app.requireUser }, async (req, reply) => {
     noStore(reply);
-    const { rows } = await pool.query(`${SELECT.replace('FROM materials m', `, (${ownedSql}) AS owned FROM materials m`)}
+    const { rows } = await pool.query(`${SELECT.replace('FROM materials m', `, (${ownedSql}) AS owned, EXISTS (SELECT 1 FROM purchases p WHERE p.user_id = $1 AND p.tariff_id = t.id) AS bought FROM materials m`)}
       WHERE t.active OR (${ownedSql}) ORDER BY t.sort, m.id`, [req.auth.id]);
     return {
       materials: rows.map((r) => ({
         id: String(r.id), slug: r.slug, kind: r.kind, title: r.title, text: r.description, cover: coverLink(r),
         price: Math.round(r.price_kop / 100), old: Math.round(r.old_price_kop / 100), owned: r.owned,
+        gift: r.owned && !r.bought,   // открыт подарком к «Сопровождению по питанию», а не покупкой
         ready: !!(r.file_key || r.page_url), fileType: r.owned ? r.file_type || null : null,
       })),
     };
