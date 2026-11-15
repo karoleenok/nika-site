@@ -366,3 +366,5 @@ body:has(dialog[open]) { overflow: hidden; }
 /* Телефон и почта рядом на ПК: окно «Выдать доступ» помещается в экран ноутбука без прокрутки */
 .sheet__row { display: grid; gap: var(--sp-4); }
 @media (min-width: 768px) { .sheet__row { grid-template-columns: 1fr 1fr; align-items: start; } }
+/* Удаление клиента: вторичная кнопка с красным текстом, отделена от «сохранить» */
+.adm-del { margin-top: var(--sp-2); color: var(--c-red); }

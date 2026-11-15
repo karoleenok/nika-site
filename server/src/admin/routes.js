@@ -80,17 +80,18 @@ export default async function adminRoutes(app, { pool, config }) {
     if (!Number.isInteger(days) || days < 1 || days > 366) return bad(reply, 400, 'Выбери срок.');
     const tariffId = idOf(b.tariffId);
     if (!tariffId) return bad(reply, 400, 'Выбери тариф.');
-    const mustChange = b.mustChange !== false;
+    const mustChange = b.mustChange === true;
     const password = generateClientPassword();
     const h = await hashPassword(password);
 
-    return tx(pool, async (c) => {
-      if (!(await c.query(`SELECT 1 FROM tariffs WHERE id = $1 AND kind = 'access'`, [tariffId])).rowCount) return bad(reply, 400, 'Такого тарифа нет.');
+    // Ответ отправляем после фиксации транзакции: иначе клиент может войти раньше, чем его запись сохранится
+    const out = await tx(pool, async (c) => {
+      if (!(await c.query(`SELECT 1 FROM tariffs WHERE id = $1 AND kind = 'access'`, [tariffId])).rowCount) return { status: 400, body: { error: 'Такого тарифа нет.' } };
       // Уже есть такой клиент (та же почта или тот же телефон): не плодим дубль, ведём в карточку
       const dup = (await c.query(
         `SELECT id FROM users WHERE email = $1 OR ($2 <> '' AND regexp_replace(phone, '\\D', '', 'g') IN ($2, '8' || substr($2, 2))) LIMIT 1`,
         [email, digits.length >= 10 ? digits : ''])).rows[0];
-      if (dup) return reply.code(409).send({ error: 'Такой клиент уже есть. Открой его карточку и продли доступ там.', id: String(dup.id) });
+      if (dup) return { status: 409, body: { error: 'Такой клиент уже есть. Открой его карточку и продли доступ там.', id: String(dup.id) } };
       const u = (await c.query(
         'INSERT INTO users (email, name, phone, password_hash, password_temp, password_shown) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
         [email, name, phone, h, mustChange, sealPassword(config.sessionSecret, password)])).rows[0];
@@ -100,8 +101,9 @@ export default async function adminRoutes(app, { pool, config }) {
       await audit(c, req.admin.id, 'client.create', { userId: u.id });
       await audit(c, req.admin.id, 'access.open', { userId: u.id, note: cleanText(b.note, 120) || null, meta: { days, endsAt: ends.toISOString(), tariffId } });
       await audit(c, req.admin.id, 'client.password', { userId: u.id, meta: { reset: false, mustChange } });
-      return reply.code(201).send({ id: String(u.id), login: loginOf(email), password, mustChange, endsAt: ends.toISOString() });
+      return { status: 201, body: { id: String(u.id), login: loginOf(email), password, mustChange, endsAt: ends.toISOString() } };
     });
+    return reply.code(out.status).send(out.body);
   });
 
   // Правка данных и заметки. Приходят только те поля, которые меняем.
@@ -138,6 +140,23 @@ export default async function adminRoutes(app, { pool, config }) {
     });
   });
 
+  // Удалить клиента, созданного по ошибке. Только owner и tech.
+  // Если у клиента были оплаты, удалять нельзя: это история денег и чеков. Тогда закрывают доступ.
+  app.delete('/api/admin/clients/:id', { preHandler: money }, async (req, reply) => {
+    const id = idOf(req.params.id);
+    if (!id) return bad(reply, 404, 'Клиент не найден');
+    return tx(pool, async (c) => {
+      if (!(await c.query('SELECT 1 FROM users WHERE id = $1 FOR UPDATE', [id])).rowCount) return bad(reply, 404, 'Клиент не найден');
+      const paid = await c.query(`SELECT 1 FROM orders WHERE user_id = $1 AND status IN ('paid','manual','refunded') LIMIT 1`, [id]);
+      if (paid.rowCount) return bad(reply, 400, 'У клиента есть оплаты на сайте, удалить нельзя. Закрой доступ: карточка останется в истории.');
+      // Неоплаченные заказы оставляем без привязки; сессии, доступ и прочее удалятся вместе с клиентом
+      await c.query('UPDATE orders SET user_id = NULL WHERE user_id = $1', [id]);
+      await c.query('DELETE FROM users WHERE id = $1', [id]);
+      await audit(c, req.admin.id, 'client.delete', {});
+      return { ok: true };
+    });
+  });
+
   // «Напомнили о продлении»: Ника написала клиенту в WhatsApp. Запоминаем, чтобы не напоминать дважды подряд.
   app.post('/api/admin/clients/:id/remind', async (req, reply) => {
     const id = idOf(req.params.id);
@@ -153,7 +172,7 @@ export default async function adminRoutes(app, { pool, config }) {
     noStore(reply);
     const id = idOf(req.params.id);
     if (!id) return bad(reply, 404, 'Клиент не найден');
-    const mustChange = req.body?.mustChange !== false;
+    const mustChange = req.body?.mustChange === true;
     const password = generateClientPassword();
     const h = await hashPassword(password);
     return tx(pool, async (c) => {

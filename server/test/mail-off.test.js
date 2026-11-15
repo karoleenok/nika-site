@@ -16,7 +16,7 @@ after(() => t.close());
 test('без почты: весь путь клиента от карточки в админке до кабинета, ни одного письма для входа не нужно', async () => {
   assert.deepEqual((await t.api('GET', '/api/auth/config')).json(), { mail: false });
   const id = (await t.api('POST', '/api/admin/clients', { name: 'Оля', email: 'olya@example.com', phone: '' }, { cookie: admin })).json().id;
-  const { password } = (await t.api('POST', `/api/admin/clients/${id}/password`, {}, { cookie: admin })).json();
+  const { password } = (await t.api('POST', `/api/admin/clients/${id}/password`, { mustChange: true }, { cookie: admin })).json();
   const c = ck(await t.api('POST', '/api/auth/password', { email: 'olya@example.com', password }, { ip: t.freshIp() }));
   const me = (await t.api('GET', '/api/me', undefined, { cookie: c })).json();
   assert.equal(me.mustChangePassword, true); assert.equal(me.passwordOnly, true);

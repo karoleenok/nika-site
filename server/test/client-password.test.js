@@ -43,7 +43,7 @@ test('без входа в админку и с сессией клиента п
 
 test('админ задаёт пароль: клиент входит без писем, кабинет просит сменить, в базе и журнале пароля нет', async () => {
   t.mails.length = 0;
-  const r = await give({});
+  const r = await give({ mustChange: true });
   assert.equal(r.statusCode, 200);
   assert.equal(r.headers['cache-control'], 'no-store');
   const { password, email, mustChange } = r.json();
@@ -86,7 +86,7 @@ test('повторная выдача: старый пароль и старые
 });
 
 test('пароль клиента не открывает админку', async () => {
-  const r = (await give({})).json();
+  const r = (await give({ mustChange: true })).json();
   const a = await t.api('POST', '/api/auth/password', { email: 'anya@example.com', password: r.password, kind: 'admin' }, { ip: t.freshIp() });
   assert.equal(a.statusCode, 400);
 });

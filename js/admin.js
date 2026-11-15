@@ -92,6 +92,7 @@
     const m = x.meta || {}, e = m.endsAt ? new Date(m.endsAt) : null;
     switch (x.action) {
       case 'client.create': return 'Клиент добавлен';
+      case 'client.delete': return 'Удалён клиент, созданный по ошибке';
       case 'client.update': return 'Изменены данные клиента';
       case 'client.note': return 'Изменена заметка о клиенте';
       case 'client.remind': return 'Отправлено напоминание о продлении';
@@ -286,6 +287,7 @@
     $('[data-c-remind]').hidden = c.state !== 'warn' && c.state !== 'bad';
     $('[data-c-note]').value = c.note || '';
     drawPass(c);
+    $('[data-c-del]').hidden = !canMoney;
     const f = $('[data-c-form]'); f.elements.name.value = c.name; f.elements.email.value = c.email; f.elements.phone.value = c.phone; $('[data-c-err]').textContent = '';
     $('[data-c-pay]').textContent = ''; $('[data-c-hist]').textContent = '';
     const mine = c.id;
@@ -314,6 +316,16 @@
     const r = await api.request('PATCH', '/api/admin/clients/' + cur.id, body); btn.disabled = false;
     if (!r.ok) { if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
     await reloadClient(); toast('Данные сохранены');
+  });
+
+  /* Удалить клиента, созданного по ошибке (Ника и Каролина). С оплатами на сайте сервер не даст удалить. */
+  $('[data-c-del]').addEventListener('click', () => {
+    if (!cur) return; const c = cur;
+    confirmDlg('Удалить клиента?', c.name + ' пропадёт из списка вместе с доступом и паролем. Вернуть нельзя. Если человек просто перестал заниматься, лучше закрой доступ.', 'удалить', async () => {
+      const r = await api.del('/api/admin/clients/' + c.id);
+      if (!r.ok) { if (r.status === 401) return fail(r); toast(r.data.error); return; }
+      await loadClients(); location.hash = '#/clients'; toast('Клиент удалён');
+    });
   });
 
   /* Продлить / открыть. Недели считаются по 7 дней от текущей даты окончания (или от сегодня, если доступ закончился). */
@@ -363,7 +375,7 @@
   const loginUrl = location.origin + '/lk/login.html';
   let cpText = '', cpWho = null;
   const passMsg = (c, pw, must) => 'Привет, ' + first(c.name) + '! Твой вход в личный кабинет:\n' + loginUrl + '\n\nЛогин: ' + c.login + '\nПароль: ' + pw +
-    (must ? '\n\nПри первом входе кабинет попросит придумать свой пароль.' : '') + '\nЕсли не получится войти, напиши мне.';
+    '\n\nЛогин и пароль сохранятся в кабинете в разделе «Профиль». Если не получится войти, напиши мне.';
   const drawPass = c => {
     const chip = $('[data-c-passchip]');
     $('[data-c-passstate]').hidden = !c.hasPassword; chip.className = 'stat stat--' + (c.passwordTemp ? 'warn' : 'ok'); chip.textContent = c.passwordTemp ? 'временный пароль' : 'пароль задан';
@@ -381,11 +393,11 @@
     $('[data-dcp-ok]').textContent = cur.hasPassword ? 'выдать' : 'задать';
     $('[data-dcp-text]').textContent = 'Сайт сам придумает пароль для ' + cur.name + ' и покажет его один раз. ' +
       (cur.hasPassword ? 'Прежний пароль перестанет работать, на всех устройствах клиенту придётся войти заново.' : 'Клиент войдёт по логину ' + (cur.login || cur.email) + ' и этому паролю.');
-    $('[data-dcp-must]').checked = true; $('[data-dcp-err]').textContent = ''; openDlg('cpass');
+    $('[data-dcp-err]').textContent = ''; openDlg('cpass');
   });
   fcp.addEventListener('submit', async e => {
     e.preventDefault(); if (!cpAsk || cpAsk.hidden) return;
-    const c = cur, btn = $('[data-dcp-ok]'), must = $('[data-dcp-must]').checked; btn.disabled = true;
+    const c = cur, btn = $('[data-dcp-ok]'), must = false; btn.disabled = true;
     const r = await api.post('/api/admin/clients/' + c.id + '/password', { mustChange: must });
     btn.disabled = false;
     if (!r.ok) { if (r.status === 401) return fail(r); $('[data-dcp-err]').textContent = r.data.error; return; }
@@ -452,7 +464,7 @@
     if (!body.email && !body.phone) { dnErr.textContent = 'Нужен телефон или почта: по ним клиент войдёт в кабинет.'; f.elements.phone.focus(); return; }
     if (!dnSel.value) { dnErr.textContent = 'Выбери тариф.'; dnSel.focus(); return; }
     const btn = $('[data-dn-ok]'); btn.disabled = true;
-    const r = await api.post('/api/admin/clients/grant', { ...body, tariffId: dnSel.value, days: dnPick()[1], mustChange: true });
+    const r = await api.post('/api/admin/clients/grant', { ...body, tariffId: dnSel.value, days: dnPick()[1], mustChange: false });
     btn.disabled = false;
     if (!r.ok) {
       if (r.status === 401) return fail(r);
@@ -876,6 +888,8 @@
     });
     if (!raw.extras.length) ul.appendChild(el('li', 'empty-line', 'Материалов пока нет. Нажми «+ материал».'));
   };
+  /* Подпись поля файла: выбран файл или нет (зелёная рамка через .is-set) */
+  const setFile = (box, tEl, name, def) => { box.classList.toggle('is-set', !!name); tEl.textContent = name ? 'Выбран файл: ' + name : def; };
   let me = null; const mf = $('[data-me]');
   const drawMaterialEd = id => {
     const isNew = id === 'new', x = isNew ? null : raw.extras.find(e => e.id === id);

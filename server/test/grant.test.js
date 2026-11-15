@@ -27,7 +27,7 @@ test('только телефон: клиент создан, доступ от�
   assert.equal(r.statusCode, 201);
   assert.equal(r.headers['cache-control'], 'no-store');
   const { id, login, password, endsAt, mustChange } = r.json();
-  assert.equal(login, '+79141234567'); assert.equal(mustChange, true);
+  assert.equal(login, '+79141234567'); assert.equal(mustChange, false, 'пароль постоянный');
   assert.ok(new Date(endsAt) - Date.now() > 27 * 864e5);
 
   const card = (await t.api('GET', `/api/admin/clients/${id}`, undefined, { cookie: admin })).json();
@@ -48,7 +48,7 @@ test('с почтой: логин — почта', async () => {
   const r = await grant({ name: 'Оля', phone: '+7 924 000-11-22', email: 'Olya@Example.com', tariffId, days: 7 });
   assert.equal(r.statusCode, 201);
   assert.equal(r.json().login, 'olya@example.com');
-  assert.equal((await signIn('olya@example.com', r.json().password)).statusCode, 200);
+  const si = await signIn('olya@example.com', r.json().password); assert.equal(si.statusCode, 200);
 });
 
 test('дубль по телефону или почте: 409 и id карточки', async () => {
@@ -74,4 +74,18 @@ test('смена телефона меняет логин; админ по те�
   assert.equal((await signIn('+79145550000', password)).statusCode, 400);
   assert.equal((await t.api('PATCH', `/api/admin/clients/${id}`, { name: 'Катя', phone: '' }, { cookie: admin })).statusCode, 400);
   assert.equal((await t.api('POST', '/api/auth/password', { email: '+79145550001', password, kind: 'admin' }, { ip: t.freshIp() })).statusCode, 400);
+});
+
+test('удаление: клиент без оплат удаляется; staff не может; с оплатой нельзя', async () => {
+  const { id } = (await grant({ name: 'Ошибка', phone: '+79140000099', tariffId, days: 7 })).json();
+  await t.pool.query(`INSERT INTO admins (email, name, role, password_hash) VALUES ('staff@x.com','Диана','staff',$1)`, [await hashPassword('Correct-Horse-8')]);
+  const staff = ck(await t.api('POST', '/api/auth/password', { email: 'staff@x.com', password: 'Correct-Horse-8', kind: 'admin' }, { ip: t.freshIp() }));
+  assert.equal((await t.api('DELETE', `/api/admin/clients/${id}`, undefined, { cookie: staff })).statusCode, 403);
+  assert.equal((await t.api('DELETE', `/api/admin/clients/${id}`, undefined, { cookie: admin })).statusCode, 200);
+  assert.equal((await t.pool.query('SELECT 1 FROM users WHERE id = $1', [id])).rowCount, 0);
+  assert.equal((await t.api('DELETE', `/api/admin/clients/${id}`, undefined, { cookie: admin })).statusCode, 404);
+
+  const pr = await grant({ name: 'Платил', phone: '+79140000098', tariffId, days: 7 }); const p = pr.json();
+  await t.pool.query(`INSERT INTO orders (user_id, email, tariff_id, item_name, amount_kop, status, paid_at) VALUES ($1, 'x@x.ru', $2, 'Месяц', 300000, 'paid', now())`, [p.id, tariffId]);
+  assert.equal((await t.api('DELETE', `/api/admin/clients/${p.id}`, undefined, { cookie: admin })).statusCode, 400);
 });
