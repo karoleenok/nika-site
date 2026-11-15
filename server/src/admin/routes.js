@@ -5,6 +5,7 @@ import { normEmail, validEmail } from '../auth/crypto.js';
 import { CLIENT_SELECT, clientView, audit, DAY, MAX_FUTURE_DAYS } from '../access.js';
 import { hashPassword } from '../auth/password.js';
 import { generateClientPassword } from '../auth/genpass.js';
+import { sealPassword } from '../auth/shown.js';
 
 const bad = (reply, status, error) => reply.code(status).send({ error });
 const idOf = (v) => (/^\d{1,15}$/.test(String(v)) ? String(v) : null);
@@ -17,7 +18,7 @@ const only = (...roles) => async (req, reply) => {
 };
 const money = only('owner', 'tech');
 
-export default async function adminRoutes(app, { pool }) {
+export default async function adminRoutes(app, { pool, config }) {
   const noStore = (reply) => reply.header('cache-control', 'no-store');
 
   // ---------- Клиенты ----------
@@ -110,7 +111,8 @@ export default async function adminRoutes(app, { pool }) {
     return tx(pool, async (c) => {
       const cur = (await c.query('SELECT email, password_hash IS NOT NULL AS had FROM users WHERE id = $1 FOR UPDATE', [id])).rows[0];
       if (!cur) return bad(reply, 404, 'Клиент не найден');
-      await c.query('UPDATE users SET password_hash = $2, password_temp = $3 WHERE id = $1', [id, h, mustChange]);
+      // Без почты клиенту негде восстановить пароль: показываем его в профиле, пока клиент не задаст свой
+      await c.query('UPDATE users SET password_hash = $2, password_temp = $3, password_shown = $4 WHERE id = $1', [id, h, mustChange, sealPassword(config.sessionSecret, password)]);
       // Все прежние входы клиента закрываем: старый пароль и старые сессии больше не действуют
       await c.query('DELETE FROM sessions WHERE user_id = $1', [id]);
       await audit(c, req.admin.id, 'client.password', { userId: id, meta: { reset: cur.had, mustChange } });

@@ -55,7 +55,31 @@ export async function bootstrapProd(pool, env = process.env, log = console.log) 
         if (r.rowCount) log('стартовый пароль админа задан');
       }
     } catch (e) { if (e.code !== 'ENOENT') throw e; }
+    await starterContent(c, log);
     const a = await c.query("SELECT count(*)::int AS n FROM admins WHERE role = 'owner' AND active");
     if (a.rows[0].n === 0) throw new Error('Нет ни одного владельца (owner). Задай INITIAL_ADMINS');
   });
+}
+
+// Стартовые группы и уроки (без файлов: в кабинете они «скоро»). Ставятся один раз, отметка в settings:
+// если Ника потом удалит или переименует урок, при следующей выкладке он не вернётся.
+export async function starterContent(c, log = () => {}) {
+  const done = await c.query(`INSERT INTO settings (key, value) VALUES ('starter_content', 'true') ON CONFLICT (key) DO NOTHING`);
+  if (!done.rowCount) return;
+  const { groups } = JSON.parse(await fs.readFile(path.join(seedDir, 'starter.json'), 'utf8'));
+  const base = (await c.query('SELECT coalesce(max(sort), 0)::int AS m FROM video_groups')).rows[0].m;
+  let added = 0;
+  for (const [gi, g] of groups.entries()) {
+    const gid = (await c.query(
+      `INSERT INTO video_groups (name, sort) VALUES ($1, $2) ON CONFLICT (lower(name)) DO UPDATE SET name = video_groups.name RETURNING id`,
+      [g.name, base + gi + 1])).rows[0].id;
+    const vbase = (await c.query('SELECT coalesce(max(sort), 0)::int AS m FROM videos WHERE group_id = $1', [gid])).rows[0].m;
+    for (const [vi, title] of g.videos.entries()) {
+      const r = await c.query(`INSERT INTO videos (title, group_id, sort, status, published)
+        SELECT $1, $2, $3, 'empty', false WHERE NOT EXISTS (SELECT 1 FROM videos WHERE group_id = $2 AND lower(title) = lower($1))`,
+        [title, gid, vbase + vi + 1]);
+      added += r.rowCount;
+    }
+  }
+  log(`стартовые уроки добавлены: ${added}`);
 }

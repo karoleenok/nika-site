@@ -1,3 +1,4 @@
+import { openPassword } from './shown.js';
 import { newToken, hashToken, newCode, hashCode, sameBytes, normEmail, validEmail } from './crypto.js';
 import { cookieName, cookieOptions, createSession, readSession, deleteSession, deleteOtherUserSessions } from './sessions.js';
 import { hashPassword, checkPassword, burnTime, passwordProblem } from './password.js';
@@ -184,11 +185,14 @@ export default async function authRoutes(app, { config, pool, mailer }) {
 
   // ---------- Кто я ----------
   app.get('/api/me', { preHandler: app.requireUser }, async (req, reply) => {
-    const { rows } = await pool.query('SELECT name, email, password_hash IS NOT NULL AS has_password, password_temp FROM users WHERE id = $1', [req.auth.id]);
+    const { rows } = await pool.query('SELECT name, email, password_hash IS NOT NULL AS has_password, password_temp, password_shown FROM users WHERE id = $1', [req.auth.id]);
+    const shown = rows[0].password_shown ? openPassword(config.sessionSecret, rows[0].password_shown) : null;
     reply.header('cache-control', 'no-store');
     // mustChangePassword: пароль выдала Ника, кабинет попросит придумать свой
     // passwordOnly: письма с кодом не ходят, пароль — единственный способ входа
-    return { name: rows[0].name, email: rows[0].email, hasPassword: rows[0].has_password, mustChangePassword: rows[0].has_password && rows[0].password_temp, passwordOnly: !config.mailOn };
+    return { name: rows[0].name, email: rows[0].email, hasPassword: rows[0].has_password, mustChangePassword: rows[0].has_password && rows[0].password_temp, passwordOnly: !config.mailOn,
+      // Пароль выдал сайт или Ника и почты нет: клиент видит его в профиле, свой задать пока нельзя
+      shownPassword: shown, passwordLocked: !config.mailOn && !!shown && !rows[0].password_temp };
   });
 
   app.get('/api/admin/me', async (req, reply) => {
@@ -231,14 +235,15 @@ export default async function authRoutes(app, { config, pool, mailer }) {
   // После любого изменения: выход на других устройствах и письмо клиенту
   app.put('/api/me/password', { preHandler: app.requireUser }, async (req, reply) => {
     const pw = String(req.body?.password ?? '');
-    const { rows } = await pool.query('SELECT email, password_hash, password_temp FROM users WHERE id = $1', [req.auth.id]);
+    const { rows } = await pool.query('SELECT email, password_hash, password_temp, password_shown FROM users WHERE id = $1', [req.auth.id]);
+    if (!config.mailOn && rows[0].password_shown && !rows[0].password_temp) return bad(reply, 400, 'Пока пароль сменить нельзя: он показан в профиле. Свой можно будет задать позже.');
     const problem = passwordProblem(pw, rows[0].email);
     if (problem) return bad(reply, 400, problem);
     // Временный пароль от Ники нельзя «сменить» на него же
     if (rows[0].password_temp && rows[0].password_hash && await checkPassword(rows[0].password_hash, pw)) return bad(reply, 400, 'Это пароль, который прислала Ника. Придумай свой.');
     const h = await hashPassword(pw);
     await tx(pool, async (c) => {
-      await c.query('UPDATE users SET password_hash = $1, password_temp = false WHERE id = $2', [h, req.auth.id]);
+      await c.query('UPDATE users SET password_hash = $1, password_temp = false, password_shown = NULL WHERE id = $2', [h, req.auth.id]);
       await deleteOtherUserSessions(c, req.auth.id, req.auth.sessionId);
     });
     mailer.sendLater({ to: rows[0].email, ...passwordChangedMail({ removed: false }) });
@@ -250,7 +255,7 @@ export default async function authRoutes(app, { config, pool, mailer }) {
     if (!config.mailOn) return bad(reply, 400, 'Сейчас вход только по паролю, убрать его нельзя. Пароль можно сменить.');
     const { rows } = await pool.query('SELECT email FROM users WHERE id = $1', [req.auth.id]);
     await tx(pool, async (c) => {
-      await c.query('UPDATE users SET password_hash = NULL, password_temp = false WHERE id = $1', [req.auth.id]);
+      await c.query('UPDATE users SET password_hash = NULL, password_temp = false, password_shown = NULL WHERE id = $1', [req.auth.id]);
       await deleteOtherUserSessions(c, req.auth.id, req.auth.sessionId);
     });
     mailer.sendLater({ to: rows[0].email, ...passwordChangedMail({ removed: true }) });

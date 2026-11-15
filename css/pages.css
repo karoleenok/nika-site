@@ -413,3 +413,17 @@
 @media (max-width: 767px) {
   .qz__nav { position: sticky; bottom: 0; z-index: 2; margin-inline: calc(-1 * var(--gutter)); padding: var(--sp-3) var(--gutter) calc(var(--sp-3) + env(safe-area-inset-bottom, 0px)); background: linear-gradient(rgba(255, 255, 255, 0), var(--c-white) 28%); }
 }
+
+/* «Спасибо» после оплаты: логин и пароль от сайта (почта пока не работает) */
+.ty-cred { display: grid; gap: var(--sp-3); max-width: 520px; margin-top: var(--sp-5); padding: var(--sp-5); border: 1px solid rgba(255, 255, 255, .18); border-radius: var(--r-card); background: rgba(255, 255, 255, .04); animation: pg-in .45s var(--ease-out) both; }
+.ty-cred[hidden] { display: none; }
+.ty-cred__k { font-size: var(--fs-tiny); line-height: 1.3; color: var(--c-on-dark-2); text-transform: uppercase; letter-spacing: .06em; }
+.ty-cred__kv { display: grid; gap: var(--sp-2); }
+.ty-cred__kv > div { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--sp-3); align-items: baseline; }
+.ty-cred__kv dt { color: var(--c-on-dark-2); font-size: var(--fs-small); line-height: 1.4; }
+.ty-cred__kv dd { margin: 0; font-size: var(--fs-body, 1rem); line-height: 1.4; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; user-select: all; }
+.ty-cred__p { color: var(--c-on-dark-2); font-size: var(--fs-small); line-height: 1.4; text-wrap: pretty; }
+.ty-cred__copy { justify-self: start; }
+.ty-cred__msg { font-size: var(--fs-small); line-height: 1.4; color: var(--c-on-dark-2); min-height: 1.4em; }
+.ty-cred__msg:empty { display: none; }
+@media (prefers-reduced-motion: reduce) { .ty-cred { animation: none; } }

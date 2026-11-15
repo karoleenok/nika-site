@@ -58,7 +58,9 @@
   const chip = (cls) => { const c = el('span', 'stat stat--' + state, label); if (cls) c.classList.add(cls); return c; };
 
   if (D.demo) $('[data-demo-bar]').hidden = false;   // материалы пока демо
-  $$('[data-name]').forEach(n => { n.textContent = (D.client.name || '').split(' ')[0]; });   // в приветствии только имя, без фамилии
+  /* В приветствии только имя. После оплаты на сайте имени может не быть (Robokassa даёт только почту): тогда «Привет!» */
+  { const first = (D.client.name || '').trim().split(' ')[0];
+    $$('[data-name]').forEach(n => { const h = n.parentNode; if (first) n.textContent = first; else if (h) h.textContent = 'Привет!'; }); }
 
   const acc = $('[data-acc]');
   acc.classList.toggle('acc--bad', locked);
@@ -243,6 +245,7 @@
 
   /* ---------- Профиль ---------- */
   $('[data-p-name]').textContent = D.client.name;
+  { const row = $('[data-p-name]').closest('div'); if (row) row.hidden = !(D.client.name || '').trim(); }
   $('[data-p-email]').textContent = D.client.email;
   $('[data-p-plan]').textContent = !AC ? 'не удалось загрузить' : sv === 'none' ? 'пока нет' : '«' + (AC.plan ? AC.plan.name : '') + '», ' + (locked ? (AC.closed ? 'закрыт ' : 'закончился ') : 'до ') + fmt(end);
   const pay = $('[data-pay]');
@@ -288,8 +291,28 @@
     p1.focus();
   })();
 
+  /* Логин и пароль в профиле: показываем, пока клиент не задал свой (без почты его негде восстановить) */
+  (() => {
+    const box = $('[data-cred]'); if (!box || !me.shownPassword) return;
+    const pw = $('[data-cred-pass]', box), eye = $('[data-cred-eye]', box), msg = $('[data-cred-msg]', box);
+    $('[data-cred-login]', box).textContent = me.email;
+    if (!me.passwordLocked) $('[data-cred-note]', box).textContent = 'Этим логином и паролем входи с любого устройства. Ниже можно задать свой пароль.';
+    box.hidden = false;
+    eye.addEventListener('click', () => {
+      const on = !pw.classList.contains('is-on');
+      pw.classList.toggle('is-on', on); pw.textContent = on ? me.shownPassword : '••••••••••••';
+      eye.textContent = on ? 'скрыть пароль' : 'показать пароль'; eye.setAttribute('aria-pressed', String(on));
+    });
+    $('[data-cred-copy]', box).addEventListener('click', async () => {
+      let ok = false; try { await navigator.clipboard.writeText('Логин: ' + me.email + '\nПароль: ' + me.shownPassword); ok = true; } catch (_) {}
+      msg.textContent = ok ? 'Скопировано.' : 'Не получилось скопировать. Нажми «показать пароль» и скопируй вручную.';
+    });
+  })();
+
   (() => {
     const box = $('[data-pw]'); if (!box) return;
+    /* Пароль выдал сайт, почты нет: свой задать пока нельзя, блок смены не показываем */
+    if (me.passwordLocked) { box.hidden = true; return; }
     const form = $('[data-pw-form]', box), actions = $('[data-pw-actions]', box), conf = $('[data-pw-confirm]', box);
     const chip = $('[data-pw-chip]', box), lead = $('[data-pw-lead]', box), msg = $('[data-pw-msg]', box), err = $('[data-pw-err]', box);
     const openBtn = $('[data-pw-open]', box), rmBtn = $('[data-pw-remove]', box);

@@ -125,15 +125,35 @@
     else if (key === 'pay' && (!order || !order.orderId)) drawPay('paid', null);
     else if (key === 'pay') {
       const it = itemOf(order);
+      let cred = null;
+      const showCred = c => {
+        const box = $('[data-ty-cred]'); if (!box || !c) return;
+        $('[data-ty-cred-login]').textContent = c.email; $('[data-ty-cred-pass]').textContent = c.password;
+        box.hidden = false;
+        const acc = $('[data-ty-account]'); if (acc) { acc.href = 'lk/'; acc.textContent = 'открыть кабинет'; }
+        $('[data-ty-lead]').textContent = 'Спасибо, оплата прошла. Доступ уже открыт, а вход в кабинет мы сделали сами: он ниже.';
+        const ol = $('[data-ty-steps]'); ol.textContent = '';
+        ['Сохрани логин и пароль.', 'Нажми «открыть кабинет»: в этом браузере ты уже вошёл(а).', 'С другого устройства входи по этой почте и паролю. Если что-то не открылось, напиши Нике в WhatsApp.']
+          .forEach(t => { const li = document.createElement('li'); li.textContent = t; ol.appendChild(li); });
+        $('[data-ty-cred-copy]').onclick = async () => {
+          const text = 'Кабинет: ' + location.origin + '/lk/login.html\nЛогин: ' + c.email + '\nПароль: ' + c.password;
+          let ok = false; try { await navigator.clipboard.writeText(text); ok = true; } catch (_) {}
+          $('[data-ty-cred-msg]').textContent = ok ? 'Скопировано. Сохрани в заметках.' : 'Не получилось скопировать. Выдели пароль и скопируй вручную.';
+        };
+      };
       drawPay('check', it);
       const started = Date.now();
       const poll = async () => {
         let st = '';
         try {
           const r = await fetch('/api/pay/status/' + encodeURIComponent(order.orderId) + '?k=' + encodeURIComponent(order.key), { cache: 'no-store', credentials: 'same-origin' });
-          if (r.ok) st = (await r.json()).status;
+          if (r.ok) { const j = await r.json(); st = j.status; if (st === 'paid' && j.login) cred = j.login; }
         } catch (_) {}
-        if (st === 'paid') { drawPay('paid', it); try { sessionStorage.removeItem('nd_order'); } catch (_) {} return; }
+        if (st === 'paid') {
+          /* Оплачено: если сайт выдал вход, просим ещё раз уже с enter=1, сервер откроет кабинет в этом браузере */
+          if (cred) { try { await fetch('/api/pay/status/' + encodeURIComponent(order.orderId) + '?k=' + encodeURIComponent(order.key) + '&enter=1', { cache: 'no-store', credentials: 'same-origin' }); } catch (_) {} }
+          drawPay('paid', it); showCred(cred); try { sessionStorage.removeItem('nd_order'); } catch (_) {} return;
+        }
         if (st === 'failed' || st === 'refunded') { drawPay('fail', it); return; }
         if (Date.now() - started > 60e3) { drawPay('wait', it); return; }
         setTimeout(poll, Date.now() - started < 10e3 ? 1500 : 4000);   // сначала часто, потом реже

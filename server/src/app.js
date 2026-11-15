@@ -54,7 +54,7 @@ export async function buildApp({ config, pool, s3, mailer, serveStatic = !config
   });
 
   await authRoutes(app, { config, pool, mailer });
-  await adminRoutes(app, { pool });
+  await adminRoutes(app, { pool, config });
   await lkRoutes(app, { pool });
   await videoRoutes(app, { pool, s3 });
   await payRoutes(app, { config, pool, mailer });

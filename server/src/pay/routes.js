@@ -6,6 +6,8 @@ import { normEmail, validEmail } from '../auth/crypto.js';
 import { Limiter } from '../auth/limits.js';
 import { audit, DAY } from '../access.js';
 import { paidMail, adminPaidMail } from '../mail.js';
+import { issueIfNoPassword, openPassword } from '../auth/shown.js';
+import { createSession, cookieName, cookieOptions } from '../auth/sessions.js';
 import { paymentUrl, resultSignOk, sumToKop, MAX_INV_ID } from './robokassa.js';
 
 export const OFFER_VERSION = '2026-11-13';
@@ -15,7 +17,7 @@ const cleanText = (v, max) => String(v ?? '').trim().slice(0, max);
 
 // Выдать то, за что заплатили. Вызывается внутри транзакции, заказ уже заблокирован (FOR UPDATE).
 // Повторный вызов для того же заказа ничего не добавит: access_periods.order_id и purchases.order_id уникальны.
-export async function fulfill(c, order) {
+export async function fulfill(c, order, { secret } = {}) {
   let uid = order.user_id;
   if (!uid) {
     const u = await c.query(
@@ -37,6 +39,8 @@ export async function fulfill(c, order) {
   } else if (order.kind === 'material') {
     await c.query(`INSERT INTO purchases (user_id, tariff_id, order_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, [uid, order.tariff_id, order.id]);
   }
+  // Почта может не работать: вход в кабинет сайт выдаёт сам (пароль покажется на странице «спасибо» и в профиле)
+  if (secret) await issueIfNoPassword(c, uid, secret);
   return { userId: uid, endsAt };
 }
 
@@ -92,11 +96,24 @@ export default async function payRoutes(app, { config, pool, mailer }) {
     statusLimit.hit(req.ip);
     const id = idOf(req.params.id), key = String(req.query?.k ?? '');
     const o = id && (await pool.query(
-      `SELECT o.status, o.status_key, o.item_name, t.kind, t.slug FROM orders o JOIN tariffs t ON t.id = o.tariff_id WHERE o.id = $1`, [id])).rows[0];
+      `SELECT o.status, o.status_key, o.item_name, o.user_id, o.paid_at, o.email, t.kind, t.slug, u.password_shown FROM orders o JOIN tariffs t ON t.id = o.tariff_id LEFT JOIN users u ON u.id = o.user_id WHERE o.id = $1`, [id])).rows[0];
     // Чужой заказ и несуществующий выглядят одинаково
     if (!o || !o.status_key || !crypto.timingSafeEqual(Buffer.from(o.status_key.padEnd(64)), Buffer.from(key.slice(0, 64).padEnd(64)))) return bad(reply, 404, 'Заказ не найден');
     const status = o.status === 'manual' ? 'paid' : o.status;
-    return { status, title: o.item_name, kind: o.kind, item: o.slug };
+    const out = { status, title: o.item_name, kind: o.kind, item: o.slug };
+    // Оплачено недавно и пароль выдал сайт: показываем вход и сразу открываем кабинет в этом браузере.
+    // Ключ заказа знает только браузер покупателя; через 2 дня страница «спасибо» вход уже не показывает.
+    const fresh = status === 'paid' && o.paid_at && Date.now() - new Date(o.paid_at).getTime() < 2 * DAY;
+    const pw = fresh && o.password_shown ? openPassword(config.sessionSecret, o.password_shown) : null;
+    if (pw) {
+      out.login = { email: o.email, password: pw };
+      if (req.query?.enter === '1') {
+        const s = await createSession(pool, { kind: 'user', id: o.user_id, persistent: true });
+        reply.setCookie(cookieName('user', config.publicUrl.startsWith('https://')), s.token, cookieOptions(config.publicUrl.startsWith('https://'), s.maxAgeMs));
+        out.entered = true;
+      }
+    }
+    return out;
   });
 
   // ---------- Уведомление Robokassa ----------
@@ -118,7 +135,7 @@ export default async function payRoutes(app, { config, pool, mailer }) {
         if (sumToKop(sum) !== o.amount_kop) return { result: 'bad_sum', o };
         if (o.status === 'paid' || o.status === 'manual') return { result: 'repeat', o };   // повтор: ответить OK, ничего не делать
         if (o.status !== 'new' && o.status !== 'failed') return { result: 'bad_status', o };
-        const g = await fulfill(c, o);
+        const g = await fulfill(c, o, { secret: config.sessionSecret });
         const fee = sumToKop(p.Fee);
         await c.query(`UPDATE orders SET status = 'paid', paid_at = now(), pay_method = $2, fee_kop = $3 WHERE id = $1`,
           [o.id, cleanText(p.IncCurrLabel || p.PaymentMethod, 40) || null, fee]);
@@ -165,7 +182,7 @@ export default async function payRoutes(app, { config, pool, mailer }) {
       const o = (await c.query(ORDER_FOR_UPDATE, [id])).rows[0];
       if (!o) return { err: [404, 'Заказ не найден'] };
       if (o.status !== 'new' && o.status !== 'failed') return { err: [400, 'Этот заказ уже оплачен или возвращён.'] };
-      const g = await fulfill(c, o);
+      const g = await fulfill(c, o, { secret: config.sessionSecret });
       await c.query(`UPDATE orders SET status = 'manual', paid_at = now(), status_note = $2, status_by = $3 WHERE id = $1`, [id, note, req.admin.id]);
       await audit(c, req.admin.id, 'order.manual', { userId: g.userId, target: id, note,
         meta: { title: o.item_name, sumKop: o.amount_kop, endsAt: g.endsAt && new Date(g.endsAt).toISOString() } });

@@ -297,3 +297,9 @@ body.lk--auth { background: var(--c-ink); color: var(--c-white); }
 .soon .gate__t { overflow-wrap: anywhere; }
 .soon__p { font-size: var(--fs-body); line-height: var(--lh-text); text-wrap: pretty; margin-top: calc(-1 * var(--sp-1)); }
 @media (prefers-reduced-motion: reduce) { .soon__track { animation: none; } }
+
+/* Профиль: логин и пароль, которые выдал сайт или Ника (пока нет почты) */
+.cred dd { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.cred__pw { letter-spacing: .02em; }
+.cred__pw.is-on { user-select: all; }
+.kv > div[hidden] { display: none; }

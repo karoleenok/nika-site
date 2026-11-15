@@ -14,8 +14,8 @@
   <link rel="preload" href="../fonts/InterTight-Variable.woff" as="font" type="font/woff" crossorigin>
   <link rel="stylesheet" href="../css/tokens.css?v=20261113b">
   <link rel="stylesheet" href="../css/base.css?v=20261113b">
-  <link rel="stylesheet" href="../css/pages.css?v=20261113b">
-  <link rel="stylesheet" href="../css/lk.css?v=20261115b">
+  <link rel="stylesheet" href="../css/pages.css?v=20261115c">
+  <link rel="stylesheet" href="../css/lk.css?v=20261115c">
 </head>
 <body class="lk" data-wa-phone="79141636665">
 <!-- ПРОВЕРИТЬ: номер WhatsApp Ники (data-wa-phone), тот же, что на главной -->
@@ -150,6 +150,19 @@
         <h2 class="lk-h2">Оплаты</h2>
         <ul class="pay" data-pay></ul>
       </div>
+      <div class="lk-block lk-card" data-cred hidden>
+        <h2 class="lk-h2 lk-h2--in">Вход в кабинет</h2>
+        <dl class="kv cred">
+          <div><dt>Логин</dt><dd data-cred-login></dd></div>
+          <div><dt>Пароль</dt><dd><span class="cred__pw" data-cred-pass>••••••••••••</span></dd></div>
+        </dl>
+        <p class="lk-p" data-cred-note>Этим логином и паролем входи с любого устройства. Сменить пароль на свой можно будет позже.</p>
+        <div class="stack">
+          <button class="btn btn--line-dark" type="button" aria-pressed="false" data-cred-eye>показать пароль</button>
+          <button class="btn btn--line-dark" type="button" data-cred-copy>скопировать</button>
+        </div>
+        <p class="pw__msg" data-cred-msg role="status" aria-live="polite"></p>
+      </div>
       <div class="lk-block lk-card" data-pw>
         <h2 class="lk-h2 lk-h2--in">Пароль для входа</h2>
         <p class="lk-p" data-pw-lead>Необязательно. Сейчас ты входишь по&nbsp;коду или ссылке из&nbsp;письма. Если удобнее пароль, задай его: код понадобится, только когда ты&nbsp;его забудешь.</p>
@@ -244,6 +257,6 @@
 
 <script src="../js/api.js?v=20261113b"></script>
 <script src="../js/lk-data.js?v=20261113b"></script>
-<script src="../js/lk.js?v=20261115b"></script>
+<script src="../js/lk.js?v=20261115c"></script>
 </body>
 </html>
