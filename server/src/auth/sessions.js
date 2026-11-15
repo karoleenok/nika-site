@@ -7,6 +7,7 @@ export const LIFETIME = {
   user:  { persistent: 30 * DAY, sliding: true },
   admin: { persistent: 14 * DAY, sliding: false },
   temp: 12 * 3600e3,
+  view: 3600e3, // «посмотреть как клиент»: ровно час, не продлевается
 };
 const SLIDE_EVERY = 3600e3; // продлеваем не чаще раза в час, чтобы не писать в базу на каждый запрос
 
@@ -21,13 +22,13 @@ export function cookieOptions(secure, maxAgeMs) {
   return o;
 }
 
-export async function createSession(db, { kind, id, persistent }) {
+export async function createSession(db, { kind, id, persistent, viewerAdminId = null }) {
   const token = newToken();
-  const ms = persistent ? LIFETIME[kind].persistent : LIFETIME.temp;
+  const ms = viewerAdminId ? LIFETIME.view : persistent ? LIFETIME[kind].persistent : LIFETIME.temp;
   await db.query(
-    `INSERT INTO sessions (token_hash, user_id, admin_id, persistent, expires_at)
-     VALUES ($1, $2, $3, $4, now() + $5 * interval '1 millisecond')`,
-    [hashToken(token), kind === 'user' ? id : null, kind === 'admin' ? id : null, persistent, ms]);
+    `INSERT INTO sessions (token_hash, user_id, admin_id, persistent, expires_at, viewer_admin_id)
+     VALUES ($1, $2, $3, $4, now() + $5 * interval '1 millisecond', $6)`,
+    [hashToken(token), kind === 'user' ? id : null, kind === 'admin' ? id : null, !!persistent && !viewerAdminId, ms, viewerAdminId]);
   return { token, maxAgeMs: persistent ? ms : 0 };
 }
 
@@ -36,13 +37,14 @@ export async function readSession(db, kind, token) {
   if (!token || token.length > 100) return null;
   const col = kind === 'admin' ? 'admin_id' : 'user_id';
   const { rows } = await db.query(
-    `SELECT s.id, s.${col} AS owner_id, s.persistent, s.last_seen_at, s.expires_at
+    `SELECT s.id, s.${col} AS owner_id, s.persistent, s.last_seen_at, s.expires_at, s.viewer_admin_id
        FROM sessions s
        ${kind === 'admin' ? 'JOIN admins a ON a.id = s.admin_id AND a.active' : ''}
       WHERE s.token_hash = $1 AND s.${col} IS NOT NULL AND s.expires_at > now()`,
     [hashToken(token)]);
   const s = rows[0];
   if (!s) return null;
+  if (s.viewer_admin_id) return { session: s, refresh: 0 }; // просмотр админом не продлевается
   const since = Date.now() - new Date(s.last_seen_at).getTime();
   if (since < SLIDE_EVERY) return { session: s, refresh: 0 };
   const slide = s.persistent ? LIFETIME[kind].sliding : true; // временная сессия всегда скользит (12 ч без действий)

@@ -96,6 +96,7 @@
       case 'client.update': return 'Изменены данные клиента';
       case 'client.note': return 'Изменена заметка о клиенте';
       case 'client.remind': return 'Отправлено напоминание о продлении';
+      case 'client.view': return 'Открыт кабинет клиента в режиме просмотра';
       case 'client.password': return m.reset ? 'Выдан новый пароль для входа в кабинет' : 'Задан пароль для входа в кабинет';
       case 'access.open': return 'Доступ открыт' + (e ? ' до ' + fmt(e) : '');
       case 'access.extend': return 'Доступ продлён' + (e ? ' до ' + fmt(e) : '');
@@ -384,6 +385,17 @@
       : 'Клиент входит по своему паролю. Если он его забыл, выдай новый.';
     $('[data-c-pass]').textContent = c.hasPassword ? 'выдать новый пароль' : 'задать пароль';
   };
+  /* ---------- Посмотреть кабинет как клиент: новая вкладка, только чтение ---------- */
+  const vBtn = $('[data-c-view]');
+  if (vBtn) vBtn.addEventListener('click', async () => {
+    if (!cur) return;
+    const w = window.open('', '_blank'); // открываем сразу по клику, иначе браузер заблокирует вкладку
+    vBtn.disabled = true;
+    const r = await api.post('/api/admin/clients/' + cur.id + '/view');
+    vBtn.disabled = false;
+    if (!r.ok) { if (w) w.close(); return fail(r); }
+    if (w) { w.opener = null; w.location.replace(r.data.url); } else location.href = r.data.url;
+  });
   const cpWipe = () => { cpPw.textContent = ''; cpText = ''; cpWho = null; cpMsg.textContent = ''; dlg('cpass').removeAttribute('data-sticky'); };
   dlg('cpass').addEventListener('close', cpWipe);
   $('[data-c-pass]').addEventListener('click', () => {

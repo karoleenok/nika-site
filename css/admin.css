@@ -317,6 +317,8 @@ body:has(dialog[open]) { overflow: hidden; }
 
 /* ---------- Пароль клиента: кнопка в карточке и окно с паролем ---------- */
 .adm-pass { margin-top: var(--sp-4); }
+.adm-view { display: block; margin: var(--sp-4) auto 0; }
+.adm-view__note { margin: var(--sp-2) 0 0; font-size: var(--fs-tiny); line-height: var(--lh-small); color: var(--c-muted); text-align: center; }
 .pw__state[hidden] { display: none; }
 .sheet__grp { display: grid; gap: var(--sp-4); }
 .sheet__grp[hidden] { display: none; }

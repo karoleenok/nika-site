@@ -33,11 +33,13 @@ export default async function authRoutes(app, { config, pool, mailer }) {
     const r = await readSession(pool, kind, token);
     if (!r) { if (token) clearCookie(reply, kind); return null; }
     if (r.refresh) setCookie(reply, kind, token, r.refresh);
-    return { kind, id: r.session.owner_id, sessionId: r.session.id, token };
+    return { kind, id: r.session.owner_id, sessionId: r.session.id, token, viewer: r.session.viewer_admin_id || null };
   }
   app.decorate('requireUser', async (req, reply) => {
     req.auth = await load(req, reply, 'user');
     if (!req.auth) return bad(reply, 401, 'Нужно войти');
+    // Админ смотрит кабинет как клиент: только чтение, ничего от имени клиента не меняем
+    if (req.auth.viewer && req.method !== 'GET' && req.method !== 'HEAD') return bad(reply, 403, 'Это режим просмотра: менять ничего нельзя.');
   });
   app.decorate('requireAdmin', async (req, reply) => {
     req.auth = await load(req, reply, 'admin');
@@ -187,11 +189,13 @@ export default async function authRoutes(app, { config, pool, mailer }) {
   // ---------- Кто я ----------
   app.get('/api/me', { preHandler: app.requireUser }, async (req, reply) => {
     const { rows } = await pool.query('SELECT name, email, password_hash IS NOT NULL AS has_password, password_temp, password_shown FROM users WHERE id = $1', [req.auth.id]);
-    const shown = rows[0].password_shown ? openPassword(config.sessionSecret, rows[0].password_shown) : null;
+    const view = req.auth.viewer ? (await pool.query('SELECT name FROM admins WHERE id = $1', [req.auth.viewer])).rows[0] : null;
+    // В режиме просмотра пароль клиента админу не показываем и окно «придумай пароль» не открываем
+    const shown = !view && rows[0].password_shown ? openPassword(config.sessionSecret, rows[0].password_shown) : null;
     reply.header('cache-control', 'no-store');
     // mustChangePassword: пароль выдала Ника, кабинет попросит придумать свой
     // passwordOnly: письма с кодом не ходят, пароль — единственный способ входа
-    return { name: rows[0].name, email: isPhoneEmail(rows[0].email) ? '' : rows[0].email, login: loginOf(rows[0].email), hasPassword: rows[0].has_password, mustChangePassword: rows[0].has_password && rows[0].password_temp, passwordOnly: !config.mailOn,
+    return { name: rows[0].name, email: isPhoneEmail(rows[0].email) ? '' : rows[0].email, login: loginOf(rows[0].email), hasPassword: rows[0].has_password, mustChangePassword: !view && rows[0].has_password && rows[0].password_temp, viewAs: view ? { admin: view.name } : null, passwordOnly: !config.mailOn,
       // Пароль выдал сайт или Ника и почты нет: клиент видит его в профиле, свой задать пока нельзя
       shownPassword: shown, passwordLocked: !config.mailOn && !!shown && !rows[0].password_temp };
   });

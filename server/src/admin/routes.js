@@ -6,6 +6,7 @@ import { CLIENT_SELECT, clientView, audit, DAY, MAX_FUTURE_DAYS } from '../acces
 import { hashPassword } from '../auth/password.js';
 import { generateClientPassword } from '../auth/genpass.js';
 import { sealPassword } from '../auth/shown.js';
+import { createSession, cookieName, cookieOptions } from '../auth/sessions.js';
 
 const bad = (reply, status, error) => reply.code(status).send({ error });
 const idOf = (v) => (/^\d{1,15}$/.test(String(v)) ? String(v) : null);
@@ -185,6 +186,24 @@ export default async function adminRoutes(app, { pool, config }) {
       await audit(c, req.admin.id, 'client.password', { userId: id, meta: { reset: cur.had, mustChange } });
       return { ok: true, email: cur.email, login: loginOf(cur.email), password, mustChange };
     });
+  });
+
+  // ---------- Посмотреть кабинет глазами клиента ----------
+  // Только owner и tech. Отдельная сессия кабинета на 1 час, только чтение, запись в журнале.
+  // Пароль клиента не нужен и не меняется, его собственные входы не трогаем.
+  app.post('/api/admin/clients/:id/view', { preHandler: only('owner', 'tech') }, async (req, reply) => {
+    noStore(reply);
+    const id = idOf(req.params.id);
+    if (!id) return bad(reply, 404, 'Клиент не найден');
+    if (!(await pool.query('SELECT 1 FROM users WHERE id = $1', [id])).rowCount) return bad(reply, 404, 'Клиент не найден');
+    const secure = config.publicUrl.startsWith('https://');
+    const s = await tx(pool, async (c) => {
+      const r = await createSession(c, { kind: 'user', id, persistent: false, viewerAdminId: req.admin.id });
+      await audit(c, req.admin.id, 'client.view', { userId: id });
+      return r;
+    });
+    reply.setCookie(cookieName('user', secure), s.token, cookieOptions(secure)); // до закрытия браузера, на сервере 1 час
+    return { ok: true, url: '/lk/' };
   });
 
   // ---------- Доступ ----------

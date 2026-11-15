@@ -39,6 +39,14 @@ body.lk { background: var(--c-paper); min-height: 100vh; min-height: 100svh; }
 
 .lk-main { width: 100%; max-width: var(--lk-main-w); margin-inline: auto; padding: var(--sp-6) var(--gutter) calc(var(--lk-tab) + var(--safe-b, 0px) + var(--sp-7)); }
 .lk-main [data-view][hidden] { display: none; }
+/* Режим просмотра админом: плашка прилипает под шапкой, пароли клиента не показываем */
+.viewas { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: var(--sp-6); padding: 12px 16px; border-radius: var(--r-card); background: var(--c-warn-bg); color: var(--c-warn); }
+.viewas[hidden] { display: none; }
+.viewas__t { margin: 0; flex: 1 1 260px; font-size: var(--fs-small); line-height: var(--lh-small); }
+.viewas__out { min-height: 44px; padding: 0 16px; border-radius: var(--r-btn); background: var(--c-ink); color: var(--c-white); font-size: var(--fs-small); font-weight: 500; white-space: nowrap; }
+@media (hover: hover) { .viewas__out:hover { background: var(--c-red); } }
+.is-viewas [data-cred], .is-viewas [data-pw], .is-viewas [data-gate] { display: none !important; }
+@media (min-width: 1024px) { .viewas { position: sticky; top: var(--sp-4); z-index: 30; } }
 .lk-main [data-view]:not([hidden]) { animation: pg-in .45s var(--ease-out) both; }
 
 @media (min-width: 1024px) {

@@ -16,6 +16,18 @@
   const D = window.LK_DATA;
   if (!D) return;
   D.client = { name: me.name, email: me.email, login: me.login || me.email };
+  /* ---------- Админ смотрит кабинет как клиент: плашка сверху, блоки с паролем скрыты ---------- */
+  if (me.viewAs) {
+    document.body.classList.add('is-viewas');
+    const va = document.querySelector('[data-viewas]');
+    va.querySelector('[data-viewas-who]').textContent = me.viewAs.admin || 'Админ';
+    va.hidden = false;
+    va.querySelector('[data-viewas-out]').addEventListener('click', async () => {
+      await window.NikaApi.post('/api/auth/logout', { kind: 'user' });
+      window.close(); // вкладку открыла админка; если браузер не дал закрыть, уходим в админку
+      location.replace('/admin/');
+    });
+  }
   const [ar, vr] = await Promise.all([window.NikaApi.get('/api/me/access'), window.NikaApi.get('/api/videos')]);
   if (ar.status === 401 || vr.status === 401) { location.replace('login.html'); return; }
   D.groups = vr.ok ? vr.data.groups : [];
