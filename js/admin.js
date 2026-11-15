@@ -1,5 +1,5 @@
 /* Админка Ники. Экраны по hash: #/ #/clients #/client/ID #/content #/content/materials
-   #/video/ID|new #/material/ID|new #/leads #/more #/prices #/log.
+   #/video/ID|new #/material/ID|new #/leads #/more #/prices #/services #/log.
    Клиенты, доступы, цены и журнал приходят с сервера (js/api.js), роль проверяет сервер.
    Группы и видео тоже с сервера (фаза 3), файлы грузит js/uploader.js прямо в хранилище.
    Заявки с сервера (фаза 5). Материалы с сервера: обложка в базе, файл прямо в хранилище по подписанной ссылке.
@@ -106,6 +106,9 @@
       case 'order.manual': return 'Оплата «' + (m.title || '') + '» отмечена вручную';
       case 'order.refund': return 'Возврат «' + (m.title || '') + '», ' + money((m.sumKop || 0) / 100);
       case 'tariff.price': return 'Цена «' + (m.name || '') + '»: ' + money(m.from) + ' → ' + money(m.to);
+      case 'service.create': return 'Добавлен сервис «' + (m.name || '') + '»';
+      case 'service.update': return 'Сервис «' + (m.name || '') + '»: изменено' + (m.until ? ', хватит до ' + fmt(new Date(m.until + 'T00:00:00')) : '');
+      case 'service.delete': return 'Удалён сервис «' + (m.name || '') + '»';
       case 'password_change': return 'Изменён пароль для входа в админку';
       case 'material.create': return 'Добавлен материал «' + (m.title || '') + '»';
       case 'material.update': return 'Изменён материал «' + (m.title || '') + '»';
@@ -1160,6 +1163,142 @@
     toast(ordMode === 'confirm' ? 'Оплата отмечена, доступ открыт' : 'Возврат отмечен');
   });
 
+  /* ---------- Сервисы и оплаты ----------
+     За что платим мы (домен, сервер, хранилище). Плашка наверху любого экрана появляется за 14 дней до срока
+     (за 3, если сервис продлевается сам) и краснеет, когда срок вышел. Данные только у owner и tech. */
+  let services = [];
+  const loadServices = async () => { if (!canMoney) return; const r = await api.get('/api/admin/services'); if (r.ok) services = r.data.services; else fail(r); };
+  const isoDate = iso => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
+  const toIso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const daysTo = sv => (sv.until ? Math.round((isoDate(sv.until) - today) / 864e5) : null);
+  const WARN_DAYS = 14, WARN_AUTO = 3;
+  const svcLevel = sv => {
+    const n = daysTo(sv);
+    if (n == null) return 'none';
+    if (n < 0) return 'bad';
+    return n <= (sv.autoRenew ? WARN_AUTO : WARN_DAYS) ? 'warn' : 'ok';
+  };
+  const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
+  const leftText = n => (n < 0 ? 'срок вышел ' + agoText(-n) : n === 0 ? 'последний день' : 'осталось ' + dayWord(n));
+  const perMonth = () => Math.round(services.reduce((a, x) => a + (x.period === 'year' ? x.sum / 12 : x.sum), 0));
+  const PAYER = { nika: 'Ника', karolina: 'Каролина' };
+  /* Прибавить месяц или год, не перескакивая через конец месяца (31 января + месяц = 28 февраля) */
+  const addPeriod = (d, period) => {
+    const x = new Date(d.getFullYear(), d.getMonth() + (period === 'year' ? 12 : 1), 1);
+    x.setDate(Math.min(d.getDate(), new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate())); return x;
+  };
+
+  const drawSvcAlert = () => {
+    const box = $('[data-svc-alert]'); if (!box) return;
+    const due = canMoney && routeName !== 'services' ? services.filter(x => ['warn', 'bad'].includes(svcLevel(x))).sort((a, b) => daysTo(a) - daysTo(b)) : [];
+    box.hidden = !due.length; if (!due.length) return;
+    const first = due[0], n = daysTo(first), bad = n < 0, urgent = n <= 3;
+    box.className = 'svc-alert ' + (urgent ? 'svc-alert--bad' : 'svc-alert--warn');
+    $('[data-svc-alert-t]').textContent = (bad ? 'Просрочено: ' : 'Скоро платить: ') + first.name;
+    const rest = due.length > 1 ? ' · ещё ' + (due.length - 1) : '';
+    $('[data-svc-alert-s]').textContent = cap(leftText(n)) + ' · ' + money(first.sum) + (first.period === 'year' ? ' / год' : ' / мес.') + rest;
+  };
+
+  /* Событие в календаре Ники за 3 дня до срока: письма с сайта пока ходить не могут, календарь страхует */
+  const icsEsc = t => String(t).replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  const calendarFile = sv => {
+    let d = addDays(isoDate(sv.until), -3); if (d < today) d = new Date(today);
+    const next = addDays(d, 1), ymd = x => toIso(x).replace(/-/g, '');
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//nikassd.ru//admin//RU', 'BEGIN:VEVENT',
+      'UID:svc-' + sv.id + '-' + sv.until + '@nikassd.ru', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]|\.\d{3}/g, ''),
+      'DTSTART;VALUE=DATE:' + ymd(d), 'DTEND;VALUE=DATE:' + ymd(next),
+      'SUMMARY:' + icsEsc('Оплатить: ' + sv.name),
+      'DESCRIPTION:' + icsEsc('Хватит до ' + fmt(isoDate(sv.until)) + '. ' + money(sv.sum) + (sv.period === 'year' ? ' в год' : ' в месяц') + (sv.payUrl ? '. Оплата: ' + sv.payUrl : '')),
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc('Оплатить: ' + sv.name), 'TRIGGER:PT9H', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'];
+    const a = el('a'); a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' }));
+    a.download = 'oplata-' + sv.id + '.ics'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
+
+  const fact = (dt, dd) => { const w = el('div'); w.appendChild(el('dt', '', dt)); w.appendChild(el('dd', '', dd)); return w; };
+  const drawServices = () => {
+    const ul = $('[data-svc-list]'); ul.textContent = '';
+    services.forEach(sv => {
+      const lv = svcLevel(sv), n = daysTo(sv), li = el('li', 'svc svc--' + lv);
+      const top = el('div', 'svc__top');
+      top.appendChild(el('h2', 'svc__n', sv.name));
+      top.appendChild(el('span', 'stat ' + (lv === 'none' ? 'stat--off' : 'stat--' + lv), lv === 'none' ? 'срок не задан' : lv === 'bad' ? 'просрочено' : lv === 'warn' ? 'скоро платить' : 'всё оплачено'));
+      li.appendChild(top);
+      if (sv.what) li.appendChild(el('p', 'svc__w', sv.what));
+      const dl = el('dl', 'svc__f');
+      dl.appendChild(fact('Сумма', money(sv.sum) + (sv.period === 'year' ? ' / год' : ' / мес.')));
+      dl.appendChild(fact('Хватит до', sv.until ? fmt(isoDate(sv.until)) + (isoDate(sv.until).getFullYear() !== today.getFullYear() ? ' ' + isoDate(sv.until).getFullYear() : '') : 'не задано'));
+      dl.appendChild(fact('Платит', PAYER[sv.payer]));
+      dl.appendChild(fact('Продление', sv.autoRenew ? 'само' : 'руками'));
+      li.appendChild(dl);
+      if (n != null) li.appendChild(el('p', 'svc__left', leftText(n)));
+      if (sv.note) li.appendChild(el('p', 'svc__note', sv.note));
+      const act = el('div', 'svc__act');
+      const paid = el('button', 'btn ' + (lv === 'warn' || lv === 'bad' ? 'btn--red' : 'btn--line-dark'), 'оплатила'); paid.type = 'button'; paid.addEventListener('click', () => svcPaidOpen(sv)); act.appendChild(paid);
+      if (sv.payUrl && /^https:\/\//.test(sv.payUrl)) { const a = el('a', 'btn btn--line-dark', 'страница оплаты'); a.href = sv.payUrl; a.target = '_blank'; a.rel = 'noopener noreferrer'; act.appendChild(a); }
+      if (sv.until) { const c = el('button', 'btn btn--line-dark', 'в календарь'); c.type = 'button'; c.addEventListener('click', () => { calendarFile(sv); toast('Файл скачан: открой его, и напоминание появится в календаре'); }); act.appendChild(c); }
+      const ed = el('button', 'linkbtn', 'изменить'); ed.type = 'button'; ed.addEventListener('click', () => svcEdit(sv)); act.appendChild(ed);
+      li.appendChild(act); ul.appendChild(li);
+    });
+    $('[data-svc-sum]').textContent = services.length ? 'Всего около ' + money(perMonth()) + ' в месяц' : '';
+    if (!services.length) ul.appendChild(el('li', 'empty-line', 'Сервисов пока нет. Добавь первый: домен, сервер или хранилище.'));
+  };
+
+  /* Добавить или изменить */
+  let svcCur = null;
+  const fs = $('[data-form="svc"]'), fsErr = $('[data-ds-err]');
+  const svcEdit = sv => {
+    svcCur = sv || null; fsErr.textContent = ''; fs.reset();
+    $('[data-ds-title]').textContent = sv ? 'Изменить сервис' : 'Новый сервис';
+    $('[data-ds-del]').hidden = !sv;
+    if (sv) { const f = fs.elements; f.name.value = sv.name; f.what.value = sv.what; f.sum.value = sv.sum; f.period.value = sv.period; f.until.value = sv.until || ''; f.payer.value = sv.payer; f.payUrl.value = sv.payUrl; f.note.value = sv.note; f.autoRenew.checked = sv.autoRenew; }
+    openDlg('svc');
+  };
+  $('[data-svc-add]').addEventListener('click', () => svcEdit(null));
+  fs.addEventListener('submit', async e => {
+    e.preventDefault(); const f = fs.elements;
+    const name = f.name.value.trim(), sumRaw = f.sum.value.trim(), url = f.payUrl.value.trim();
+    [...fs.querySelectorAll('[aria-invalid]')].forEach(x => x.removeAttribute('aria-invalid'));
+    const stop = (field, msg) => { fsErr.textContent = msg; field.setAttribute('aria-invalid', 'true'); field.focus(); };
+    if (!name) return stop(f.name, 'Напиши название сервиса.');
+    if (sumRaw && !/^\d{1,7}$/.test(sumRaw.replace(/\s/g, ''))) return stop(f.sum, 'Сумма: только цифры, в рублях.');
+    if (url && !/^https:\/\//i.test(url)) return stop(f.payUrl, 'Ссылка должна начинаться с https://');
+    const body = { name, what: f.what.value.trim(), sum: num(sumRaw), period: f.period.value, until: f.until.value, payer: f.payer.value, payUrl: url, note: f.note.value.trim(), autoRenew: f.autoRenew.checked };
+    const btn = fs.querySelector('[type="submit"]'); btn.disabled = true;
+    const r = svcCur ? await api.request('PATCH', '/api/admin/services/' + svcCur.id, body) : await api.post('/api/admin/services', body);
+    btn.disabled = false;
+    if (!r.ok) { if (r.status === 401) return fail(r); fsErr.textContent = r.data.error; return; }
+    dlg('svc').close(); await loadServices(); drawServices(); drawSvcAlert(); toast(svcCur ? 'Сохранено' : 'Сервис добавлен');
+  });
+  $('[data-ds-del]').addEventListener('click', () => {
+    const sv = svcCur; if (!sv) return;
+    dlg('svc').close();
+    confirmDlg('Удалить сервис?', '«' + sv.name + '» пропадёт из списка, напоминаний по нему больше не будет. Это не отключает сам сервис: подписку надо отменять у поставщика.', 'удалить', async () => {
+      const r = await api.del('/api/admin/services/' + sv.id);
+      if (!r.ok) { if (r.status === 401) return fail(r); toast(r.data.error); return; }
+      await loadServices(); drawServices(); drawSvcAlert(); toast('Сервис удалён');
+    });
+  });
+
+  /* «Оплатила»: подставляем следующую дату, её можно поправить */
+  const fp = $('[data-form="svcpaid"]'), fpErr = $('[data-dsp-err]');
+  let paidFor = null;
+  const svcPaidOpen = sv => {
+    paidFor = sv; fpErr.textContent = '';
+    const base = sv.until && isoDate(sv.until) >= today ? isoDate(sv.until) : new Date(today);
+    fp.elements.until.value = toIso(addPeriod(base, sv.period));
+    $('[data-dsp-text]').textContent = sv.name + ': ' + money(sv.sum) + (sv.period === 'year' ? ' в год' : ' в месяц') + '. Платит ' + PAYER[sv.payer] + '. Отметь, когда деньги ушли.';
+    $('[data-dsp-hint]').textContent = /timeweb/i.test(sv.name) ? 'Timeweb: поставь дату, до которой хватит баланса, она видна в панели.' : 'Дату можно поправить.';
+    openDlg('svcpaid');
+  };
+  fp.addEventListener('submit', async e => {
+    e.preventDefault(); const v = fp.elements.until.value;
+    if (!v) { fpErr.textContent = 'Выбери дату.'; fp.elements.until.focus(); return; }
+    const btn = fp.querySelector('[type="submit"]'); btn.disabled = true;
+    const r = await api.request('PATCH', '/api/admin/services/' + paidFor.id, { until: v }); btn.disabled = false;
+    if (!r.ok) { if (r.status === 401) return fail(r); fpErr.textContent = r.data.error; return; }
+    dlg('svcpaid').close(); await loadServices(); drawServices(); drawSvcAlert(); toast('Записано: хватит до ' + fmt(isoDate(v)));
+  });
+
   /* ---------- Журнал, выход, сброс демо ---------- */
   const drawLog = () => {
     const ul = $('[data-log]'); ul.textContent = '';
@@ -1170,11 +1309,11 @@
 
   /* ---------- Роутер ---------- */
   const views = $$('[data-view]');
-  const NAV = { today: 'today', clients: 'clients', client: 'clients', content: 'content', video: 'content', material: 'content', leads: 'leads', more: 'more', prices: 'more', log: 'more', payments: 'more' };
-  const TITLES = { today: 'Сегодня', clients: 'Клиенты', client: 'Клиент', content: 'Контент', video: 'Видео', material: 'Материал', leads: 'Заявки', more: 'Ещё', prices: 'Тарифы и цены', log: 'Журнал', payments: 'Оплаты' };
+  const NAV = { today: 'today', clients: 'clients', client: 'clients', content: 'content', video: 'content', material: 'content', leads: 'leads', more: 'more', prices: 'more', services: 'more', log: 'more', payments: 'more' };
+  const TITLES = { today: 'Сегодня', clients: 'Клиенты', client: 'Клиент', content: 'Контент', video: 'Видео', material: 'Материал', leads: 'Заявки', more: 'Ещё', prices: 'Тарифы и цены', services: 'Сервисы и оплаты', log: 'Журнал', payments: 'Оплаты' };
   let firstRun = true, routeName = '';
-  const DRAW = { today: drawToday, clients: drawClients, leads: drawLeads, prices: drawPrices, log: drawLog, payments: drawOrders };
-  const FRESH = { today: () => Promise.all([loadClients(), loadPurchases(), loadLeads()]), clients: loadClients, prices: loadPrices, log: loadLog, payments: loadOrders, leads: loadLeads };
+  const DRAW = { today: drawToday, clients: drawClients, leads: drawLeads, prices: drawPrices, services: drawServices, log: drawLog, payments: drawOrders };
+  const FRESH = { today: () => Promise.all([loadClients(), loadPurchases(), loadLeads(), loadServices()]), clients: loadClients, prices: loadPrices, services: loadServices, log: loadLog, payments: loadOrders, leads: loadLeads };
   const route = () => {
     const full = location.hash.replace(/^#\/?/, ''), qi = full.indexOf('?'), path = qi > -1 ? full.slice(0, qi) : full, qs = new URLSearchParams(qi > -1 ? full.slice(qi + 1) : '');
     const parts = path.split('/');
@@ -1188,11 +1327,12 @@
       $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
       if (tab === 'videos') { drawVideos(); loadContent().then(ok => { if (ok && routeName === 'content' && !$('[data-pane="videos"]').hidden) drawVideos(); }); } else { drawMaterials(); loadMaterials().then(ok => { if (ok && routeName === 'content' && !$('[data-pane="materials"]').hidden) drawMaterials(); }); }
     }
-    if ((name === 'prices' || name === 'log' || name === 'payments') && !canMoney) { location.replace('#/more'); return; }
+    if ((name === 'prices' || name === 'services' || name === 'log' || name === 'payments') && !canMoney) { location.replace('#/more'); return; }
     routeName = name;
     (DRAW[name] || (() => {}))();
     /* Сначала рисуем то, что уже загружено, потом тихо обновляем с сервера */
-    if (FRESH[name]) FRESH[name]().then(() => { if (routeName === name) DRAW[name](); });
+    drawSvcAlert();
+    if (FRESH[name]) FRESH[name]().then(() => { if (routeName === name) DRAW[name](); drawSvcAlert(); });
     updateDot();
     views.forEach(v => { v.hidden = v.dataset.view !== name; });
     $$('[data-nav]').forEach(a => { if (a.dataset.nav === NAV[name]) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
@@ -1202,7 +1342,7 @@
     firstRun = false;
   };
   window.addEventListener('hashchange', route);
-  await Promise.all([loadClients(), loadPurchases(), loadAccessTariffs(), loadPrices(), loadContent(), loadLeads(), loadSettings()]);
+  await Promise.all([loadClients(), loadPurchases(), loadAccessTariffs(), loadPrices(), loadServices(), loadContent(), loadLeads(), loadSettings()]);
   route();
   /* Экскурсия один раз на админа (отметка на сервере). Кто прошёл её до переноса отметки на сервер,
      у того она есть в браузере: переносим молча и не показываем снова. */

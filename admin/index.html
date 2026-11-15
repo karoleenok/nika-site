@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../css/base.css?v=20261113b">
   <link rel="stylesheet" href="../css/pages.css?v=20261115c">
   <link rel="stylesheet" href="../css/lk.css?v=20261115w">
-  <link rel="stylesheet" href="../css/admin.css?v=20261115w">
+  <link rel="stylesheet" href="../css/admin.css?v=20261115x">
 </head>
 <body class="lk adm">
 <svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
@@ -38,6 +38,8 @@
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h4"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 010-8 5.2 5.2 0 019.8-1.1A4.6 4.6 0 0117 18z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol>
 </svg>
 <a class="skip-link" href="#main">К содержимому</a>
 
@@ -64,6 +66,13 @@
 
   <main id="main" class="lk-main">
     <noscript><p class="lk-card">Для админки нужен включённый JavaScript.</p></noscript>
+
+    <!-- Напоминание об оплате сервисов: на любом экране, пока срок близко (только owner и tech) -->
+    <a class="svc-alert" data-svc-alert href="#/services" hidden>
+      <svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
+      <span class="svc-alert__b"><b data-svc-alert-t></b><small data-svc-alert-s></small></span>
+      <span class="svc-alert__go">открыть</span>
+    </a>
 
     <!-- ===== Сегодня ===== -->
     <section data-view="today" hidden aria-labelledby="h-today">
@@ -334,6 +343,7 @@
       <h1 class="display lk-h1" id="h-more" tabindex="-1">Ещё</h1>
       <ul class="menu">
         <li data-role="owner tech"><a href="#/payments"><svg class="ic" aria-hidden="true"><use href="#i-card"/></svg><span class="menu__t"><b>Оплаты</b><small>заказы, возвраты, ручное подтверждение</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
+        <li data-role="owner tech"><a href="#/services"><svg class="ic" aria-hidden="true"><use href="#i-cloud"/></svg><span class="menu__t"><b>Сервисы и оплаты</b><small>домен, сервер, хранилище: до какого числа оплачено</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
         <li data-role="owner tech"><a href="#/prices"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg><span class="menu__t"><b>Тарифы и цены</b><small>изменить без разработчика</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
         <li data-role="owner tech"><a href="#/log"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span class="menu__t"><b>Журнал действий</b><small>кто и когда менял доступы</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
       </ul>
@@ -359,6 +369,21 @@
         <button class="chip" type="button" aria-pressed="false" data-f="refunded">возвраты</button>
       </div>
       <ul class="ord" data-orders></ul>
+    </section>
+
+    <!-- ===== Сервисы и оплаты ===== -->
+    <section data-view="services" hidden aria-labelledby="h-services">
+      <a class="back" href="#/more"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>ещё</a>
+      <div class="head-row">
+        <h1 class="display lk-h1" id="h-services" tabindex="-1">Сервисы и оплаты</h1>
+      </div>
+      <p class="lk-p adm-sub">За что платим мы, а не клиенты: домен, сервер, хранилище. Админка напомнит заранее, пока деньги не кончились и сайт не отключился.</p>
+      <div class="pane-h">
+        <p class="lk-p" data-svc-sum aria-live="polite"></p>
+        <button class="btn btn--line-dark btn--sm" type="button" data-svc-add>+ сервис</button>
+      </div>
+      <ul class="svc-list" data-svc-list></ul>
+      <p class="hint" data-svc-hint>Сервер и хранилище Timeweb списывают деньги с баланса каждый день, поэтому «хватит до» там примерная дата. После пополнения баланса нажми «оплатила» и поставь новую.</p>
     </section>
 
     <!-- ===== Журнал ===== -->
@@ -502,6 +527,47 @@
   </form>
 </dialog>
 
+<dialog class="sheet" data-dlg="svc" aria-labelledby="ds-t">
+  <form class="sheet__in" data-form="svc" method="dialog" novalidate>
+    <h2 class="sheet__t" id="ds-t" data-ds-title>Сервис</h2>
+    <label class="field"><span class="field__label">Название</span><input class="field__input" type="text" name="name" maxlength="80" autocomplete="off" placeholder="Например: Почта Postbox"></label>
+    <label class="field"><span class="field__label">Что оплачиваем</span><input class="field__input" type="text" name="what" maxlength="200" autocomplete="off" placeholder="Например: письма с кодами входа"></label>
+    <div class="sheet__row">
+      <label class="field"><span class="field__label">Сумма, ₽</span><input class="field__input" type="text" name="sum" inputmode="numeric" autocomplete="off" placeholder="0"></label>
+      <label class="field"><span class="field__label">Как часто</span><select class="field__input" name="period"><option value="month">раз в месяц</option><option value="year">раз в год</option></select></label>
+    </div>
+    <div class="sheet__row">
+      <label class="field"><span class="field__label">Хватит до</span><input class="field__input" type="date" name="until"><span class="field__hint">Пусто: напоминать не будем</span></label>
+      <label class="field"><span class="field__label">Кто платит</span><select class="field__input" name="payer"><option value="nika">Ника</option><option value="karolina">Каролина</option></select></label>
+    </div>
+    <label class="field"><span class="field__label">Страница оплаты (по желанию)</span><input class="field__input" type="url" name="payUrl" maxlength="300" autocomplete="off" inputmode="url" autocapitalize="none" spellcheck="false" placeholder="https://"></label>
+    <label class="field"><span class="field__label">Заметка (по желанию)</span><input class="field__input" type="text" name="note" maxlength="300" autocomplete="off"></label>
+    <label class="sw-row">
+      <span class="sw-row__t"><b>Продлевается само</b><small>Тогда напомню только за 3 дня: вдруг карта не прошла.</small></span>
+      <input class="sw" type="checkbox" role="switch" name="autoRenew">
+    </label>
+    <span class="field__err" role="alert" data-ds-err></span>
+    <button class="btn-del" type="button" data-ds-del hidden>удалить сервис</button>
+    <div class="sheet__act">
+      <button class="btn btn--line-dark" type="button" data-close>отмена</button>
+      <button class="btn btn--red" type="submit">сохранить</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" data-dlg="svcpaid" aria-labelledby="dsp-t">
+  <form class="sheet__in" data-form="svcpaid" method="dialog" novalidate>
+    <h2 class="sheet__t" id="dsp-t">Оплатила?</h2>
+    <p class="sheet__p" data-dsp-text></p>
+    <label class="field"><span class="field__label">Теперь хватит до</span><input class="field__input" type="date" name="until"><span class="field__hint" data-dsp-hint></span></label>
+    <span class="field__err" role="alert" data-dsp-err></span>
+    <div class="sheet__act">
+      <button class="btn btn--line-dark" type="button" data-close>отмена</button>
+      <button class="btn btn--red" type="submit">сохранить дату</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="sheet" data-dlg="group" aria-labelledby="dg-t">
   <form class="sheet__in" data-form="group" method="dialog" novalidate>
     <h2 class="sheet__t" id="dg-t" data-dg-title>Группа</h2>
@@ -551,6 +617,6 @@
 <script src="../js/lk-data.js?v=20261115m"></script>
 <script src="../js/admin-data.js?v=20261115a"></script>
 <script src="../js/uploader.js?v=20261113b"></script>
-<script src="../js/admin.js?v=20261115w"></script>
+<script src="../js/admin.js?v=20261115x"></script>
 </body>
 </html>

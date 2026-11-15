@@ -6,6 +6,7 @@ import path from 'node:path';
 import fastifyCookie from '@fastify/cookie';
 import authRoutes from './auth/routes.js';
 import adminRoutes from './admin/routes.js';
+import servicesRoutes from './admin/services.js';
 import lkRoutes from './lk/routes.js';
 import videoRoutes from './videos/routes.js';
 import payRoutes from './pay/routes.js';
@@ -56,6 +57,7 @@ export async function buildApp({ config, pool, s3, mailer, serveStatic = !config
 
   await authRoutes(app, { config, pool, mailer });
   await adminRoutes(app, { pool, config });
+  await servicesRoutes(app, { pool });
   await lkRoutes(app, { pool });
   await videoRoutes(app, { pool, s3 });
   await materialRoutes(app, { pool, s3 });
