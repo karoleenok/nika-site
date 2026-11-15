@@ -370,3 +370,10 @@ body:has(dialog[open]) { overflow: hidden; }
 @media (min-width: 768px) { .sheet__row { grid-template-columns: 1fr 1fr; align-items: start; } }
 /* Удаление клиента: вторичная кнопка с красным текстом, отделена от «сохранить» */
 .adm-del { margin-top: var(--sp-2); color: var(--c-red); }
+
+/* ---------- Редактор материала: загрузка файла ---------- */
+.ed [data-me-open][hidden], .ed [data-me-bar][hidden] { display: none; }
+.ed [data-me-open] { width: 100%; }
+.ed [data-me-bar] { margin-top: var(--sp-4); }
+.ed [data-me-busy]:empty { display: none; }
+.ed [data-me-busy] { margin-top: var(--sp-2); text-align: left; }

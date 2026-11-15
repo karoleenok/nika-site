@@ -14,3 +14,11 @@ INSERT INTO tariffs (slug, kind, grp, name, price_kop, old_price_kop, sort) VALU
   ('video-call',   'service',  'По видеосвязи', '1 тренировка по видеосвязи', 249900, 270000, 13),
   ('guide-emotions', 'material', 'Материалы', 'Гайд «Как перестать заедать эмоции?»', 89900, 0, 20),
   ('video-alcohol',  'material', 'Материалы', 'Видео-разбор «Как не отказывать себе в алкоголе при похудении?»', 89900, 0, 21);
+
+-- Карточки материалов для кабинета (картинки и страницы из папки сайта)
+INSERT INTO materials (tariff_id, kind, title, cover_url, page_url)
+SELECT t.id, m.kind, m.title, m.cover, m.page FROM tariffs t JOIN (VALUES
+  ('guide-emotions', 'гайд', 'Как перестать заедать эмоции?', '/assets/img/cover-guide.webp', '/guide-zaedanie.html'),
+  ('video-alcohol', 'видео-разбор', 'Как не отказывать себе в алкоголе при похудении?', '/assets/img/cover-video.webp', '/video-alkogol.html')
+) AS m(slug, kind, title, cover, page) ON m.slug = t.slug
+ON CONFLICT (tariff_id) DO NOTHING;

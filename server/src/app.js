@@ -10,6 +10,7 @@ import lkRoutes from './lk/routes.js';
 import videoRoutes from './videos/routes.js';
 import payRoutes from './pay/routes.js';
 import leadRoutes from './leads/routes.js';
+import materialRoutes from './materials/routes.js';
 import { cspHeader } from './csp.js';
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -57,6 +58,7 @@ export async function buildApp({ config, pool, s3, mailer, serveStatic = !config
   await adminRoutes(app, { pool, config });
   await lkRoutes(app, { pool });
   await videoRoutes(app, { pool, s3 });
+  await materialRoutes(app, { pool, s3 });
   await payRoutes(app, { config, pool, mailer });
   await leadRoutes(app, { config, pool, mailer });
 

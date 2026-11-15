@@ -1,6 +1,6 @@
 /* Личный кабинет клиента. Экраны переключаются по hash: #/ #/video #/video/v01 #/extra #/profile.
    Срок доступа и оплаты приходят с сервера (/api/me/access), тренировки из /api/videos,
-   само видео по ссылке на 5 минут (/api/videos/:id/play). Материалы пока демо (window.LK_DATA).
+   само видео по ссылке на 5 минут (/api/videos/:id/play). Материалы из /api/me/materials, файл по ссылке на 10 минут.
    Всё, что приходит из данных, вставляется через textContent. */
 (() => {
   'use strict';
@@ -28,7 +28,8 @@
       location.replace('/admin/');
     });
   }
-  const [ar, vr] = await Promise.all([window.NikaApi.get('/api/me/access'), window.NikaApi.get('/api/videos')]);
+  const [ar, vr, mr] = await Promise.all([window.NikaApi.get('/api/me/access'), window.NikaApi.get('/api/videos'), window.NikaApi.get('/api/me/materials')]);
+  D.extras = mr.ok ? mr.data.materials : [];
   if (ar.status === 401 || vr.status === 401) { location.replace('login.html'); return; }
   D.groups = vr.ok ? vr.data.groups : [];
   /* D.videos — то, что можно смотреть. D.soon — уроки «скоро»: видны в списке, по нажатию окно, файла ещё нет. */
@@ -69,7 +70,6 @@
   const planLine = AC && AC.plan ? 'Тариф «' + AC.plan.name + '»' + (AC.plan.weeks ? ' · ' + AC.plan.weeks + ' ' + plural(AC.plan.weeks, 'неделя', 'недели', 'недель') : '') : '';
   const chip = (cls) => { const c = el('span', 'stat stat--' + state, label); if (cls) c.classList.add(cls); return c; };
 
-  if (D.demo) $('[data-demo-bar]').hidden = false;   // материалы пока демо
   /* В приветствии только имя. После оплаты на сайте имени может не быть (Robokassa даёт только почту): тогда «Привет!» */
   { const first = (D.client.name || '').trim().split(' ')[0];
     $$('[data-name]').forEach(n => { const h = n.parentNode; if (first) n.textContent = first; else if (h) h.textContent = 'Привет!'; }); }
@@ -244,16 +244,34 @@
 
   /* ---------- Материалы ---------- */
   const xl = $('[data-xlist]');
+  /* Окно открываем сразу по нажатию (иначе Safari заблокирует), адрес подставляем, когда сервер выдаст ссылку */
+  const openMaterial = async (x, btn) => {
+    if (btn.getAttribute('aria-busy') === 'true') return;
+    btn.setAttribute('aria-busy', 'true');
+    const w = x.fileType === 'application/pdf' || !x.fileType ? window.open('', '_blank') : null;
+    const r = await window.NikaApi.get('/api/me/materials/' + x.id + '/open');
+    btn.removeAttribute('aria-busy');
+    if (!r.ok) { if (w) w.close(); if (r.status === 401) { location.replace('login.html'); return; } btn.nextElementSibling.textContent = r.data.error; return; }
+    if (w) { w.opener = null; w.location.href = r.data.url; } else location.href = r.data.url;
+  };
   D.extras.forEach(x => {
     const li = el('li', 'xcard');
-    const img = el('img'); img.src = x.cover; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async'; img.width = 96; img.height = 120;
+    const img = el('img'); img.src = x.cover || '../favicon.png'; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async'; img.width = 96; img.height = 120;
     const b = el('div', 'xcard__body');
     b.appendChild(el('span', 'xcard__k', x.kind));
     b.appendChild(el('span', 'xcard__t', x.title));
-    if (x.owned) { b.appendChild(el('span', 'stat stat--ok', 'куплено')); const a = el('a', 'btn btn--red', 'открыть'); a.href = x.href; b.appendChild(a); }
-    else { b.appendChild(el('span', 'xcard__k', x.price)); const a = el('a', 'btn btn--line-dark', 'забрать'); a.href = x.href; b.appendChild(a); }
+    if (x.owned) {
+      b.appendChild(el('span', 'stat stat--ok', x.price ? 'куплено' : 'подарок'));
+      const a = el('button', 'btn btn--red', x.ready ? 'открыть' : 'скоро будет'); a.type = 'button'; a.disabled = !x.ready;
+      a.addEventListener('click', () => openMaterial(x, a)); b.appendChild(a);
+      const m = el('span', 'xcard__k'); m.setAttribute('role', 'status'); b.appendChild(m);
+    } else {
+      b.appendChild(el('span', 'xcard__k', x.price.toLocaleString('ru-RU') + ' ₽'));
+      const a = el('a', 'btn btn--line-dark', 'забрать'); a.href = '../checkout.html?item=' + encodeURIComponent(x.slug); b.appendChild(a);
+    }
     li.appendChild(img); li.appendChild(b); xl.appendChild(li);
   });
+  if (!D.extras.length) xl.appendChild(el('li', 'xcard__k', mr.ok ? 'Материалов пока нет.' : 'Материалы не загрузились. Обнови страницу.'));
 
   /* ---------- Профиль ---------- */
   $('[data-p-name]').textContent = D.client.name;

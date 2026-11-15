@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="../css/tokens.css?v=20261113b">
   <link rel="stylesheet" href="../css/base.css?v=20261113b">
   <link rel="stylesheet" href="../css/pages.css?v=20261115c">
-  <link rel="stylesheet" href="../css/lk.css?v=20261115v">
-  <link rel="stylesheet" href="../css/admin.css?v=20261115v">
+  <link rel="stylesheet" href="../css/lk.css?v=20261115w">
+  <link rel="stylesheet" href="../css/admin.css?v=20261115w">
 </head>
 <body class="lk adm">
 <svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
@@ -64,7 +64,6 @@
 
   <main id="main" class="lk-main">
     <noscript><p class="lk-card">Для админки нужен включённый JavaScript.</p></noscript>
-    <p class="demo-bar" data-demo-bar hidden>Материалы пока демо: сохраняются только в этом браузере. Всё остальное настоящее.</p>
 
     <!-- ===== Сегодня ===== -->
     <section data-view="today" hidden aria-labelledby="h-today">
@@ -303,8 +302,11 @@
           <label class="drop drop--sm">
             <input class="drop__in" type="file" accept=".pdf,video/*" data-me-file>
             <span class="drop__t" data-me-file-t>Выбрать файл (PDF или видео)</span>
-            <span class="drop__s">Демо: пока никуда не загружается.</span>
+            <span class="drop__s">PDF или видео до 1 ГБ. Клиент откроет его, только когда купит.</span>
           </label>
+          <button class="btn btn--line-dark btn--sm adm-gap" type="button" data-me-open hidden>открыть загруженный файл</button>
+          <div class="bar bar--dark adm-gap" role="img" aria-label="Загружено 0%" data-me-bar hidden><i></i></div>
+          <p class="drop__s" aria-live="polite" data-me-busy></p>
         </div>
         <div class="lk-card ed__card">
           <label class="sw-row">
@@ -335,7 +337,7 @@
         <li data-role="owner tech"><a href="#/prices"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg><span class="menu__t"><b>Тарифы и цены</b><small>изменить без разработчика</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
         <li data-role="owner tech"><a href="#/log"><svg class="ic" aria-hidden="true"><use href="#i-today"/></svg><span class="menu__t"><b>Журнал действий</b><small>кто и когда менял доступы</small></span><svg class="ic ic--chev" aria-hidden="true"><use href="#i-chev"/></svg></a></li>
       </ul>
-      <div class="stack"><button class="btn btn--line-dark" type="button" data-tour-start>как пользоваться админкой</button><button class="btn btn--line-dark" type="button" data-change-pass>сменить пароль</button><button class="btn btn--line-dark" type="button" data-reset-demo>сбросить демо-данные</button><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
+      <div class="stack"><button class="btn btn--line-dark" type="button" data-tour-start>как пользоваться админкой</button><button class="btn btn--line-dark" type="button" data-change-pass>сменить пароль</button><button class="btn btn--line-dark" type="button" data-logout>выйти</button></div>
     </section>
 
     <!-- ===== Цены ===== -->
@@ -546,9 +548,9 @@
 </div>
 
 <script src="../js/api.js?v=20261113b"></script>
-<script src="../js/lk-data.js?v=20261113b"></script>
+<script src="../js/lk-data.js?v=20261115m"></script>
 <script src="../js/admin-data.js?v=20261115a"></script>
 <script src="../js/uploader.js?v=20261113b"></script>
-<script src="../js/admin.js?v=20261115v"></script>
+<script src="../js/admin.js?v=20261115w"></script>
 </body>
 </html>

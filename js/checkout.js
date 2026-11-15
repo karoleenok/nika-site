@@ -1,13 +1,20 @@
 /* Оформление заказа: товар из каталога, почта и согласия, переход на оплату в Robokassa.
    Товар берётся из js/catalog.js по ?item=id только для показа. Цену на оплату ставит сервер по артикулу,
    поэтому подмена цены в браузере ничего не даст. */
-(() => {
+(async () => {
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);
   const C = window.NDCatalog || {};
   const id = new URLSearchParams(location.search).get('item');
-  const it = Object.prototype.hasOwnProperty.call(C, id) ? C[id] : null;
   const root = $('[data-co]');
+  /* Новые материалы Ника добавляет в админке: их нет в catalog.js, берём название и цену с сервера */
+  const fromServer = async () => {
+    if (!id || !/^m-[a-f0-9]{10}$/.test(id) || !window.NikaApi) return null;
+    const r = await window.NikaApi.get('/api/tariffs');
+    const t = r.ok ? r.data.tariffs.find(x => x.slug === id && x.kind === 'material') : null;
+    return t ? { kind: 'материал', title: t.name, price: t.price, old: t.old, after: 'lk' } : null;
+  };
+  const it = Object.prototype.hasOwnProperty.call(C, id) ? C[id] : await fromServer();
   if (!it) { $('[data-co-empty]').hidden = false; return; }
 
   const rub = n => n.toLocaleString('ru-RU').replace(/\s/g, ' ') + ' ₽';

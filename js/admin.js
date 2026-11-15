@@ -2,13 +2,12 @@
    #/video/ID|new #/material/ID|new #/leads #/more #/prices #/log.
    Клиенты, доступы, цены и журнал приходят с сервера (js/api.js), роль проверяет сервер.
    Группы и видео тоже с сервера (фаза 3), файлы грузит js/uploader.js прямо в хранилище.
-   Заявки с сервера (фаза 5). ДЕМО пока: материалы, они в localStorage и видны в кабинете клиента.
+   Заявки с сервера (фаза 5). Материалы с сервера: обложка в базе, файл прямо в хранилище по подписанной ссылке.
    Всё из данных вставляется через textContent. */
 (() => {
   'use strict';
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const CONTENT = 'nika_demo_content';
   const rd = k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch (_) { return null; } };
   const wr = (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} };
 
@@ -34,18 +33,15 @@
   const num = v => Number(String(v || '').replace(/\D/g, '')) || 0;
 
   /* ---------- Контент ---------- */
-  /* Группы и видео живут на сервере (loadContent). Материалы пока демо: localStorage, общий с кабинетом клиента. */
-  const raw = {
-    groups: [], videos: [],
-    extras: L.all && L.all.extras ? JSON.parse(JSON.stringify(L.all.extras)) : L.extras.map((x, i) => ({ ...x, on: true, price: num(x.price), old: 1699, text: '', gift: i === 0 }))
-  };
-  const persist = () => wr(CONTENT, JSON.stringify({ extras: raw.extras }));
+  /* Группы, видео и материалы живут на сервере (loadContent, loadMaterials). */
+  const raw = { groups: [], videos: [], extras: [] };
+  let materialsLoaded = false;
   const vById = id => raw.videos.find(v => v.id === id);
   const gById = id => raw.groups.find(g => g.id === id);
   const inGroup = gid => raw.videos.filter(v => v.group === gid);
 
   /* ---------- Данные с сервера ---------- */
-  /* Клиенты, доступы, цены, журнал, группы и видео живут на сервере. Материалы пока демо. */
+  /* Клиенты, доступы, цены, журнал, группы, видео и материалы живут на сервере. */
   const api = window.NikaApi;
   const ROLE = who.role;
   const canMoney = ROLE === 'owner' || ROLE === 'tech';
@@ -111,12 +107,16 @@
       case 'order.refund': return 'Возврат «' + (m.title || '') + '», ' + money((m.sumKop || 0) / 100);
       case 'tariff.price': return 'Цена «' + (m.name || '') + '»: ' + money(m.from) + ' → ' + money(m.to);
       case 'password_change': return 'Изменён пароль для входа в админку';
+      case 'material.create': return 'Добавлен материал «' + (m.title || '') + '»';
+      case 'material.update': return 'Изменён материал «' + (m.title || '') + '»';
+      case 'material.delete': return 'Удалён материал «' + (m.title || '') + '»';
+      case 'material.cover': return 'Заменена обложка материала';
+      case 'material.file': return 'Загружен файл материала' + (m.name ? ' «' + m.name + '»' : '');
       case 'settings.videos_soon': return m.on ? 'Включён показ уроков «скоро» в кабинете' : 'Выключен показ уроков «скоро» в кабинете';
       default: return 'Действие: ' + x.action;
     }
   };
 
-  if (L.demo) $('[data-demo-bar]').hidden = false;
 
   /* ---------- Тост с отменой ---------- */
   const toastEl = $('[data-toast]'), toastT = $('[data-toast-t]'), toastB = $('[data-toast-b]');
@@ -888,49 +888,141 @@
   });
 
   /* ---------- Контент: материалы ---------- */
+  const loadMaterials = async () => {
+    const r = await api.get('/api/admin/materials');
+    if (!r.ok) { fail(r); return false; }
+    raw.extras = r.data.materials; materialsLoaded = true; return true;
+  };
+  const putMaterial = m => { const i = raw.extras.findIndex(x => x.id === m.id); if (i > -1) raw.extras[i] = m; else raw.extras.push(m); };
   const drawMaterials = () => {
     const ul = $('[data-mlist]'); ul.textContent = '';
-    $('[data-m-sum]').textContent = raw.extras.length + ' ' + plural(raw.extras.length, 'материал', 'материала', 'материалов');
+    $('[data-m-sum]').textContent = materialsLoaded ? raw.extras.length + ' ' + plural(raw.extras.length, 'материал', 'материала', 'материалов') : 'Загружаем…';
     raw.extras.forEach(x => {
       const li = el('li'); const a = el('a', 'mrow'); a.href = '#/material/' + x.id;
-      const img = el('img'); img.alt = ''; img.src = x.cover || '../favicon.png'; img.width = 64; img.height = 80; a.appendChild(img);
-      const b = el('span', 'mrow__b'); b.appendChild(el('span', 'mrow__k', x.kind)); b.appendChild(el('span', 'mrow__t', x.title)); b.appendChild(el('span', 'mrow__p', (x.price || 0).toLocaleString('ru-RU') + ' ₽' + (x.gift ? ' · дарим' : ''))); a.appendChild(b);
-      if (x.on === false) a.appendChild(el('span', 'stat stat--off', 'скрыт'));
+      const img = el('img'); img.alt = ''; img.src = x.cover || '../favicon.png'; img.width = 64; img.height = 80; img.loading = 'lazy'; a.appendChild(img);
+      const b = el('span', 'mrow__b'); b.appendChild(el('span', 'mrow__k', x.kind)); b.appendChild(el('span', 'mrow__t', x.title));
+      b.appendChild(el('span', 'mrow__p', money(x.price || 0) + (x.gift ? ' · дарим' : '') + (x.sales ? ' · ' + x.sales + ' ' + plural(x.sales, 'покупка', 'покупки', 'покупок') : ''))); a.appendChild(b);
+      if (!x.file && !x.page) a.appendChild(el('span', 'stat stat--warn', 'нет файла'));
+      else if (x.on === false) a.appendChild(el('span', 'stat stat--off', 'скрыт'));
       li.appendChild(a); ul.appendChild(li);
     });
-    if (!raw.extras.length) ul.appendChild(el('li', 'empty-line', 'Материалов пока нет. Нажми «+ материал».'));
+    if (materialsLoaded && !raw.extras.length) ul.appendChild(el('li', 'empty-line', 'Материалов пока нет. Нажми «+ материал».'));
   };
   /* Подпись поля файла: выбран файл или нет (зелёная рамка через .is-set) */
-  const setFile = (box, tEl, name, def) => { box.classList.toggle('is-set', !!name); tEl.textContent = name ? 'Выбран файл: ' + name : def; };
+  const setFile = (box, tEl, name, def) => { box.classList.toggle('is-set', !!name); tEl.textContent = name ? name : def; };
+  const FILE_EXT = /\.(pdf|mp4|m4v|mov|webm)$/i, MAX_FILE = 1024 ** 3;
+  const size = b => b < 1048576 ? Math.max(1, Math.round(b / 1024)) + ' КБ' : mb(b);
   let me = null; const mf = $('[data-me]');
+  const meBar = $('[data-me-bar]'), meBusy = $('[data-me-busy]'), meSave = $('[type="submit"]', mf);
   const drawMaterialEd = id => {
     const isNew = id === 'new', x = isNew ? null : raw.extras.find(e => e.id === id);
-    if (!isNew && !x) { location.replace('#/content/materials'); return false; }
-    me = { x, isNew, cover: x ? x.cover || '' : '', file: x ? x.file || null : null };
+    if (!isNew && !x) {
+      if (!materialsLoaded) { loadMaterials().then(ok => { if (ok && location.hash === '#/material/' + id) route(); }); return false; }
+      location.replace('#/content/materials'); return false;
+    }
+    me = { x, isNew, cover: null, coverUrl: x ? x.cover : '', file: null };
     $('[data-me-h]').textContent = isNew ? 'Новый материал' : x.title;
     const f = mf.elements; f.kind.value = x ? x.kind : 'гайд'; f.title.value = x ? x.title : ''; f.text.value = x && x.text ? x.text : ''; f.price.value = x ? x.price || '' : ''; f.old.value = x && x.old ? x.old : '';
+    f.price.disabled = f.old.disabled = !canMoney;
     f.on.checked = x ? x.on !== false : false; f.gift.checked = x ? !!x.gift : false; $('[data-me-err]').textContent = '';
-    const img = $('[data-me-cover]'); img.hidden = !me.cover; if (me.cover) img.src = me.cover;
-    setFile($('[data-me-cover-in]').parentElement, $('[data-me-cover-t]'), null, me.cover ? 'Заменить картинку' : 'Выбрать картинку');
-    setFile($('[data-me-file]').parentElement, $('[data-me-file-t]'), me.file, 'Выбрать файл (PDF или видео)');
+    const img = $('[data-me-cover]'); img.hidden = !me.coverUrl; if (me.coverUrl) img.src = me.coverUrl;
+    setFile($('[data-me-cover-in]').parentElement, $('[data-me-cover-t]'), null, me.coverUrl ? 'Заменить картинку' : 'Выбрать картинку');
+    const cur = x && x.file ? x.file.name + ' · ' + size(x.file.sizeBytes) : x && x.page ? 'Страница на сайте' : null;
+    setFile($('[data-me-file]').parentElement, $('[data-me-file-t]'), cur, 'Выбрать файл (PDF или видео)');
+    $('[data-me-file]').value = ''; $('[data-me-cover-in]').value = '';
+    $('[data-me-open]').hidden = !(x && (x.file || x.page));
+    meBar.hidden = true; meBusy.textContent = '';
     $('[data-me-del]').hidden = isNew; return true;
   };
-  $('[data-me-cover-in]').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { me.cover = String(r.result); const img = $('[data-me-cover]'); img.src = me.cover; img.hidden = false; setFile(e.target.parentElement, $('[data-me-cover-t]'), f.name, ''); }; r.readAsDataURL(f); });
-  $('[data-me-file]').addEventListener('change', e => { const f = e.target.files[0]; if (f) { me.file = f.name; setFile(e.target.parentElement, $('[data-me-file-t]'), me.file, ''); } });
-  mf.addEventListener('submit', e => {
-    e.preventDefault(); const f = mf.elements, t = f.title.value.trim(), p = num(f.price.value), o = num(f.old.value);
-    if (!t) { $('[data-me-err]').textContent = 'Напиши название материала.'; f.title.focus(); return; }
-    if (o && o <= p) { $('[data-me-err]').textContent = 'Старая цена должна быть выше новой, иначе скидки нет.'; f.old.focus(); return; }
-    const x = me.x || { id: 'm' + Date.now(), href: '../index.html#shop', owned: false };
-    Object.assign(x, { kind: f.kind.value, title: t, text: f.text.value.trim(), price: p, old: o, on: f.on.checked, gift: f.gift.checked, cover: me.cover, file: me.file });
-    if (me.isNew) raw.extras.push(x);
-    persist(); toast(me.isNew ? 'Материал добавлен' + (x.on ? '' : ' (пока скрыт)') : 'Сохранено'); location.hash = '#/content/materials';
+  /* Обложку сжимаем в браузере до 800 px по длинной стороне: в базу уходит ~100 КБ, а не фото с телефона на 8 МБ */
+  const shrink = file => new Promise((ok, no) => {
+    if (file.size > 25 * 1024 * 1024) { no(new Error('big')); return; }
+    const im = new Image(), fr = new FileReader();   // data:, а не blob: — так разрешает политика безопасности (CSP)
+    im.onload = () => {
+      const k = Math.min(1, 800 / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      const out = (type, q) => c.toDataURL(type, q);
+      let d = out('image/webp', .85); let type = 'image/webp';
+      if (!d.startsWith('data:image/webp')) { d = out('image/jpeg', .85); type = 'image/jpeg'; }
+      ok({ type, url: d, data: d.slice(d.indexOf(',') + 1) });
+    };
+    im.onerror = () => no(new Error('bad'));
+    fr.onload = () => { im.src = String(fr.result); }; fr.onerror = () => no(new Error('bad'));
+    fr.readAsDataURL(file);
+  });
+  $('[data-me-cover-in]').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { me.cover = await shrink(f); } catch (_) { toast('Не получилось открыть картинку. Выбери JPG или PNG.'); e.target.value = ''; return; }
+    const img = $('[data-me-cover]'); img.src = me.cover.url; img.hidden = false; setFile(e.target.parentElement, $('[data-me-cover-t]'), f.name, '');
+  });
+  $('[data-me-file]').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (!FILE_EXT.test(f.name)) { toast('Подойдёт PDF или видео MP4, MOV, WebM.'); e.target.value = ''; return; }
+    if (f.size > MAX_FILE) { toast('Файл больше 1 ГБ. Сожми видео и попробуй снова.'); e.target.value = ''; return; }
+    me.file = f; setFile(e.target.parentElement, $('[data-me-file-t]'), f.name + ' · ' + size(f.size), '');
+  });
+  /* Загрузка файла одним PUT прямо в хранилище; XHR, чтобы показать прогресс */
+  const putFile = (url, headers, file) => new Promise(ok => {
+    const x = new XMLHttpRequest(); x.open('PUT', url);
+    Object.entries(headers).forEach(([k, v]) => x.setRequestHeader(k, v));
+    x.upload.onprogress = ev => { if (ev.lengthComputable) { const p = Math.round(ev.loaded / ev.total * 100); meBar.style.setProperty('--p', p); meBar.setAttribute('aria-label', 'Загружено ' + p + '%'); meBusy.textContent = 'Загружаем файл: ' + p + '%'; } };
+    x.onload = () => ok(x.status >= 200 && x.status < 300); x.onerror = () => ok(false); x.send(file);
+  });
+  const leaveGuard = e => { e.preventDefault(); e.returnValue = ''; };
+  let meWorking = false;
+  mf.addEventListener('submit', async e => {
+    e.preventDefault(); if (meWorking) return;
+    const f = mf.elements, t = f.title.value.trim(), p = num(f.price.value), o = num(f.old.value), err = $('[data-me-err]');
+    err.textContent = '';
+    if (!t) { err.textContent = 'Напиши название материала.'; f.title.focus(); return; }
+    if (o && o <= p) { err.textContent = 'Старая цена должна быть выше новой, иначе скидки нет.'; f.old.focus(); return; }
+    const willHaveFile = me.file || (me.x && (me.x.file || me.x.page));
+    if (f.on.checked && !willHaveFile) { err.textContent = 'Чтобы показать материал клиентам, загрузи файл.'; return; }
+    const body = { kind: f.kind.value, title: t, text: f.text.value.trim(), gift: f.gift.checked, on: f.on.checked && !!(me.x && (me.x.file || me.x.page)) };
+    if (canMoney) { body.price = p; body.old = o; }
+    meWorking = true; meSave.disabled = true; meSave.setAttribute('aria-busy', 'true'); addEventListener('beforeunload', leaveGuard);
+    const done = () => { meWorking = false; meSave.disabled = false; meSave.removeAttribute('aria-busy'); removeEventListener('beforeunload', leaveGuard); };
+    meBusy.textContent = 'Сохраняем…';
+    let r = me.isNew ? await api.post('/api/admin/materials', body) : await api.request('PATCH', '/api/admin/materials/' + me.x.id, body);
+    if (!r.ok) { done(); meBusy.textContent = ''; if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
+    let m = r.data.material; putMaterial(m);
+    if (me.isNew) { me.isNew = false; me.x = m; history.replaceState(null, '', '#/material/' + m.id); $('[data-me-del]').hidden = false; }
+    if (me.cover) {
+      meBusy.textContent = 'Загружаем обложку…';
+      r = await api.put('/api/admin/materials/' + m.id + '/cover', { type: me.cover.type, data: me.cover.data });
+      if (r.ok) { m = r.data.material; putMaterial(m); me.cover = null; } else toast(r.data.error || 'Обложка не сохранилась. Попробуй ещё раз.');
+    }
+    if (me.file) {
+      meBar.hidden = false; meBar.style.setProperty('--p', 0);
+      const s = await api.post('/api/admin/materials/' + m.id + '/file', { name: me.file.name, size: me.file.size });
+      const sent = s.ok && await putFile(s.data.url, s.data.headers, me.file);
+      r = sent ? await api.post('/api/admin/materials/' + m.id + '/file/done', { name: me.file.name }) : s;
+      meBar.hidden = true;
+      if (!sent || !r.ok) { done(); meBusy.textContent = ''; me.x = m; err.textContent = (r.data && r.data.error) || 'Файл не загрузился. Проверь интернет и нажми «сохранить» ещё раз.'; return; }
+      m = r.data.material; putMaterial(m); me.file = null;
+      if (f.on.checked && !m.on) {
+        r = await api.request('PATCH', '/api/admin/materials/' + m.id, { on: true });
+        if (r.ok) { m = r.data.material; putMaterial(m); } else toast(r.data.error);
+      }
+    }
+    done(); meBusy.textContent = '';
+    toast(m.on ? 'Сохранено' : 'Сохранено. Материал пока скрыт от клиентов.');
+    location.hash = '#/content/materials';
+  });
+  $('[data-me-open]').addEventListener('click', async () => {
+    if (!me.x) return;
+    const w = window.open('', '_blank');
+    const r = await api.get('/api/admin/materials/' + me.x.id + '/open');
+    if (!r.ok) { if (w) w.close(); fail(r); return; }
+    if (w) { w.opener = null; w.location.href = r.data.url; } else location.href = r.data.url;
   });
   $('[data-me-del]').addEventListener('click', () => {
     const x = me.x; if (!x) return;
-    confirmDlg('Удалить материал?', '«' + x.title + '» пропадёт из кабинета и магазина. Если не уверена, лучше выключи «Показывать клиентам».', 'удалить', () => {
-      const i = raw.extras.indexOf(x); raw.extras.splice(i, 1); persist(); location.hash = '#/content/materials';
-      toast('Материал удалён', 'вернуть', () => { raw.extras.splice(i, 0, x); persist(); if (location.hash.startsWith('#/content/materials')) drawMaterials(); });
+    confirmDlg('Удалить материал?', '«' + x.title + '» пропадёт из кабинета вместе с файлом. Если не уверена, лучше выключи «Показывать клиентам».', 'удалить', async () => {
+      const r = await api.del('/api/admin/materials/' + x.id);
+      if (!r.ok) { fail(r); return; }
+      raw.extras = raw.extras.filter(e => e.id !== x.id); location.hash = '#/content/materials'; toast('Материал удалён');
     });
   });
 
@@ -1075,7 +1167,6 @@
     if (!logList.length) ul.appendChild(el('li', 'hist__e', 'Пока ничего не менялось.'));
   };
   $$('[data-logout]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); window.NikaApi.logout('admin'); }));
-  $('[data-reset-demo]').addEventListener('click', () => confirmDlg('Сбросить демо?', 'Вернутся демо-материалы. Клиенты, доступы, цены и видео не затрагиваются.', 'сбросить', () => { try { localStorage.removeItem(CONTENT); } catch (_) {} location.hash = '#/'; location.reload(); }));
 
   /* ---------- Роутер ---------- */
   const views = $$('[data-view]');
@@ -1095,7 +1186,7 @@
       const tab = parts[1] === 'materials' ? 'materials' : 'videos';
       $$('[data-seg]').forEach(a => a.setAttribute('aria-selected', String(a.dataset.seg === tab)));
       $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
-      if (tab === 'videos') { drawVideos(); loadContent().then(ok => { if (ok && routeName === 'content' && !$('[data-pane="videos"]').hidden) drawVideos(); }); } else drawMaterials();
+      if (tab === 'videos') { drawVideos(); loadContent().then(ok => { if (ok && routeName === 'content' && !$('[data-pane="videos"]').hidden) drawVideos(); }); } else { drawMaterials(); loadMaterials().then(ok => { if (ok && routeName === 'content' && !$('[data-pane="materials"]').hidden) drawMaterials(); }); }
     }
     if ((name === 'prices' || name === 'log' || name === 'payments') && !canMoney) { location.replace('#/more'); return; }
     routeName = name;
