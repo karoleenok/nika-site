@@ -30,8 +30,8 @@
       <!-- Вход по почте и паролю одной формой: показывается первым, пока письма с кодом не ходят (решает сервер, /api/auth/config) -->
       <form class="auth__step" data-step="login" novalidate hidden>
         <label class="field">
-          <span class="field__label">Почта</span>
-          <input class="field__input" type="email" name="email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="name@mail.ru" required data-l-email>
+          <span class="field__label">Почта или телефон</span>
+          <input class="field__input" type="text" name="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="name@mail.ru или +7 999 …" required data-l-email>
           <span class="field__err" data-err="lemail" role="alert"></span>
         </label>
         <label class="field">
@@ -124,6 +124,6 @@
 </main>
 <!-- ПРОВЕРИТЬ: номер WhatsApp Ники (data-wa-phone), тот же, что на главной -->
 <script src="../js/api.js?v=20261113b"></script>
-<script src="../js/lk-auth.js?v=20261115a"></script>
+<script src="../js/lk-auth.js?v=20261115g"></script>
 </body>
 </html>

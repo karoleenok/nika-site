@@ -358,3 +358,11 @@ body:has(dialog[open]) { overflow: hidden; }
 @media (hover: hover) { .tour__x:hover { color: var(--c-white); } }
 @media (min-width: 1024px) { .tour { left: auto; right: var(--sp-7); bottom: var(--sp-7); width: 420px; margin: 0; } .tour--up { top: var(--sp-7); bottom: auto; } }
 @media (prefers-reduced-motion: reduce) { .tour.is-in, .tour-ring { animation: none; transition: none; } .tour__bar > i { transition: none; } }
+
+/* «Выдать доступ» на «Сегодня»: главное действие, когда Нике написали в WhatsApp об оплате */
+.adm-grant { margin-bottom: var(--sp-5); }
+@media (max-width: 767px) { .adm-grant { width: 100%; } }
+.field__hint[hidden] { display: none; }
+/* Телефон и почта рядом на ПК: окно «Выдать доступ» помещается в экран ноутбука без прокрутки */
+.sheet__row { display: grid; gap: var(--sp-4); }
+@media (min-width: 768px) { .sheet__row { grid-template-columns: 1fr 1fr; align-items: start; } }

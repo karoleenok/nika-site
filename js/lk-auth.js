@@ -117,7 +117,9 @@
       e.preventDefault();
       setErr(le, lerrE, ''); setErr(lp, lerrP, '');
       const v = le.value.trim();
-      if (!validEmail(v)) { setErr(le, lerrE, 'Проверь почту: похоже, в адресе опечатка.'); le.focus(); return; }
+      // Клиент может войти по телефону (если покупал через WhatsApp без почты)
+      const phoneOk = KIND !== 'admin' && !v.includes('@') && /^[+\d\s()\-]{6,25}$/.test(v) && v.replace(/\D/g, '').length >= 10;
+      if (!validEmail(v) && !phoneOk) { setErr(le, lerrE, KIND === 'admin' ? 'Проверь почту: похоже, в адресе опечатка.' : 'Введи почту или телефон, как в сообщении от Ники.'); le.focus(); return; }
       if (!lp.value) { setErr(lp, lerrP, 'Введи пароль.'); lp.focus(); return; }
       busy(steps.login, true);
       const r = await API.post('/api/auth/password', { email: v, password: lp.value, kind: KIND, remember: $('[data-l-remember]').checked });
@@ -126,7 +128,7 @@
       setErr(lp, lerrP, r.data.error); lp.select();
     });
     const toCode = $('[data-l-code]'), back = $('[data-e-back]');
-    if (toCode) toCode.addEventListener('click', () => { email.value = le.value.trim(); show('email'); email.focus(); });
+    if (toCode) toCode.addEventListener('click', () => { email.value = le.value.includes('@') ? le.value.trim() : ''; show('email'); email.focus(); });
     if (back) back.addEventListener('click', () => { le.value = email.value.trim(); show('login'); lp.focus(); });
     if (KIND === 'admin') show('login');
     else if (urlToken === null) {

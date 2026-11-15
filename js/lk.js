@@ -15,7 +15,7 @@
   async function start(me) {
   const D = window.LK_DATA;
   if (!D) return;
-  D.client = { name: me.name, email: me.email };
+  D.client = { name: me.name, email: me.email, login: me.login || me.email };
   const [ar, vr] = await Promise.all([window.NikaApi.get('/api/me/access'), window.NikaApi.get('/api/videos')]);
   if (ar.status === 401 || vr.status === 401) { location.replace('login.html'); return; }
   D.groups = vr.ok ? vr.data.groups : [];
@@ -246,7 +246,8 @@
   /* ---------- Профиль ---------- */
   $('[data-p-name]').textContent = D.client.name;
   { const row = $('[data-p-name]').closest('div'); if (row) row.hidden = !(D.client.name || '').trim(); }
-  $('[data-p-email]').textContent = D.client.email;
+  $('[data-p-email]').textContent = D.client.login;
+  { const dt = $('[data-p-email]').previousElementSibling; if (dt) dt.textContent = D.client.email ? 'Почта' : 'Телефон'; }
   $('[data-p-plan]').textContent = !AC ? 'не удалось загрузить' : sv === 'none' ? 'пока нет' : '«' + (AC.plan ? AC.plan.name : '') + '», ' + (locked ? (AC.closed ? 'закрыт ' : 'закончился ') : 'до ') + fmt(end);
   const pay = $('[data-pay]');
   const pays = AC ? AC.payments : [];
@@ -268,7 +269,7 @@
   (() => {
     const g = $('[data-gate]'); if (!g || !me.mustChangePassword) return;
     const form = $('[data-gate-form]', g), p1 = $('[data-gate-pw1]', g), p2 = $('[data-gate-pw2]', g), err = $('[data-gate-err]', g), eye = $('[data-gate-eye]', g);
-    $('[data-gate-user]', g).value = me.email;
+    $('[data-gate-user]', g).value = me.login || me.email;
     g.addEventListener('cancel', e => e.preventDefault());
     eye.addEventListener('click', () => {
       const on = p1.type === 'password'; p1.type = on ? 'text' : 'password'; p2.type = p1.type;
@@ -295,7 +296,7 @@
   (() => {
     const box = $('[data-cred]'); if (!box || !me.shownPassword) return;
     const pw = $('[data-cred-pass]', box), eye = $('[data-cred-eye]', box), msg = $('[data-cred-msg]', box);
-    $('[data-cred-login]', box).textContent = me.email;
+    $('[data-cred-login]', box).textContent = me.login || me.email;
     if (!me.passwordLocked) $('[data-cred-note]', box).textContent = 'Этим логином и паролем входи с любого устройства. Ниже можно задать свой пароль.';
     box.hidden = false;
     eye.addEventListener('click', () => {
@@ -304,7 +305,7 @@
       eye.textContent = on ? 'скрыть пароль' : 'показать пароль'; eye.setAttribute('aria-pressed', String(on));
     });
     $('[data-cred-copy]', box).addEventListener('click', async () => {
-      let ok = false; try { await navigator.clipboard.writeText('Логин: ' + me.email + '\nПароль: ' + me.shownPassword); ok = true; } catch (_) {}
+      let ok = false; try { await navigator.clipboard.writeText('Логин: ' + (me.login || me.email) + '\nПароль: ' + me.shownPassword); ok = true; } catch (_) {}
       msg.textContent = ok ? 'Скопировано.' : 'Не получилось скопировать. Нажми «показать пароль» и скопируй вручную.';
     });
   })();

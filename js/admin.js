@@ -225,7 +225,7 @@
     const chips = $('[data-cl-chips]'); chips.textContent = '';
     FIL.forEach(([id, name]) => { const b = el('button', 'chip', name); b.type = 'button'; b.setAttribute('aria-pressed', String(cf.f === id)); b.addEventListener('click', () => { cf.f = id; drawClients(); }); chips.appendChild(b); });
     const q = cf.q.trim().toLowerCase();
-    const list = sorted().filter(c => (cf.f === 'all' || stateOf(c) === cf.f) && (!q || (c.name + ' ' + c.email).toLowerCase().includes(q)));
+    const list = sorted().filter(c => (cf.f === 'all' || stateOf(c) === cf.f) && (!q || (c.name + ' ' + c.email + ' ' + c.phone + ' ' + String(c.phone || '').replace(/\D/g, '')).toLowerCase().includes(q)));
     const ul = $('[data-cl-list]'); ul.textContent = '';
     list.forEach(c => {
       const st = stateOf(c), li = el('li'); const a = el('a', 'row'); a.href = '#/client/' + c.id;
@@ -245,20 +245,6 @@
   $('[data-cl-q]').addEventListener('input', e => { cf.q = e.target.value; drawClients(); });
   $('[data-cl-form]').addEventListener('submit', e => e.preventDefault());
   $('[data-cl-reset]').addEventListener('click', () => { cf.f = 'all'; cf.q = ''; $('[data-cl-q]').value = ''; drawClients(); });
-
-  /* Новый клиент */
-  const fnc = $('[data-form="newclient"]');
-  $('[data-cl-add]').addEventListener('click', () => { fnc.reset(); $('[data-dn-err]').textContent = ''; openDlg('newclient'); fnc.elements.name.focus(); });
-  fnc.addEventListener('submit', async e => {
-    e.preventDefault(); const f = e.currentTarget, err = $('[data-dn-err]'); err.textContent = '';
-    const body = { name: f.elements.name.value.trim(), email: f.elements.email.value.trim(), phone: f.elements.phone.value.trim() };
-    if (!body.name) { err.textContent = 'Напиши имя.'; f.elements.name.focus(); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(body.email)) { err.textContent = 'Проверь почту: похоже, опечатка.'; f.elements.email.focus(); return; }
-    const btn = f.querySelector('[type="submit"]'); btn.disabled = true;
-    const r = await api.post('/api/admin/clients', body); btn.disabled = false;
-    if (!r.ok) { if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
-    dlg('newclient').close(); await loadClients(); toast('Клиент добавлен'); location.hash = '#/client/' + r.data.id;
-  });
 
   /* Смена пароля админа */
   const fpw = $('[data-form="pass"]');
@@ -320,7 +306,10 @@
     e.preventDefault(); const f = e.currentTarget, err = $('[data-c-err]'); err.textContent = '';
     const body = { name: f.elements.name.value.trim(), email: f.elements.email.value.trim(), phone: f.elements.phone.value.trim() };
     if (!body.name) { err.textContent = 'Напиши имя.'; f.elements.name.focus(); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(body.email)) { err.textContent = 'Проверь почту: похоже, опечатка.'; f.elements.email.focus(); return; }
+    // Клиент без почты входит по телефону: пустую почту не отправляем, логином остаётся номер
+    if (!body.email && !cur.email) delete body.email;
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(body.email)) { err.textContent = 'Проверь почту: похоже, опечатка.'; f.elements.email.focus(); return; }
+    if (!cur.email && !('email' in body) && body.phone.replace(/\D/g, '').length < 10) { err.textContent = 'Клиент входит по телефону: без номера он не войдёт. Добавь почту или оставь телефон.'; f.elements.phone.focus(); return; }
     const btn = f.querySelector('[type="submit"]'); btn.disabled = true;
     const r = await api.request('PATCH', '/api/admin/clients/' + cur.id, body); btn.disabled = false;
     if (!r.ok) { if (r.status === 401) return fail(r); err.textContent = r.data.error; return; }
@@ -372,8 +361,8 @@
   /* ---------- Пароль клиента: сервер придумывает, показываем один раз ---------- */
   const fcp = $('[data-form="cpass"]'), cpAsk = $('[data-dcp-ask]'), cpDone = $('[data-dcp-done]'), cpPw = $('[data-dcp-pw]'), cpMsg = $('[data-dcp-msg]');
   const loginUrl = location.origin + '/lk/login.html';
-  let cpText = '';
-  const passMsg = (c, pw, must) => 'Привет, ' + first(c.name) + '! Твой вход в личный кабинет:\n' + loginUrl + '\n\nПочта: ' + c.email + '\nПароль: ' + pw +
+  let cpText = '', cpWho = null;
+  const passMsg = (c, pw, must) => 'Привет, ' + first(c.name) + '! Твой вход в личный кабинет:\n' + loginUrl + '\n\nЛогин: ' + c.login + '\nПароль: ' + pw +
     (must ? '\n\nПри первом входе кабинет попросит придумать свой пароль.' : '') + '\nЕсли не получится войти, напиши мне.';
   const drawPass = c => {
     const chip = $('[data-c-passchip]');
@@ -383,7 +372,7 @@
       : 'Клиент входит по своему паролю. Если он его забыл, выдай новый.';
     $('[data-c-pass]').textContent = c.hasPassword ? 'выдать новый пароль' : 'задать пароль';
   };
-  const cpWipe = () => { cpPw.textContent = ''; cpText = ''; cpMsg.textContent = ''; dlg('cpass').removeAttribute('data-sticky'); };
+  const cpWipe = () => { cpPw.textContent = ''; cpText = ''; cpWho = null; cpMsg.textContent = ''; dlg('cpass').removeAttribute('data-sticky'); };
   dlg('cpass').addEventListener('close', cpWipe);
   $('[data-c-pass]').addEventListener('click', () => {
     if (!cur) return;
@@ -391,7 +380,7 @@
     $('[data-dcp-title]').textContent = cur.hasPassword ? 'Выдать новый пароль' : 'Задать пароль';
     $('[data-dcp-ok]').textContent = cur.hasPassword ? 'выдать' : 'задать';
     $('[data-dcp-text]').textContent = 'Сайт сам придумает пароль для ' + cur.name + ' и покажет его один раз. ' +
-      (cur.hasPassword ? 'Прежний пароль перестанет работать, на всех устройствах клиенту придётся войти заново.' : 'Клиент войдёт по почте ' + cur.email + ' и этому паролю.');
+      (cur.hasPassword ? 'Прежний пароль перестанет работать, на всех устройствах клиенту придётся войти заново.' : 'Клиент войдёт по логину ' + (cur.login || cur.email) + ' и этому паролю.');
     $('[data-dcp-must]').checked = true; $('[data-dcp-err]').textContent = ''; openDlg('cpass');
   });
   fcp.addEventListener('submit', async e => {
@@ -400,15 +389,15 @@
     const r = await api.post('/api/admin/clients/' + c.id + '/password', { mustChange: must });
     btn.disabled = false;
     if (!r.ok) { if (r.status === 401) return fail(r); $('[data-dcp-err]').textContent = r.data.error; return; }
-    cpText = passMsg({ name: c.name, email: r.data.email }, r.data.password, must);
+    cpText = passMsg({ name: c.name, login: r.data.login || r.data.email }, r.data.password, must);
     $('[data-dcp-title]').textContent = 'Пароль готов';
-    $('[data-dcp-url]').textContent = loginUrl.replace(/^https?:\/\//, ''); $('[data-dcp-email]').textContent = r.data.email; cpPw.textContent = r.data.password;
+    $('[data-dcp-url]').textContent = loginUrl.replace(/^https?:\/\//, ''); $('[data-dcp-email]').textContent = r.data.login || r.data.email; cpPw.textContent = r.data.password;
     $('[data-dcp-wa]').hidden = !waDigits(c.phone);
     cpAsk.hidden = true; cpDone.hidden = false; dlg('cpass').setAttribute('data-sticky', '');
     ($('[data-dcp-wa]').hidden ? $('[data-dcp-copy]') : $('[data-dcp-wa]')).focus();
     c.hasPassword = true; c.passwordTemp = must; drawPass(c);
   });
-  $('[data-dcp-wa]').addEventListener('click', () => { if (cur && cpText && contact(cur, cpText)) cpMsg.textContent = 'WhatsApp открыт. Проверь, что сообщение ушло.'; });
+  $('[data-dcp-wa]').addEventListener('click', () => { const who = cpWho || cur; if (who && cpText && contact(who, cpText)) cpMsg.textContent = 'WhatsApp открыт. Проверь, что сообщение ушло.'; });
   $('[data-dcp-copy]').addEventListener('click', async () => {
     if (!cpText) return;
     let ok = false;
@@ -417,6 +406,62 @@
       dlg('cpass').appendChild(ta); ta.select(); try { ok = document.execCommand('copy'); } catch (_) {} ta.remove();
     }
     cpMsg.textContent = ok ? 'Скопировано. Вставь сообщение в чат с клиентом.' : 'Не получилось скопировать. Выдели пароль и скопируй вручную.';
+  });
+
+  /* ---------- Выдать доступ одним шагом: клиент оплатил в WhatsApp ----------
+     Имя + телефон (почта по желанию) + тариф и срок → сервер создаёт клиента, открывает доступ и придумывает пароль.
+     Сразу показываем окно с логином, паролем и готовым сообщением. Галочку можно снять: тогда просто карточка клиента. */
+  const fnc = $('[data-form="newclient"]'), dnErr = $('[data-dn-err]'), dnSel = $('[data-dn-tariff]'), dnOpts = $('[data-dn-opts]'), dnNew = $('[data-dn-new]');
+  const DN_OPTS = [['1 неделя', 7], ['2 недели', 14], ['4 недели', 28], ['8 недель', 56], ['12 недель', 84], ['16 недель', 112]];
+  const DN_DEF = 2;
+  const dnPick = () => { const r = $('input:checked', dnOpts); return DN_OPTS[Number(r ? r.value : DN_DEF)]; };
+  const dnDraw = () => { dnNew.textContent = 'Доступ до ' + fmt(addDays(new Date(), dnPick()[1])); };
+  const dnSet = i => { $$('input', dnOpts)[i].checked = true; dnDraw(); };
+  DN_OPTS.forEach((o, i) => {
+    const l = el('label', 'pill'); const r = el('input'); r.type = 'radio'; r.name = 'dnspan'; r.value = String(i);
+    r.addEventListener('change', dnDraw); l.appendChild(r); l.appendChild(el('span', '', o[0])); dnOpts.appendChild(l);
+  });
+  /* Выбрали тариф — срок подставляется по нему; при желании меняется руками */
+  dnSel.addEventListener('change', () => { const t = accessTariffs.find(x => x.id === dnSel.value); const i = t ? DN_OPTS.findIndex(o => o[1] === t.days) : -1; dnSet(i > -1 ? i : DN_DEF); });
+  const openGrant = async () => {
+    fnc.reset(); dnErr.textContent = '';
+    if (!accessTariffs.length) await loadAccessTariffs();
+    dnSel.textContent = '';
+    accessTariffs.forEach(t => { const o = el('option', '', t.name + (t.weeks ? ' · ' + t.weeks + ' ' + plural(t.weeks, 'неделя', 'недели', 'недель') : '')); o.value = t.id; dnSel.appendChild(o); });
+    if (accessTariffs.length) dnSel.dispatchEvent(new Event('change')); else dnSet(DN_DEF);
+    openDlg('newclient'); fnc.elements.name.focus();
+  };
+  $('[data-cl-add]').addEventListener('click', openGrant);
+  $('[data-grant]').addEventListener('click', openGrant);
+  const showCreds = (c, login, password, must, title) => {
+    cpWipe(); cpAsk.hidden = true; cpDone.hidden = false;
+    cpText = passMsg({ name: c.name, login }, password, must); cpWho = c;
+    $('[data-dcp-title]').textContent = title;
+    $('[data-dcp-url]').textContent = loginUrl.replace(/^https?:\/\//, ''); $('[data-dcp-email]').textContent = login; cpPw.textContent = password;
+    $('[data-dcp-wa]').hidden = !waDigits(c.phone);
+    openDlg('cpass'); dlg('cpass').setAttribute('data-sticky', '');
+    ($('[data-dcp-wa]').hidden ? $('[data-dcp-copy]') : $('[data-dcp-wa]')).focus();
+  };
+  fnc.addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.currentTarget; dnErr.textContent = '';
+    const body = { name: f.elements.name.value.trim(), email: f.elements.email.value.trim(), phone: f.elements.phone.value.trim() };
+    const digits = body.phone.replace(/\D/g, '');
+    if (!body.name) { dnErr.textContent = 'Напиши имя.'; f.elements.name.focus(); return; }
+    if (body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(body.email)) { dnErr.textContent = 'Проверь почту: похоже, опечатка.'; f.elements.email.focus(); return; }
+    if (body.phone && (digits.length < 10 || digits.length > 15)) { dnErr.textContent = 'Проверь телефон: нужно 10–15 цифр.'; f.elements.phone.focus(); return; }
+    if (!body.email && !body.phone) { dnErr.textContent = 'Нужен телефон или почта: по ним клиент войдёт в кабинет.'; f.elements.phone.focus(); return; }
+    if (!dnSel.value) { dnErr.textContent = 'Выбери тариф.'; dnSel.focus(); return; }
+    const btn = $('[data-dn-ok]'); btn.disabled = true;
+    const r = await api.post('/api/admin/clients/grant', { ...body, tariffId: dnSel.value, days: dnPick()[1], mustChange: true });
+    btn.disabled = false;
+    if (!r.ok) {
+      if (r.status === 401) return fail(r);
+      dnErr.textContent = r.data.error;
+      if (r.status === 409 && r.data.id) toast('Такой клиент уже есть', 'открыть', () => { dlg('newclient').close(); location.hash = '#/client/' + r.data.id; });
+      return;
+    }
+    dlg('newclient').close(); await loadClients(); location.hash = '#/client/' + r.data.id;
+    showCreds({ name: body.name, phone: body.phone }, r.data.login, r.data.password, r.data.mustChange, 'Доступ открыт до ' + fmt(new Date(r.data.endsAt)));
   });
   $('[data-dcp-finish]').addEventListener('click', async () => { dlg('cpass').close(); await reloadClient(); toast('Пароль задан'); });
 

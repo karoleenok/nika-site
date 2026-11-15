@@ -1,5 +1,5 @@
 import { openPassword } from './shown.js';
-import { newToken, hashToken, newCode, hashCode, sameBytes, normEmail, validEmail } from './crypto.js';
+import { newToken, hashToken, newCode, hashCode, sameBytes, normEmail, validEmail, loginToEmail, loginOf, isPhoneEmail } from './crypto.js';
 import { cookieName, cookieOptions, createSession, readSession, deleteSession, deleteOtherUserSessions } from './sessions.js';
 import { hashPassword, checkPassword, burnTime, passwordProblem } from './password.js';
 import { Limiter, CODE_LIMITS, PASS_LIMITS } from './limits.js';
@@ -154,8 +154,9 @@ export default async function authRoutes(app, { config, pool, mailer }) {
   // ---------- 4. Пароль ----------
   // Клиент: необязательный пароль из профиля. Админ: основной способ входа (письма с кодом могут не ходить).
   app.post('/api/auth/password', async (req, reply) => {
-    const email = normEmail(req.body?.email);
     const kind = kindOf(req.body?.kind);
+    // Клиент может войти по телефону (если покупал через WhatsApp без почты), админ только по почте
+    const email = kind === 'admin' ? normEmail(req.body?.email) : loginToEmail(req.body?.email);
     const pw = String(req.body?.password ?? '');
     if (!validEmail(email) || !pw || pw.length > 128) return bad(reply, 400, GENERIC_PASS);
     const pair = `${email}|${req.ip}`;
@@ -190,7 +191,7 @@ export default async function authRoutes(app, { config, pool, mailer }) {
     reply.header('cache-control', 'no-store');
     // mustChangePassword: пароль выдала Ника, кабинет попросит придумать свой
     // passwordOnly: письма с кодом не ходят, пароль — единственный способ входа
-    return { name: rows[0].name, email: rows[0].email, hasPassword: rows[0].has_password, mustChangePassword: rows[0].has_password && rows[0].password_temp, passwordOnly: !config.mailOn,
+    return { name: rows[0].name, email: isPhoneEmail(rows[0].email) ? '' : rows[0].email, login: loginOf(rows[0].email), hasPassword: rows[0].has_password, mustChangePassword: rows[0].has_password && rows[0].password_temp, passwordOnly: !config.mailOn,
       // Пароль выдал сайт или Ника и почты нет: клиент видит его в профиле, свой задать пока нельзя
       shownPassword: shown, passwordLocked: !config.mailOn && !!shown && !rows[0].password_temp };
   });

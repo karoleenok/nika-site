@@ -1,3 +1,4 @@
+import { isPhoneEmail, loginOf } from './auth/crypto.js';
 // Доступ клиента: как считается статус и срок. Срок в базе в днях, в интерфейсе недели.
 // Действующий доступ = период, не закрытый вручную, который ещё не закончился.
 export const DAY = 864e5;
@@ -44,7 +45,7 @@ export const CLIENT_SELECT = `
 
 export function clientView(row, now = new Date()) {
   return {
-    id: String(row.id), name: row.name, email: row.email, phone: row.phone, note: row.note,
+    id: String(row.id), name: row.name, email: isPhoneEmail(row.email) ? '' : row.email, login: loginOf(row.email), phone: row.phone, note: row.note,
     createdAt: row.created_at,
     // есть ли пароль для входа и временный ли он (выдан из админки, клиент ещё не сменил)
     hasPassword: !!row.has_password, passwordTemp: !!row.has_password && !!row.password_temp,

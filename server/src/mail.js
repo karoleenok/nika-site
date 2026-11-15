@@ -9,6 +9,8 @@ export function createMailer(cfg, log = console) {
   });
   return {
     async send({ to, subject, text, html }) {
+      // Клиент без почты (вход по телефону): служебный адрес .invalid, письмо некуда отправить
+      if (/\.invalid$/i.test(String(to || ''))) return;
       await transport.sendMail({ from: cfg.from, replyTo: cfg.replyTo || undefined, to, subject, text, html });
     },
     // Фоновая отправка: ответ API не ждёт письма, поэтому по скорости ответа не понять, есть ли почта в базе

@@ -1,7 +1,7 @@
 // Админка: клиенты, доступ, тарифы, журнал. Роль проверяется на сервере в каждом маршруте.
 // owner (Ника) — всё. tech (Каролина) — всё. staff (Диана) — клиенты и доступ, без цен и журнала.
 import { tx } from '../db.js';
-import { normEmail, validEmail } from '../auth/crypto.js';
+import { normEmail, validEmail, phoneDigits, validPhoneDigits, phoneEmail, isPhoneEmail, loginOf } from '../auth/crypto.js';
 import { CLIENT_SELECT, clientView, audit, DAY, MAX_FUTURE_DAYS } from '../access.js';
 import { hashPassword } from '../auth/password.js';
 import { generateClientPassword } from '../auth/genpass.js';
@@ -63,6 +63,47 @@ export default async function adminRoutes(app, { pool, config }) {
     return reply.code(201).send({ id: String(id) });
   });
 
+  // «Выдать доступ» одним шагом: клиент купил через WhatsApp.
+  // Создаём клиента, открываем доступ, придумываем пароль и отдаём логин с паролем один раз.
+  // Почта по желанию: без неё логином будет телефон.
+  app.post('/api/admin/clients/grant', async (req, reply) => {
+    noStore(reply);
+    const b = req.body || {};
+    const name = cleanText(b.name, 100), phone = cleanPhone(b.phone), rawEmail = String(b.email ?? '').trim();
+    if (!name) return bad(reply, 400, 'Напиши имя.');
+    if (!phoneOk(phone)) return bad(reply, 400, 'Телефон: цифры, можно с плюсом.');
+    const digits = phoneDigits(phone);
+    if (!rawEmail && !validPhoneDigits(digits)) return bad(reply, 400, 'Нужен телефон или почта: по ним клиент войдёт в кабинет.');
+    const email = rawEmail ? normEmail(rawEmail) : phoneEmail(digits);
+    if (rawEmail && !validEmail(email)) return bad(reply, 400, 'Проверь почту: похоже, опечатка.');
+    const days = Number(b.days);
+    if (!Number.isInteger(days) || days < 1 || days > 366) return bad(reply, 400, 'Выбери срок.');
+    const tariffId = idOf(b.tariffId);
+    if (!tariffId) return bad(reply, 400, 'Выбери тариф.');
+    const mustChange = b.mustChange !== false;
+    const password = generateClientPassword();
+    const h = await hashPassword(password);
+
+    return tx(pool, async (c) => {
+      if (!(await c.query(`SELECT 1 FROM tariffs WHERE id = $1 AND kind = 'access'`, [tariffId])).rowCount) return bad(reply, 400, 'Такого тарифа нет.');
+      // Уже есть такой клиент (та же почта или тот же телефон): не плодим дубль, ведём в карточку
+      const dup = (await c.query(
+        `SELECT id FROM users WHERE email = $1 OR ($2 <> '' AND regexp_replace(phone, '\\D', '', 'g') IN ($2, '8' || substr($2, 2))) LIMIT 1`,
+        [email, digits.length >= 10 ? digits : ''])).rows[0];
+      if (dup) return reply.code(409).send({ error: 'Такой клиент уже есть. Открой его карточку и продли доступ там.', id: String(dup.id) });
+      const u = (await c.query(
+        'INSERT INTO users (email, name, phone, password_hash, password_temp, password_shown) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+        [email, name, phone, h, mustChange, sealPassword(config.sessionSecret, password)])).rows[0];
+      const ends = new Date(Date.now() + days * DAY);
+      await c.query(`INSERT INTO access_periods (user_id, tariff_id, starts_at, ends_at, source, created_by) VALUES ($1, $2, now(), $3, 'manual', $4)`,
+        [u.id, tariffId, ends, req.admin.id]);
+      await audit(c, req.admin.id, 'client.create', { userId: u.id });
+      await audit(c, req.admin.id, 'access.open', { userId: u.id, note: cleanText(b.note, 120) || null, meta: { days, endsAt: ends.toISOString(), tariffId } });
+      await audit(c, req.admin.id, 'client.password', { userId: u.id, meta: { reset: false, mustChange } });
+      return reply.code(201).send({ id: String(u.id), login: loginOf(email), password, mustChange, endsAt: ends.toISOString() });
+    });
+  });
+
   // Правка данных и заметки. Приходят только те поля, которые меняем.
   app.patch('/api/admin/clients/:id', async (req, reply) => {
     const id = idOf(req.params.id);
@@ -80,6 +121,13 @@ export default async function adminRoutes(app, { pool, config }) {
       }
       if ('phone' in b) { next.phone = cleanPhone(b.phone); if (!phoneOk(next.phone)) return bad(reply, 400, 'Телефон: цифры, можно с плюсом. Или оставь пустым.'); }
       if ('note' in b) next.note = cleanText(b.note, 500);
+      // Клиент входит по телефону (почты нет): сменили номер — меняется и логин
+      if (isPhoneEmail(cur.email) && next.email === cur.email && next.phone !== cur.phone) {
+        const d = phoneDigits(next.phone);
+        if (!validPhoneDigits(d)) return bad(reply, 400, 'Клиент входит по телефону: без номера он не войдёт. Добавь почту или оставь телефон.');
+        next.email = phoneEmail(d);
+        if (next.email !== cur.email && (await c.query('SELECT 1 FROM users WHERE email = $1 AND id <> $2', [next.email, id])).rowCount) return bad(reply, 409, 'Клиент с таким телефоном уже есть.');
+      }
       await c.query('UPDATE users SET name = $2, email = $3, phone = $4, note = $5 WHERE id = $1', [id, next.name, next.email, next.phone, next.note]);
       // Сменили почту: старые сессии закрываем, чтобы прежний владелец адреса не остался внутри
       if (next.email !== cur.email) await c.query('DELETE FROM sessions WHERE user_id = $1', [id]);
@@ -116,7 +164,7 @@ export default async function adminRoutes(app, { pool, config }) {
       // Все прежние входы клиента закрываем: старый пароль и старые сессии больше не действуют
       await c.query('DELETE FROM sessions WHERE user_id = $1', [id]);
       await audit(c, req.admin.id, 'client.password', { userId: id, meta: { reset: cur.had, mustChange } });
-      return { ok: true, email: cur.email, password, mustChange };
+      return { ok: true, email: cur.email, login: loginOf(cur.email), password, mustChange };
     });
   });
 

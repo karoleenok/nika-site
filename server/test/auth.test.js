@@ -146,7 +146,7 @@ test('сессия: без куки 401, с кукой профиль; выхо�
   const c = await login('anna@example.com');
   const me = await t.api('GET', '/api/me', null, { cookie: c.header });
   assert.equal(me.statusCode, 200);
-  assert.deepEqual(me.json(), { name: 'Анна', email: 'anna@example.com', hasPassword: false, mustChangePassword: false, passwordOnly: false, shownPassword: null, passwordLocked: false });
+  assert.deepEqual(me.json(), { name: 'Анна', email: 'anna@example.com', login: 'anna@example.com', hasPassword: false, mustChangePassword: false, passwordOnly: false, shownPassword: null, passwordLocked: false });
   await t.api('POST', '/api/auth/logout', {}, { cookie: c.header });
   assert.equal((await t.api('GET', '/api/me', null, { cookie: c.header })).statusCode, 401, 'старая кука больше не работает');
 });

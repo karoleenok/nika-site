@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../css/base.css?v=20261113b">
   <link rel="stylesheet" href="../css/pages.css?v=20261115c">
   <link rel="stylesheet" href="../css/lk.css?v=20261115c">
-  <link rel="stylesheet" href="../css/admin.css?v=20261115c">
+  <link rel="stylesheet" href="../css/admin.css?v=20261115g">
 </head>
 <body class="lk adm">
 <svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
@@ -70,6 +70,7 @@
     <section data-view="today" hidden aria-labelledby="h-today">
       <p class="label adm-date" data-date></p>
       <h1 class="display lk-h1" id="h-today" tabindex="-1">Сегодня</h1>
+      <button class="btn btn--red adm-grant" type="button" data-grant>выдать доступ</button>
       <ul class="kpis" data-kpis></ul>
       <div class="lk-block">
         <h2 class="lk-h2">Напомнить о продлении</h2>
@@ -89,12 +90,12 @@
       <form class="search" role="search" data-cl-form>
         <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
         <label class="sr-only" for="cq">Найти клиента</label>
-        <input id="cq" class="search__input" type="search" placeholder="Найти по имени или почте" autocomplete="off" enterkeyhint="search" data-cl-q>
+        <input id="cq" class="search__input" type="search" placeholder="Имя, почта или телефон" autocomplete="off" enterkeyhint="search" data-cl-q>
       </form>
       <div class="chips lk-chips" data-cl-chips role="group" aria-label="Статус доступа"></div>
       <div class="pane-h pane-h--cl">
         <p class="lk-count" data-cl-count aria-live="polite"></p>
-        <button class="btn btn--line-dark btn--sm" type="button" data-cl-add>+ клиент</button>
+        <button class="btn btn--line-dark btn--sm" type="button" data-cl-add>+ выдать доступ</button>
       </div>
       <ul class="rows" data-cl-list></ul>
       <div class="empty" data-cl-empty hidden>
@@ -161,7 +162,7 @@
         <summary>Данные клиента</summary>
         <form class="fold__in" data-c-form novalidate>
           <label class="field"><span class="field__label">Имя</span><input class="field__input" type="text" name="name" autocomplete="off"></label>
-          <label class="field"><span class="field__label">Почта (для входа в кабинет)</span><input class="field__input" type="email" name="email" autocomplete="off" inputmode="email"></label>
+          <label class="field"><span class="field__label">Почта</span><input class="field__input" type="email" name="email" autocomplete="off" inputmode="email"></label>
           <label class="field"><span class="field__label">Телефон для WhatsApp</span><input class="field__input" type="tel" name="phone" autocomplete="off" inputmode="tel" placeholder="+7 ..."></label>
           <span class="field__err" role="alert" data-c-err></span>
           <button class="btn btn--red btn--block" type="submit">сохранить</button>
@@ -465,7 +466,7 @@
       <p class="sheet__p">Пароль виден только сейчас. Отправь его клиенту, пока окно открыто: потом посмотреть нельзя, можно только выдать новый.</p>
       <dl class="cred">
         <div><dt>Страница входа</dt><dd data-dcp-url></dd></div>
-        <div><dt>Почта</dt><dd data-dcp-email></dd></div>
+        <div><dt>Логин</dt><dd data-dcp-email></dd></div>
         <div><dt>Пароль</dt><dd class="cred__pw" data-dcp-pw></dd></div>
       </dl>
       <button class="btn btn--red btn--block" type="button" data-dcp-wa>отправить в WhatsApp</button>
@@ -478,14 +479,25 @@
 
 <dialog class="sheet" data-dlg="newclient" aria-labelledby="dn-t">
   <form class="sheet__in" data-form="newclient" method="dialog" novalidate>
-    <h2 class="sheet__t" id="dn-t">Новый клиент</h2>
-    <p class="sheet__p">Клиент войдёт в кабинет по этой почте: код придёт ему на письмо. Доступ откроешь в карточке.</p>
+    <h2 class="sheet__t" id="dn-t">Выдать доступ</h2>
+    <p class="sheet__p" data-dn-lead>Для тех, кто оплатил через WhatsApp. Сайт откроет доступ, придумает пароль и подготовит сообщение клиенту.</p>
     <label class="field"><span class="field__label">Имя</span><input class="field__input" type="text" name="name" maxlength="100" autocomplete="off"></label>
-    <label class="field"><span class="field__label">Почта</span><input class="field__input" type="email" name="email" autocomplete="off" inputmode="email" autocapitalize="none"></label>
-    <label class="field"><span class="field__label">Телефон для WhatsApp (по желанию)</span><input class="field__input" type="tel" name="phone" autocomplete="off" inputmode="tel" placeholder="+7 ..."><span class="field__err" role="alert" data-dn-err></span></label>
+    <div class="sheet__row">
+    <label class="field"><span class="field__label">Телефон</span><input class="field__input" type="tel" name="phone" autocomplete="off" inputmode="tel" placeholder="+7 ..."><span class="field__hint">Без почты вход по номеру</span></label>
+    <label class="field"><span class="field__label">Почта (по желанию)</span><input class="field__input" type="email" name="email" autocomplete="off" inputmode="email" autocapitalize="none" spellcheck="false"></label>
+    </div>
+    <div class="sheet__grp" data-dn-acc>
+      <label class="field">
+        <span class="field__label">Тариф</span>
+        <select class="field__input" data-dn-tariff></select>
+      </label>
+      <div class="pills pills--grid" data-dn-opts role="radiogroup" aria-label="Срок"></div>
+      <p class="sheet__new" data-dn-new aria-live="polite"></p>
+    </div>
+    <span class="field__err" role="alert" data-dn-err></span>
     <div class="sheet__act">
       <button class="btn btn--line-dark" type="button" data-close>отмена</button>
-      <button class="btn btn--red" type="submit">добавить</button>
+      <button class="btn btn--red" type="submit" data-dn-ok>выдать доступ</button>
     </div>
   </form>
 </dialog>
@@ -539,6 +551,6 @@
 <script src="../js/lk-data.js?v=20261113b"></script>
 <script src="../js/admin-data.js?v=20261115a"></script>
 <script src="../js/uploader.js?v=20261113b"></script>
-<script src="../js/admin.js?v=20261115c"></script>
+<script src="../js/admin.js?v=20261115g"></script>
 </body>
 </html>
