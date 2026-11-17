@@ -18,7 +18,7 @@ test('чужие поля, варианты и пункты другого по�
   assert.equal(cleanAnswers(null), null);
   assert.equal(cleanAnswers({ a: {}, c: {} }), null);
   const r1 = fullAnswers(); r1.a.hack = 1; assert.equal(cleanAnswers(r1), null);
-  const r2 = fullAnswers(); r2.a.diet = { sel: ['нет-такого'] }; assert.equal(cleanAnswers(r2), null);
+  const r2 = fullAnswers(); r2.a.request = { sel: ['нет-такого'] }; assert.equal(cleanAnswers(r2), null);
   const r3 = fullAnswers(); r3.c.male_01 = true; assert.equal(cleanAnswers(r3), null);    // мужской пункт у женщины
   const r4 = fullAnswers(); r4.a.height = 5; assert.equal(cleanAnswers(r4), null);
   const r5 = fullAnswers(); delete r5.c[schema.blocks[0].items.find((i) => i.kind === 'q').id]; assert.equal(cleanAnswers(r5), null); // не все да/нет

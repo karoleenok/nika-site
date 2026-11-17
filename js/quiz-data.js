@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = 'overlay-2026-11-13-c';
+  const VERSION = 'overlay-2026-11-17-a';
 
   /* ---------- Настройки ---------- */
   const SETTINGS = {
@@ -15,16 +15,6 @@
     // Настоящий промокод лежит на сервере (QUIZ_PROMO_CODE и QUIZ_PROMO_PERCENT в .env) и приходит в ответе на отправку анкеты.
     // Здесь только макет: его видно, если открыть сайт с ?promo-preview в адресе. Пока Ника не дала код, на экране «пришлёт Ника».
     promo: { ready: false, code: 'NIKA-XXXX', percent: 40 },
-    // ЗАГЛУШКА: какое приложение и где его брать, Каролина пока не ответила (вероятно Hello Doc).
-    // Ссылки со значением '#' не показываются; если нет ни одной настоящей, кнопка серая «скоро».
-    app: {
-      name: 'Hello Doc',
-      links: [
-        { id: 'rustore', label: 'RuStore', href: '#' },
-        { id: 'appstore', label: 'App Store', href: '#' },
-        { id: 'gplay', label: 'Google Play', href: '#' },
-      ],
-    },
   };
 
   /* ---------- Часть 1: по одному вопросу на экран ---------- */
@@ -61,7 +51,7 @@
         { id: 'symptoms', label: 'есть жалобы на самочувствие' },
         { id: 'weight', label: 'хочу похудеть или набрать вес' },
         { id: 'sport', label: 'начинаю заниматься спортом' },
-        { id: 'after', label: 'контроль после лечения' },
+        { id: 'vitamins', label: 'подбор витаминов и спортпита' },
       ], other: true },
 
     { id: 'diseases', type: 'chips', title: 'Есть ли диагностированные заболевания?', hint: 'Можно выбрать несколько.', multi: true,
@@ -73,16 +63,6 @@
         { id: 'sugar', label: 'сахар, инсулинорезистентность' },
         { id: 'anemia', label: 'анемия' },
         { id: 'kidney', label: 'почки и мочевыводящие пути' },
-      ], other: true },
-
-    { id: 'diet', type: 'chips', title: 'Как ты питаешься сейчас?',
-      options: [
-        { id: 'all', label: 'ем всё' },
-        { id: 'lessmeat', label: 'мясо и рыбу ем редко' },
-        { id: 'veg', label: 'вегетарианство' },
-        { id: 'vegan', label: 'веганство' },
-        { id: 'lowcarb', label: 'мало углеводов или кето' },
-        { id: 'strict', label: 'строгая диета, голодание' },
       ], other: true },
 
     { id: 'activity', type: 'level', title: 'Насколько ты активна в течение дня?', titleM: 'Насколько ты активен в течение дня?',

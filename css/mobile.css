@@ -79,6 +79,14 @@ body { font-size: var(--fs-body); }
 }
 .menu[hidden] { display: none; }
 .menu.is-open { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+/* Вход в личный кабинет: в верхней строке меню, на одной линии с кнопкой закрытия, чтобы не занимать место в списке */
+.menu__lk {
+  position: absolute; top: calc(10 * var(--m)); left: var(--gutter);
+  display: inline-flex; align-items: center; height: 48px; padding-inline: 18px; border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .2); background: rgba(14, 14, 14, .55);
+  font-size: var(--fs-small); line-height: 1; color: #fff; -webkit-tap-highlight-color: transparent;
+}
+.menu__lk:active { background: rgba(255, 255, 255, .12); }
 .menu__nav { display: grid; gap: calc(4 * var(--m)); }
 .menu__nav a {
   display: block; padding-block: calc(4 * var(--m));

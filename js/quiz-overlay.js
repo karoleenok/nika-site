@@ -174,11 +174,11 @@
   const renderIntro = (view) => {
     const { w, t } = heading(null, 'Какие анализы сдать');
     view.appendChild(w);
-    view.appendChild(h('p', 'qo__lead', nb('Ответь на несколько вопросов, и Ника подскажет, на какие показатели в анализах стоит обратить внимание. Это займёт около пяти минут.')));
+    view.appendChild(h('p', 'qo__lead', nb('Ответь на несколько вопросов, и я подскажу, на какие показатели в анализах стоит обратить внимание. Это займёт около пяти минут.')));
     const ul = h('ul', 'qo__facts');
     ['Сначала короткие вопросы про тебя, потом чек-лист по самочувствию.',
      'В конце получишь рекомендацию и промокод на анализы.',
-     'Ответы увидит только Ника. Хранятся до года, удалить их можно по твоей просьбе.'].forEach((s) => ul.appendChild(h('li', null, nb(s))));
+     'Ответы увижу только я. Хранятся до года, удалить их можно по твоей просьбе.'].forEach((s) => ul.appendChild(h('li', null, nb(s))));
     view.appendChild(ul);
     const lb = h('label', 'qo__consent'), inp = document.createElement('input');
     inp.type = 'checkbox'; inp.checked = consent;
@@ -534,12 +534,12 @@
       promo.textContent = '';
       if (P) {
         promo.append(h('p', 'qo__bl', 'промокод'), h('p', 'qo__code', P.code),
-          h('p', 'qo__pt', nb('Скидка ' + P.percent + '% на анализы у партнёра. Условия расскажет Ника.')));
+          h('p', 'qo__pt', nb('Скидка ' + P.percent + '% на анализы у партнёра. Условия расскажу на консультации.')));
         const cp = h('button', 'btn btn--white qo__copy', 'скопировать'); cp.type = 'button';
         cp.addEventListener('click', async () => { try { await navigator.clipboard.writeText(P.code); cp.textContent = 'скопировано'; setTimeout(() => { cp.textContent = 'скопировать'; }, 1800); } catch (_) {} });
         promo.appendChild(cp);
       } else {
-        promo.append(h('p', 'qo__bl', 'скидка на анализы'), h('p', 'qo__pt', nb('Промокод пришлёт Ника, когда ты напишешь ей в WhatsApp.')));
+        promo.append(h('p', 'qo__bl', 'скидка на анализы'), h('p', 'qo__pt', nb('Промокод пришлю, когда ты напишешь мне в WhatsApp.')));
       }
     };
     paintPromo();
@@ -549,19 +549,13 @@
     const acts = h('div', 'qo__acts');
     const wa = h('a', 'btn btn--red btn--block', 'записаться на консультацию'); wa.href = waLink(fl); wa.target = '_blank'; wa.rel = 'noopener';
     acts.append(wa, h('p', 'qo__fine', nb('Откроется WhatsApp с готовым сообщением и итогом теста. Ты увидишь текст до отправки.')), note);
-    const real = SETTINGS.app.links.filter((l) => l.href && l.href !== '#');
-    if (real.length) {
-      real.forEach((l) => { const a = h('a', 'btn btn--ink btn--block', 'скачать приложение · ' + l.label); a.href = l.href; a.target = '_blank'; a.rel = 'noopener'; acts.appendChild(a); });
-    } else {
-      const b = h('button', 'btn btn--block', 'скачать приложение · скоро'); b.type = 'button'; b.disabled = true; acts.appendChild(b);
-    }
     view.appendChild(acts);
     view.appendChild(h('p', 'qo__fine', nb(TEXTS.disclaimer)));
     const after = () => {
       if (!view.isConnected) return;
       paintPromo(); wa.href = waLink(fl);
       note.hidden = saveState === 'ok' || saveState === 'sending';
-      if (!note.hidden) note.textContent = nb('Ответы не сохранились на сайте, Ника их не увидит. Отправь итог ей в WhatsApp, контакт добавим в сообщение.');
+      if (!note.hidden) note.textContent = nb('Ответы не сохранились на сайте, я их не увижу. Отправь итог мне в WhatsApp, контакт добавим в сообщение.');
     };
     save(after).then(after);
     const again = h('button', 'qo__again', 'пройти заново'); again.type = 'button';

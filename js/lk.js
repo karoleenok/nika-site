@@ -167,7 +167,7 @@
     /* Пусто не из-за фильтра: тренировки не загрузились или Ника их ещё не опубликовала */
     const none = !allVideos.length;
     $('.empty__t', empty).textContent = videosFailed ? 'Не получилось загрузить тренировки' : none ? 'Тренировки скоро появятся' : 'Ничего не нашлось';
-    $('.empty__p', empty).textContent = videosFailed ? 'Проверь интернет и обнови страницу.' : none ? (soonMode ? 'Уроки проходят проверку на сервере: в ближайшие 1–2 дня всё появится в личном кабинете.' : 'Ника добавляет видео. Загляни чуть позже.') : 'Попробуй другое слово или сбрось фильтр.';
+    $('.empty__p', empty).textContent = videosFailed ? 'Проверь интернет и обнови страницу.' : none ? (soonMode ? 'Часть видео ещё в процессе выгрузки. Новые тренировки появятся здесь, как только загрузятся.' : 'Ника добавляет видео. Загляни чуть позже.') : 'Попробуй другое слово или сбрось фильтр.';
     /* Плашка над списком: есть уроки «скоро». Когда список пуст, тот же текст уже стоит в пустом состоянии. */
     $('[data-soon-note]').hidden = !D.soon.length;
     $('[data-reset]').hidden = none;
@@ -213,7 +213,7 @@
      и продолжаем с того же места. */
   const playerBox = $('[data-player]'), playBtn = $('[data-play]'), note = $('[data-player-note]');
   let vidEl = null, playFor = null;
-  const resetPlayer = () => { if (vidEl) { vidEl.removeAttribute('src'); vidEl.load(); vidEl.remove(); } vidEl = null; playFor = null; playBtn.hidden = false; note.textContent = ''; playerBox.classList.remove('is-on'); };
+  const resetPlayer = () => { if (vidEl) { vidEl.removeAttribute('src'); vidEl.load(); vidEl.remove(); } vidEl = null; playFor = null; playBtn.hidden = false; note.textContent = ''; playerBox.classList.remove('is-on', 'is-vertical'); };
   const getUrl = async id => {
     const r = await window.NikaApi.get('/api/videos/' + id + '/play');
     if (r.status === 401) { location.replace('login.html'); return null; }
@@ -238,6 +238,8 @@
       v.src = fresh; v.currentTime = at; v.play().catch(() => {});
     });
     v.addEventListener('playing', () => { retried = 0; });
+    /* Вертикальные ролики: рамка плеера подстраивается под кадр, а не сжимает его в 16:9 */
+    v.addEventListener('loadedmetadata', () => { playerBox.classList.toggle('is-vertical', v.videoHeight > v.videoWidth * 1.1); });
     v.src = url; vidEl = v; playFor = id; playerBox.appendChild(v);
     v.play().catch(() => {});
   });

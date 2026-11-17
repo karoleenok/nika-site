@@ -154,6 +154,9 @@ body.lk { background: var(--c-paper); min-height: 100vh; min-height: 100svh; }
 .player::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 100% at 0% 120%, rgba(200, 0, 0, .55), rgba(21, 21, 24, 0) 70%); }
 .player[hidden] { display: none; }
 .player.is-on::before, .player:has(video)::before { display: none; }
+/* Вертикальное видео: кадр 9:16 по центру, не выше 78% экрана */
+.player.is-vertical { aspect-ratio: 9 / 16; width: min(100%, calc(78vh * 9 / 16)); max-height: 78vh; margin-inline: auto; }
+@supports (height: 100dvh) { .player.is-vertical { width: min(100%, calc(78dvh * 9 / 16)); max-height: 78dvh; } }
 .player video { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; background: #000; object-fit: contain; }
 .player__play[hidden] { display: none; }
 .player__play:disabled { opacity: .6; }
