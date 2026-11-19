@@ -62,6 +62,18 @@ body { font-size: var(--fs-body); }
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   -webkit-tap-highlight-color: transparent;
 }
+/* Вход в личный кабинет: слева от бургера, в той же стеклянной капсуле, высота 48 px = зона нажатия */
+.hero__lk {
+  position: absolute; z-index: 5; top: calc(10 * var(--m)); right: calc(var(--gutter) + 56px);
+  display: inline-flex; align-items: center; gap: 8px; height: 48px; padding-inline: 14px 18px; border-radius: 14px;
+  background: rgba(14, 14, 14, .55); border: 1px solid rgba(255, 255, 255, .2);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  color: #fff; font-size: var(--fs-small); line-height: 1; white-space: nowrap; -webkit-tap-highlight-color: transparent;
+}
+.hero__lk svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.hero__lk:active { background: rgba(255, 255, 255, .12); }
+@media (max-width: 359px) { .hero__lk span { display: none; } .hero__lk { padding-inline: 14px; } }   /* узкие экраны: только значок */
+
 .burger span { display: block; width: 22px; height: 2px; border-radius: 2px; background: #fff; transition: transform var(--dur-2) var(--ease-out); }
 .burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(4px) rotate(45deg); }
 .burger[aria-expanded="true"] span:nth-child(2) { transform: translateY(-4px) rotate(-45deg); }
@@ -243,7 +255,9 @@ body.menu-lock { overflow: hidden; }
   font-size: min(38vw, 190px);
 }
 .about__photo { left: 50%; top: calc(var(--aw) * -.245); width: var(--aw); transform: translateX(-50%); }
-.about__card { grid-template-columns: minmax(0, 1fr); width: calc(100% - 2 * var(--gutter)); padding: calc(28 * var(--m)) var(--inset) calc(28 * var(--m)); }
+.about__card { grid-template-columns: minmax(0, 1fr); width: calc(100% - 2 * var(--gutter)); padding: calc(28 * var(--m)) var(--inset) calc(28 * var(--m));
+  position: relative; z-index: 3; margin-top: calc(var(--aw) * -.09);   /* красная карточка выше: закрывает талию на фото */
+}
 .about__role { text-align: left; font-size: var(--fs-h2-xl); line-height: .8; }
 .about__text { max-width: none; margin-top: 16px; font-size: var(--fs-body); line-height: 1.2; }
 .stats { margin-top: 24px; gap: 8px; }
@@ -292,6 +306,10 @@ body.menu-lock { overflow: hidden; }
 .case { min-height: 0; padding: var(--inset); border-radius: var(--r-section); }
 .case__title { min-height: 0; line-height: .8; }
 .case__text { max-width: none; margin-top: 12px; font-size: var(--fs-body); line-height: var(--lh-small); }
+/* Карточка «Работа над формой»: фото крупнее (было 31% ширины, плохо видно) */
+.stack--shots { min-height: calc(260 * var(--m)); }
+.stack--shots .stack__img { width: 40%; }
+.stack--shots .stack__img--b { left: 30%; }
 .case .stack { margin-block: auto 24px; }   /* остаток высоты — над коллажем, кнопки стоят на одной линии */
 .case__text { margin-bottom: 14px; }
 .stack { flex: none; min-height: calc(170 * var(--m)); margin-block: 14px 24px; }

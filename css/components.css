@@ -538,3 +538,6 @@
 .hero picture, .about__stage picture { display: contents; }
 .info__sum { display: block; list-style: none; pointer-events: none; cursor: default; }
 .info__sum::-webkit-details-marker { display: none; }
+
+/* Вход в личный кабинет на главном экране: только мобилка (на ПК и планшете есть «войти» в шапке) */
+.hero__lk { display: none; }
