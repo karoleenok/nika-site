@@ -253,7 +253,7 @@
 }
 .about__photo {
   position: absolute; z-index: 2;
-  left: calc(257 * var(--s)); top: calc(-246 * var(--s));   /* Ника ниже: талия уходит за край блока */
+  left: calc(257 * var(--s)); top: calc(-186 * var(--s));   /* Ника ниже: талия уходит за край блока */
   width: calc(824 * var(--s)); max-width: none; height: auto;
 }
 
