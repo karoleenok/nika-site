@@ -62,17 +62,13 @@ body { font-size: var(--fs-body); }
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   -webkit-tap-highlight-color: transparent;
 }
-/* Вход в личный кабинет: слева от бургера, в той же стеклянной капсуле, высота 48 px = зона нажатия */
+/* Вход в личный кабинет: как «войти» на ПК (контурная капсула), слева от бургера, высота 48 px = зона нажатия */
 .hero__lk {
   position: absolute; z-index: 5; top: calc(10 * var(--m)); right: calc(var(--gutter) + 56px);
-  display: inline-flex; align-items: center; gap: 8px; height: 48px; padding-inline: 14px 18px; border-radius: 14px;
-  background: rgba(14, 14, 14, .55); border: 1px solid rgba(255, 255, 255, .2);
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  color: #fff; font-size: var(--fs-small); line-height: 1; white-space: nowrap; -webkit-tap-highlight-color: transparent;
+  display: inline-flex; align-items: center; height: 48px; padding-inline: 22px; border-radius: 999px;
+  border: 1px solid currentColor; color: #fff; font-size: var(--fs-small); line-height: 1; -webkit-tap-highlight-color: transparent;
 }
-.hero__lk svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-.hero__lk:active { background: rgba(255, 255, 255, .12); }
-@media (max-width: 359px) { .hero__lk span { display: none; } .hero__lk { padding-inline: 14px; } }   /* узкие экраны: только значок */
+.hero__lk:active { background: var(--c-white); color: var(--c-red); border-color: var(--c-white); }
 
 .burger span { display: block; width: 22px; height: 2px; border-radius: 2px; background: #fff; transition: transform var(--dur-2) var(--ease-out); }
 .burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(4px) rotate(45deg); }
