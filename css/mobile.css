@@ -250,9 +250,8 @@ body.menu-lock { overflow: hidden; }
   display: flex; flex-direction: column; align-items: center; gap: 0;
   font-size: min(38vw, 190px);
 }
-.about__photo { left: 50%; top: calc(var(--aw) * -.245); width: var(--aw); transform: translateX(-50%); }
+.about__photo { left: 50%; top: calc(var(--aw) * -.165); width: var(--aw); transform: translateX(-50%); }
 .about__card { grid-template-columns: minmax(0, 1fr); width: calc(100% - 2 * var(--gutter)); padding: calc(28 * var(--m)) var(--inset) calc(28 * var(--m));
-  position: relative; z-index: 3; margin-top: calc(var(--aw) * -.09);   /* красная карточка выше: закрывает талию на фото */
 }
 .about__role { text-align: left; font-size: var(--fs-h2-xl); line-height: .8; }
 .about__text { max-width: none; margin-top: 16px; font-size: var(--fs-body); line-height: 1.2; }

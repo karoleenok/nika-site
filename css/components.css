@@ -253,7 +253,7 @@
 }
 .about__photo {
   position: absolute; z-index: 2;
-  left: calc(257 * var(--s)); top: calc(-286 * var(--s));
+  left: calc(257 * var(--s)); top: calc(-246 * var(--s));   /* Ника ниже: талия уходит за край блока */
   width: calc(824 * var(--s)); max-width: none; height: auto;
 }
 
@@ -266,7 +266,6 @@
     radial-gradient(ellipse 50% 19% at 50% 100%, var(--c-glow) 0 62%, rgba(255,0,0,0) 100%),
     linear-gradient(180deg, var(--c-red) 0 62%, #7a080a 78%, #1a0000 100%);
   display: grid; color: var(--c-white);
-  z-index: 3; margin-top: calc(-40 * var(--s));   /* карточка выше: закрывает талию на фото */
 }
 .about__role { --ls: -.008em; font-size: var(--fs-h2-xl); text-align: center; position: relative; }
 .about__text { margin-top: var(--sp-4); max-width: calc(515 * var(--s)); font-size: var(--fs-small); line-height: var(--lh-small); position: relative; }
