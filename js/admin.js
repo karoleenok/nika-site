@@ -114,6 +114,8 @@
       case 'material.update': return 'Изменён материал «' + (m.title || '') + '»';
       case 'material.delete': return 'Удалён материал «' + (m.title || '') + '»';
       case 'material.cover': return 'Заменена обложка материала';
+      case 'material.grant': return 'Открыт материал «' + (m.title || '') + '» без оплаты';
+      case 'material.revoke': return 'Закрыт материал «' + (m.title || '') + '»';
       case 'material.file': return 'Загружен файл материала' + (m.name ? ' «' + m.name + '»' : '');
       case 'settings.videos_soon': return m.on ? 'Включён показ уроков «скоро» в кабинете' : 'Выключен показ уроков «скоро» в кабинете';
       default: return 'Действие: ' + x.action;
@@ -283,6 +285,28 @@
     d.history.forEach(x => h.appendChild(histItem({ text: logText(x), note: x.note, when: when(x.at), who: x.who }, true)));
     if (!d.history.length) h.appendChild(el('li', 'hist__e', 'Пока ничего не менялось.'));
   };
+  /* Материалы клиента: переключатель открывает материал без оплаты (подарок от Ники). Купленные сам клиент закрыть не даёт. */
+  const drawClientMaterials = async cid => {
+    const box = $('[data-c-matsblock]'), ul = $('[data-c-mats]'); ul.textContent = ''; box.hidden = true;
+    const r = await api.get('/api/admin/clients/' + cid + '/materials');
+    if (!r.ok || !(cur && cur.id === cid)) return;
+    const list = r.data.materials.filter(m => m.ready);
+    if (!list.length) return;
+    box.hidden = false;
+    list.forEach(m => {
+      const li = el('li'), lab = el('label', 'sw-row'), t = el('span', 'sw-row__t');
+      t.appendChild(el('b', '', m.title)); t.appendChild(el('small', '', m.paid ? 'куплен клиентом' : m.kind));
+      const sw = el('input', 'sw'); sw.type = 'checkbox'; sw.setAttribute('role', 'switch'); sw.checked = m.on; sw.disabled = m.paid;
+      sw.addEventListener('change', async () => {
+        sw.disabled = true;
+        const q = await api.request('PUT', '/api/admin/clients/' + cid + '/materials/' + m.id, { on: sw.checked });
+        sw.disabled = false;
+        if (!q.ok) { sw.checked = !sw.checked; toast(q.data && q.data.error ? q.data.error : 'Не получилось. Попробуй ещё раз.'); return; }
+        toast(sw.checked ? 'Материал открыт клиенту' : 'Материал закрыт');
+      });
+      lab.appendChild(t); lab.appendChild(sw); li.appendChild(lab); ul.appendChild(li);
+    });
+  };
   const drawClient = id => {
     const c = byId(id); if (!c) { location.replace('#/clients'); return false; }
     cur = c; const st = stateOf(c);
@@ -305,6 +329,7 @@
     $('[data-c-pay]').textContent = ''; $('[data-c-hist]').textContent = '';
     const mine = c.id;
     api.get('/api/admin/clients/' + mine).then(r => { if (r.ok && cur && cur.id === mine) fillDetail(r.data); else if (!r.ok) fail(r); });
+    drawClientMaterials(mine);
     return true;
   };
   const reloadClient = async () => { await loadClients(); if (cur && byId(cur.id) && location.hash.startsWith('#/client/')) drawClient(cur.id); };

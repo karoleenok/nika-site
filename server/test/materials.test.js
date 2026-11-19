@@ -134,6 +134,32 @@ test('подарок: открывается клиентам с сопрово�
   assert.equal((await t.api('GET', `/api/me/materials/${M.id}/open`, undefined, { cookie: other })).statusCode, 403);
 });
 
+test('админ открывает материал клиенту без оплаты и закрывает обратно', async () => {
+  const idOf = async (email) => (await t.pool.query('SELECT id FROM users WHERE email = $1', [email])).rows[0].id;
+  const uid = await idOf('no@x.com');
+  const row = async () => (await A('GET', `/api/admin/clients/${uid}/materials`)).json().materials.find((m) => m.id === M.id);
+  assert.equal((await row()).on, false);
+  assert.equal((await t.api('GET', `/api/me/materials/${M.id}/open`, undefined, { cookie: other })).statusCode, 403);
+  assert.equal((await A('PUT', `/api/admin/clients/${uid}/materials/${M.id}`, { on: true })).statusCode, 200);
+  assert.equal((await row()).on, true);
+  assert.equal((await t.api('GET', `/api/me/materials/${M.id}/open`, undefined, { cookie: other })).statusCode, 200);
+  assert.equal((await A('PUT', `/api/admin/clients/${uid}/materials/${M.id}`, { on: false })).statusCode, 200);
+  assert.equal((await t.api('GET', `/api/me/materials/${M.id}/open`, undefined, { cookie: other })).statusCode, 403);
+  // Купленный клиентом материал закрыть нельзя
+  const bid = await idOf('buy@x.com');
+  await t.pool.query(`UPDATE purchases SET order_id = (SELECT id FROM orders LIMIT 1) WHERE user_id = $1 AND tariff_id = (SELECT tariff_id FROM materials WHERE id = $2)`, [bid, M.id]);
+  const paid = (await t.pool.query('SELECT order_id FROM purchases WHERE user_id = $1 AND order_id IS NOT NULL', [bid])).rowCount;
+  if (paid) assert.equal((await A('PUT', `/api/admin/clients/${bid}/materials/${M.id}`, { on: false })).statusCode, 409);
+  assert.equal((await t.api('PUT', `/api/admin/clients/${uid}/materials/${M.id}`, { on: true }, { cookie: buyer })).statusCode, 401);
+});
+
+test('бесплатный материал (цена 0) открывается всем клиентам', async () => {
+  assert.equal((await A('PATCH', `/api/admin/materials/${M.id}`, { price: 0, old: 0 })).statusCode, 200);
+  assert.equal((await t.api('GET', `/api/me/materials/${M.id}/open`, undefined, { cookie: other })).statusCode, 200);
+  assert.equal((await A('PATCH', `/api/admin/materials/${M.id}`, { price: 990, old: 1500 })).statusCode, 200);
+  assert.equal((await t.api('GET', `/api/me/materials/${M.id}/open`, undefined, { cookie: other })).statusCode, 403);
+});
+
 test('скрытый материал пропадает у тех, кто не купил, но остаётся у купивших', async () => {
   assert.equal((await A('PATCH', `/api/admin/materials/${M.id}`, { on: false, gift: false })).statusCode, 200);
   const no = (await t.api('GET', '/api/me/materials', undefined, { cookie: other })).json().materials;

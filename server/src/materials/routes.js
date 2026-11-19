@@ -235,6 +235,38 @@ export default async function materialRoutes(app, { pool, s3 }) {
     ResponseCacheControl: 'private, no-store',
   }), { expiresIn: OPEN_URL_TTL });
 
+  // ---------- Админка: открыть материал конкретному клиенту без оплаты ----------
+  app.get('/api/admin/clients/:id/materials', async (req, reply) => {
+    noStore(reply);
+    const uid = idOf(req.params.id);
+    if (!uid) return bad(reply, 404, 'Клиент не найден');
+    const { rows } = await pool.query(`${SELECT.replace('FROM materials m', `, EXISTS (SELECT 1 FROM purchases p WHERE p.user_id = $1 AND p.tariff_id = t.id) AS has, (SELECT p.order_id IS NOT NULL FROM purchases p WHERE p.user_id = $1 AND p.tariff_id = t.id) AS paid FROM materials m`)} ORDER BY t.sort, m.id`, [uid]);
+    return { materials: rows.map((r) => ({ id: String(r.id), kind: r.kind, title: r.title, on: !!r.has, paid: !!r.paid, ready: !!(r.file_key || r.page_url), shown: r.active })) };
+  });
+
+  app.put('/api/admin/clients/:id/materials/:mid', async (req, reply) => {
+    const uid = idOf(req.params.id), mid = idOf(req.params.mid);
+    if (!uid || !mid) return bad(reply, 404, 'Не найдено');
+    const on = req.body?.on === true;
+    const out = await tx(pool, async (c) => {
+      if (!(await c.query('SELECT 1 FROM users WHERE id = $1', [uid])).rowCount) return { status: 404, error: 'Клиент не найден' };
+      const m = await one(c, mid);
+      if (!m) return { status: 404, error: 'Материал не найден' };
+      if (on) {
+        if (!m.file_key && !m.page_url) return { status: 400, error: 'Сначала загрузи файл материала: без него клиенту нечего открыть.' };
+        await c.query('INSERT INTO purchases (user_id, tariff_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [uid, m.tariff_id]);
+      } else {
+        const paid = (await c.query('SELECT 1 FROM purchases WHERE user_id = $1 AND tariff_id = $2 AND order_id IS NOT NULL', [uid, m.tariff_id])).rowCount;
+        if (paid) return { status: 409, error: 'Клиент купил этот материал сам, закрыть доступ нельзя.' };
+        await c.query('DELETE FROM purchases WHERE user_id = $1 AND tariff_id = $2 AND order_id IS NULL', [uid, m.tariff_id]);
+      }
+      await audit(c, req.admin.id, on ? 'material.grant' : 'material.revoke', { userId: uid, target: `material:${mid}`, meta: { title: m.title } });
+      return null;
+    });
+    if (out) return bad(reply, out.status, out.error);
+    return { ok: true, on };
+  });
+
   // ---------- Публично: обложка ----------
   app.get('/api/materials/:id/cover', async (req, reply) => {
     const id = idOf(req.params.id);
@@ -247,6 +279,7 @@ export default async function materialRoutes(app, { pool, s3 }) {
 
   // ---------- Кабинет клиента ----------
   const ownedSql = `EXISTS (SELECT 1 FROM purchases p WHERE p.user_id = $1 AND p.tariff_id = t.id)
+                 OR (t.active AND t.price_kop = 0)
                  OR (m.gift AND EXISTS (SELECT 1 FROM orders o JOIN tariffs g ON g.id = o.tariff_id WHERE o.user_id = $1 AND g.slug = '${GIFT_TARIFF}' AND o.status IN ('paid','manual')))`;
 
   app.get('/api/me/materials', { preHandler: app.requireUser }, async (req, reply) => {
