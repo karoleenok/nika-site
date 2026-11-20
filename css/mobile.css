@@ -242,7 +242,7 @@ body.menu-lock { overflow: hidden; }
 /* ==========================================================================
    ОБО МНЕ
    ========================================================================== */
-/* --aw — ширина фото; кадр режется на уровне груди, как в макете (видно ~23–67% высоты файла) */
+/* --aw — ширина экрана-кадра. Фото режется плашкой по тому же месту, что и на ПК: чуть ниже пупка, виден верх легинсов */
 .about { --aw: min(100vw, 520px); }
 .about__stage { height: calc(var(--aw) * .76); }
 .about__name {
@@ -250,7 +250,7 @@ body.menu-lock { overflow: hidden; }
   display: flex; flex-direction: column; align-items: center; gap: 0;
   font-size: min(38vw, 190px);
 }
-.about__photo { left: 50%; top: calc(var(--aw) * -.11); width: var(--aw); transform: translateX(-50%); }
+.about__photo { left: 50%; top: calc(var(--aw) * .0126); width: calc(var(--aw) * .743); transform: translateX(-50%); }
 .about__card { grid-template-columns: minmax(0, 1fr); width: calc(100% - 2 * var(--gutter)); padding: calc(28 * var(--m)) var(--inset) calc(28 * var(--m));
 }
 .about__role { text-align: left; font-size: var(--fs-h2-xl); line-height: .8; }

@@ -253,8 +253,9 @@
 }
 .about__photo {
   position: absolute; z-index: 2;
-  left: calc(257 * var(--s)); top: calc(-186 * var(--s));   /* Ника ниже: талия уходит за край блока */
-  width: calc(824 * var(--s)); max-width: none; height: auto;
+  /* ч/б силуэт, как в макете: голова у верха блока, плашка режет по поясу (верх легинсов виден) */
+  left: calc(486 * var(--s)); top: calc(29 * var(--s));
+  width: calc(516 * var(--s)); max-width: none; height: auto;
 }
 
 .about__card {
