@@ -508,7 +508,7 @@
 .footer__logo img { height: calc(63 * var(--s)); width: auto; min-height: 40px; }
 .footer__bottom { display: flex; justify-content: space-between; align-items: flex-end; margin: calc(15 * var(--s)) auto 0; max-width: var(--page-max); font-size: var(--fs-tiny); line-height: calc(16 / 14); }
 .footer__legal ul { margin-top: calc(16 * var(--s)); line-height: calc(23 / 14); }
-.footer__legal a { padding-block: 2px; }
+.footer__legal a, .footer__legal [data-cookie-open] { padding-block: 2px; line-height: inherit; }
 .footer__made { text-align: right; }
 .footer__studio { font-size: var(--fs-small); }
 .footer__note { max-width: var(--page-max); margin: calc(14 * var(--s)) auto 0; font-size: var(--fs-tiny); line-height: 1.25; color: rgba(255,255,255,.6); }
