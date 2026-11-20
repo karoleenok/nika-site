@@ -20,7 +20,7 @@
     setTimeout(() => { box && box.remove(); box = null; }, 220);
   };
 
-  const policyHref = () => (document.querySelector('script[src*="cookie.js"]').getAttribute('src').replace(/js\/cookie\.js.*$/, '') || '') + 'legal/privacy.html';
+  const policyHref = () => (document.querySelector('script[src*="cookie.js"]').getAttribute('src').replace(/js\/cookie\.js.*$/, '') || '') + 'legal/cookies.html';
 
   const open = () => {
     if (box) return;
@@ -31,7 +31,7 @@
     box.innerHTML =
       '<p class="ck__t">Cookie</p>' +
       '<p class="ck__p">Сайт использует файлы cookie, чтобы работать корректно, и, если ты разрешишь, чтобы понимать, как им пользуются. ' +
-      'Подробнее в <a href="' + policyHref() + '">Политике обработки персональных данных</a>.</p>' +
+      'Подробнее в <a href="' + policyHref() + '">Политике cookie</a>.</p>' +
       '<div class="ck__btns">' +
       '<button type="button" class="ck__btn ck__btn--ok" data-ck="all">принять</button>' +
       '<button type="button" class="ck__btn ck__btn--no" data-ck="necessary">только необходимые</button>' +

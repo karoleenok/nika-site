@@ -427,3 +427,25 @@
 .ty-cred__msg { font-size: var(--fs-small); line-height: 1.4; color: var(--c-on-dark-2); min-height: 1.4em; }
 .ty-cred__msg:empty { display: none; }
 @media (prefers-reduced-motion: reduce) { .ty-cred { animation: none; } }
+
+/* Юридические страницы: строка версии, таблицы, формула, чекбоксы, цитата */
+.prose .doc-ver { font-size: var(--fs-small); color: var(--c-muted); margin-bottom: var(--sp-6); }
+.prose strong { font-weight: 600; }
+.prose .formula { background: var(--c-paper); border-radius: var(--r-card); padding: var(--sp-4); font-weight: 600; overflow-wrap: anywhere; }
+.prose blockquote { background: var(--c-paper); border-radius: var(--r-card); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-4); }
+.prose blockquote p { margin-bottom: var(--sp-2); }
+.prose blockquote p:last-child { margin-bottom: 0; }
+.prose ul.chk { list-style: none; padding-left: 0; }
+.prose ul.chk li { display: flex; gap: var(--sp-3); }
+.prose ul.chk li::before { content: ""; flex: none; width: 20px; height: 20px; margin-top: .15em; border: 1.5px solid var(--c-ink); border-radius: 4px; }
+.prose .tbl { margin-bottom: var(--sp-4); }
+.prose table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); line-height: 1.35; }
+.prose th, .prose td { text-align: left; vertical-align: top; padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid rgba(14, 14, 14, .12); }
+.prose th { font-weight: 600; background: var(--c-paper); }
+@media (max-width: 1023px) {
+  .prose table, .prose tbody, .prose tr, .prose td { display: block; }
+  .prose thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .prose tr { background: var(--c-paper); border-radius: var(--r-card); padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-3); }
+  .prose td { border: 0; padding: var(--sp-1) 0; }
+  .prose td::before { content: attr(data-l); display: block; font-size: var(--fs-tiny); color: var(--c-muted); }
+}
